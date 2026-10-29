@@ -13,4 +13,11 @@ palette 全部对外能力 → SQL，函数前缀 `plt_`。完成一项勾一项
 - [x] SQL 测试：15 份 `.test` 覆盖上游断言 + 边界 / NULL / 错误，`just test` 全绿
 - [x] 文档：README（中英）、用户指南（中英）、开发指南（中英）、首页、`function_descriptions.csv`
 - [x] 社区扩展注册草稿：`description.yml` 占位符全部替换、CSV 已重新生成
-- [ ] 收尾：`just lint` 无警告、提交
+- [x] 收尾：`just lint` 无警告、`just test` 全绿、已提交
+
+剩下的都是发版动作，不是功能缺口：
+
+- [ ] 发版：`Cargo.toml` 已是 `0.1.0` 且没有 tag，直接 `just release_tag 0.1.0` → 等 CI 出 Release，
+      再 `just release_dev 0.1.1-dev.0`
+- [ ] 发版后把 `community-extension/description.yml` 的 `repo.ref` 换成发布提交的 SHA，再向
+      duckdb/community-extensions 提 PR
