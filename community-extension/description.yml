@@ -1,44 +1,67 @@
 extension:
   name: duckfn_palette
-  description: <one line about what this extension does, shown in the community extension list>
+  description: The palette color library as SQL functions — 44 color spaces, conversion, blending, contrast, CSS, CAM16
   version: 0.1.0
   language: Rust
   build: cargo
   license: MIT
   requires_toolchains: "rust;python3"
   maintainers:
-    - <your-github-handle>
+    - shijianjs
 
 repo:
-  github: <owner>/<repo>
-  ref: <40-character commit SHA of the released version>
+  github: shijianjs/duckfn-palette
+  ref: 27e4715bd97680170ea99079ff4e798af962028d
 
 docs:
   hello_world: |
-    -- The two sample functions: one scalar, one aggregate
-    SELECT my_greet('world');
-    -- Hello, world!
+    -- A color is one STRUCT, so it can live in a column
+    SELECT plt_to_hex(plt_convert(plt_srgb(1, 0.5, 0), 'oklch'));
+    -- #ff8000
 
-    SELECT my_sum(x) FROM (VALUES (1.5::DOUBLE), (2.5::DOUBLE), (3.0::DOUBLE)) t(x);
-    -- 7.0
+    SELECT plt_to_hex(plt_mix(plt_named('red'), plt_named('blue'), 0.5));
+    -- #800080
+
+    SELECT plt_contrast(plt_named('white'), plt_named('black'));
+    -- 21.0
   extended_description: |
-    Documentation: <https://<owner>.github.io/<repo>/docs/intro> - installation, the function reference
-    and examples. **Keep this line first**: the community-extension page renders the body before
-    anything else, so the docs link is what a reader sees without scrolling.
+    Documentation: [user guide](https://shijianjs.github.io/duckfn-palette/docs/intro) ·
+    [function reference](https://shijianjs.github.io/duckfn-palette/docs/user-guide/functions) - installation,
+    every function with a runnable example, and the NULL / error rules.
 
-    A two-line summary of the whole extension: what goes in, what comes out, and the one thing a user
-    has to know before the first call.
+    `duckfn_palette` maps Rust's [palette](https://crates.io/crates/palette) color library onto SQL: 145
+    functions under the `plt_` prefix, covering 44 color spaces, conversion between them, lightening and
+    saturation, blending and compositing, color-difference metrics and WCAG contrast, color schemes,
+    named colors, white points, chromatic adaptation, transfer functions, 3x3 matrices, CAM16 with custom
+    viewing conditions and 8-bit packing. Two supporting crates fill the edges: csscolorparser for CSS
+    Color Level 4 strings, and colorous for the d3-scale-chromatic gradients and categorical palettes.
+
+    A color is a single STRUCT, so it can be stored in a column and compared like any other value:
+
+    ```text
+    STRUCT(space VARCHAR, c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, alpha DOUBLE)
+    ```
+
+    Every space has a constructor of its own name, with components in palette's `Color::new` order:
 
     | Function | Kind | Input -> output |
     | --- | --- | --- |
-    | `my_greet(name)` | scalar | `VARCHAR` -> `VARCHAR` |
-    | `my_greet_checked(name)` | scalar | `VARCHAR` -> `VARCHAR`, NULL for an empty name |
-    | `my_sum(value)` | aggregate | `DOUBLE` -> `DOUBLE`, NULLs skipped |
+    | `plt_srgb(r, g, b)` | scalar | three `DOUBLE` -> `plt_color` |
+    | `plt_convert(color, space)` | scalar | `plt_color`, `VARCHAR` -> `plt_color` |
+    | `plt_mix(a, b, factor)` | scalar | two `plt_color` + `DOUBLE` -> `plt_color` |
+    | `plt_difference(a, b, metric[, space])` | scalar | `DOUBLE` |
+    | `plt_contrast(a, b)` | scalar | `DOUBLE` (WCAG 2.1 ratio, 1..21) |
+    | `plt_css_serialize(color, format)` | scalar | `plt_color`, `VARCHAR` -> `VARCHAR` |
 
-    Then the details that do not fit a table: NULL semantics, the options a function takes, what it does
-    with the file system or the network, and which DuckDB version it needs. Requires **DuckDB 1.4 or
-    newer**: the extension is built for DuckDB 2.0.0 but declares the C API floor it needs
-    (v1.2.0), so one binary loads into 1.4.x, 1.5.x and 2.0.0 alike - the C API is binary compatible
-    across these versions, so the 2.0 release asset is the one to install on all of them and there is
-    no separate 1.5 build. Development notes and the full option
-    table live in the repository: <https://github.com/owner/repo>.
+    NULL semantics are uniform: a NULL argument gives NULL, and anything palette cannot compute gives NULL
+    too - never `NaN` and never 0. A rejected argument fails the statement with a message that starts with
+    the function name (`plt_convert: unknown color space 'nope'`). Space, mode, metric and white-point
+    names are case-insensitive and treat hyphens and spaces as underscores. Operations that palette defines
+    only for certain spaces (saturation needs a hue space, blend modes an RGB-like one) fail with a hint
+    to convert first.
+
+    Requires **DuckDB 1.4 or newer**: the extension is built for DuckDB 2.0.0 but declares the C API floor
+    it needs (v1.2.0), so one binary loads into 1.4.x, 1.5.x and 2.0.0 alike - the C API is binary
+    compatible across these versions, so the 2.0 release asset is the one to install on all of them and
+    there is no separate 1.5 build. Development notes and the full function table live in the repository:
+    <https://github.com/shijianjs/duckfn-palette>.

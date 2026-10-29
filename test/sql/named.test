@@ -1,0 +1,58 @@
+# name: test/sql/named.test
+# description: palette 的 148 个 SVG / CSS3 命名色（src/extension/functions/named.rs）。
+#   期望值来源：palette 0.7.7 的 named 表（rebeccapurple = 0x663399）与 csscolorparser
+#   的命名色测试（aliceblue = #f0f8ff 等）；整表与 CSS 解析做交叉校验。
+# group: [duckfn_palette]
+
+require duckfn_palette
+
+# 148 个名字，按字母序
+query TTT
+SELECT list_count(plt_named_names()), plt_named_names()[1], plt_named_names()[148];
+----
+148	aliceblue	yellowgreen
+
+# rebeccapurple = 102 / 51 / 153（palette named 表）
+query T
+SELECT plt_components(plt_named('rebeccapurple'));
+----
+[0.4, 0.2, 0.6]
+
+# 名字大小写与首尾空白都被规范化
+query T
+SELECT plt_components(plt_named('  RebeccaPurple '));
+----
+[0.4, 0.2, 0.6]
+
+# csscolorparser 测试里的 name ↔ hex 对应
+query TTTTT
+SELECT plt_to_hex(plt_named('aliceblue')), plt_to_hex(plt_named('bisque')), plt_to_hex(plt_named('crimson')),
+       plt_to_hex(plt_named('skyblue')), plt_to_hex(plt_named('yellowgreen'));
+----
+#f0f8ff	#ffe4c4	#dc143c	#87ceeb	#9acd32
+
+# 全部 148 个名字都能被 CSS 解析器认出，且 8 位量化后的 sRGB 完全一致
+query I
+SELECT count(*) FROM (SELECT unnest(plt_named_names()) AS n)
+WHERE plt_to_hex(plt_css_parse(n)) <> plt_to_hex(plt_named(n));
+----
+0
+
+# 反查：命名色与 from_hex 相等，plt_css_name 对全部命名色都有名字
+query III
+SELECT plt_from_hex('#f0f8ff') = plt_named('aliceblue'),
+       plt_css_name(plt_from_hex('#ff0000')),
+       count(*) FROM (SELECT unnest(plt_named_names()) AS n) WHERE plt_css_name(plt_named(n)) IS NULL;
+----
+true	red	0
+
+# 认不出的名字按三态契约返回 NULL
+query II
+SELECT plt_named('bloodred') IS NULL, plt_named(NULL) IS NULL;
+----
+true	true
+
+query T
+SELECT typeof(plt_named('red'));
+----
+STRUCT(space VARCHAR, c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, alpha DOUBLE)

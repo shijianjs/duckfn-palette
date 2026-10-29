@@ -126,10 +126,10 @@ LOAD duckfn_palette;`;
  * The other half: the functions the extension registers, called exactly like
  * DuckDB's own.
  */
-const USAGE_SAMPLE = `SELECT my_greet_checked('world');  -- Hello, world!
-SELECT my_greet_checked('');       -- NULL
-SELECT my_sum(x) FROM (VALUES (1.5::DOUBLE), (2.5::DOUBLE)) t(x);
--- 4.0`;
+const USAGE_SAMPLE = `SELECT plt_to_hex(plt_convert(plt_srgb(1, 0.5, 0), 'oklch'));  -- #ff8000
+SELECT plt_contrast(plt_named('white'), plt_named('black'));    -- 21.0
+SELECT to_json(list_transform(plt_colorous_palette('viridis', 3), lambda x: plt_to_hex(x)));
+-- ["#440154","#20908c","#fde725"]`;
 
 /**
  * The shields.io badges ask for `style=flat`, which is the rounded style; the
@@ -236,7 +236,7 @@ function featuresContent(): FeaturesContent {
           id: 'homepage.features.sql.details',
           description: 'Home page feature card description',
           message:
-            "my_greet, my_greet_checked and my_sum are ordinary DuckDB functions: use them in any query, alongside DuckDB's own, with nothing to import.",
+            '145 plt_ functions are ordinary DuckDB functions: 44 color spaces, conversion, blending, contrast, CSS and CAM16, usable in any query alongside DuckDB\u2019s own.',
         }),
       },
       {
@@ -264,7 +264,7 @@ function featuresContent(): FeaturesContent {
           id: 'homepage.features.platforms.details',
           description: 'Home page feature card description',
           message:
-            'Each version attaches one .duckdb_extension per platform to a GitHub Release, and LOAD takes a file straight from its URL \u2014 no download step in between.',
+            'Each version attaches one .duckdb_extension per platform to a GitHub Release; download the file for yours, rename it to duckfn_palette.duckdb_extension and LOAD it.',
         }),
       },
       {
@@ -413,8 +413,8 @@ function CodeShowcase(): ReactNode {
               <Translate
                 id="homepage.showcase.caption"
                 description="Home page note under the SQL code block explaining the trailing comments">
-                The comments are what each call returns — and the last one is a
-                real sum over two rows.
+                The comments are what each call returns — a converted color, a WCAG
+                contrast ratio, and a three-stop gradient sampled as hex.
               </Translate>
             </p>
           </div>

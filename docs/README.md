@@ -72,14 +72,14 @@ editor with a Run button, running in DuckDB-Wasm in the reader's browser.
 
 ````md
 ```sql {"type":"duckfn","show":"table"}
-SELECT name, my_greet_checked(name) AS greeting
-FROM (VALUES ('world'), ('')) t(name);
+SELECT space, plt_to_hex(plt_convert(plt_srgb(1, 0.5, 0), space)) AS hex
+FROM (VALUES ('lab'), ('oklch')) t(space);
 ```
 ````
 
 `"type":"duckfn"` is required; `show` is `table` (default), `text`, `html`, `iframe` or `svg`, and
 a block that demonstrates a failure declares `"expect":"error"` (see `docs/user-guide/intro.md`,
-`docs/user-guide/functions.md` and `docs/development/quick-start.md` for the ones the template ships).
+`docs/user-guide/functions.md` and `docs/development/quick-start.md` for the ones this site ships).
 See [`AGENTS.md`](./AGENTS.md) for the conventions this site's blocks follow — reading data out of
 `static/` without hard-coding a locale prefix above all, which is the mistake that makes a block work
 in English and 404 in Chinese. The full config reference is in the kit's own guide at

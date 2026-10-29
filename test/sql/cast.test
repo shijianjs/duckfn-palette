@@ -1,0 +1,165 @@
+# name: test/sql/cast.test
+# description: palette 的 cast::Packed —— 四种通道顺序的 pack / unpack
+# group: [palette]
+
+require duckfn_palette
+
+query T
+SELECT plt_pack_orders()::VARCHAR;
+----
+[argb, rgba, abgr, bgra]
+
+# ---- palette packed.rs 的上游断言 ----
+
+# Srgb(0.5, 0.0, 0.5) → 0xFF800080（0.5 量化到 0x80）
+query I
+SELECT plt_pack(plt_srgb(0.5, 0, 0.5));
+----
+4286578816
+
+# PackedRgba::from(0xFFFFFF80).unpack::<Srgba<u8>>() ≈ Srgba(1,1,1,0.5)
+query I
+SELECT count(*) FROM (
+    SELECT unnest(plt_components(plt_unpack(4294967168, 'rgba'))) AS got,
+           unnest([1.0, 1.0, 1.0, 0.5019607843137255]) AS want
+) WHERE abs(got - want) > 0.01;
+----
+0
+
+# 六位十六进制按 ARGB 解释：0x00FF0000 的 alpha 字节是 0x00
+query T
+SELECT plt_unpack(16711680)::VARCHAR;
+----
+{'space': srgb, 'c1': 1.0, 'c2': 0.0, 'c3': 0.0, 'alpha': 0.0}
+
+# 0xFFFF8000 → #ff8000（alpha 为 1）
+query T
+SELECT plt_to_hex(plt_unpack(4294934528));
+----
+#ff8000
+
+# ---- 四种通道顺序 ----
+
+query IIII
+SELECT plt_pack(plt_srgb(1, 0.5, 0), 'argb'), plt_pack(plt_srgb(1, 0.5, 0), 'rgba'),
+       plt_pack(plt_srgb(1, 0.5, 0), 'abgr'), plt_pack(plt_srgb(1, 0.5, 0), 'bgra');
+----
+4294934528	4286578943	4278223103	8454143
+
+# 顺序名大小写 / 空白 / 连字符都能识别
+query III
+SELECT plt_pack(plt_srgb(1, 0.5, 0), 'RGBA'), plt_pack(plt_srgb(1, 0.5, 0), ' bgra '),
+       plt_pack(plt_srgb(1, 0.5, 0), 'Argb ');
+----
+4286578943	8454143	4294934528
+
+# 带 alpha 时 alpha 是首个字节（argb）
+query TT
+SELECT plt_pack(plt_with_alpha(plt_srgb(1, 0.5, 0), 0.5), 'argb')::VARCHAR,
+       plt_pack(plt_with_alpha(plt_srgb(1, 0.5, 0), 0.5), 'rgba')::VARCHAR;
+----
+2164228096	4286578816
+
+# alpha = 0 和 alpha = 1 的边界
+query II
+SELECT plt_pack(plt_with_alpha(plt_srgb(0, 0, 1), 0)), plt_pack(plt_with_alpha(plt_srgb(0, 0, 1), 1));
+----
+255	4278190335
+
+query T
+SELECT plt_to_hex(plt_unpack(255));
+----
+#0000ff00
+
+# ---- 解包 ----
+
+query TTTT
+SELECT plt_unpack(4278190335, 'argb')::VARCHAR, plt_unpack(4278190335, 'rgba')::VARCHAR,
+       plt_unpack(4278190335, 'abgr')::VARCHAR, plt_unpack(4278190335, 'bgra')::VARCHAR;
+----
+{'space': srgb, 'c1': 0.0, 'c2': 0.0, 'c3': 1.0, 'alpha': 1.0}	{'space': srgb, 'c1': 1.0, 'c2': 0.0, 'c3': 0.0, 'alpha': 1.0}	{'space': srgb, 'c1': 1.0, 'c2': 0.0, 'c3': 0.0, 'alpha': 1.0}	{'space': srgb, 'c1': 0.0, 'c2': 0.0, 'c3': 1.0, 'alpha': 1.0}
+
+query TTT
+SELECT plt_unpack(0)::VARCHAR, plt_unpack(4294967295)::VARCHAR, plt_unpack(4286611584, 'rgba')::VARCHAR;
+----
+{'space': srgb, 'c1': 0.0, 'c2': 0.0, 'c3': 0.0, 'alpha': 0.0}	{'space': srgb, 'c1': 1.0, 'c2': 1.0, 'c3': 1.0, 'alpha': 1.0}	{'space': srgb, 'c1': 1.0, 'c2': 0.5019607843137255, 'c3': 0.5019607843137255, 'alpha': 0.5019607843137255}
+
+# ---- 打包会先转 sRGB 并夹到 0..1 ----
+
+query II
+SELECT plt_pack(plt_srgb(2, -1, 0.5)), plt_pack(plt_convert(plt_srgb(0.5, 0, 0.5), 'oklch'));
+----
+4294901888	4286513280
+
+# ---- 8 位量化往返（106 组三色组合 + 4 档 alpha） ----
+
+query I
+SELECT count(*) FROM (
+    SELECT r, g, b, a
+    FROM (VALUES (0), (51), (128), (204), (255)) AS rs(r)
+    CROSS JOIN (VALUES (0), (51), (128), (204), (255)) AS gs(g)
+    CROSS JOIN (VALUES (0), (51), (128), (204), (255)) AS bs(b)
+    CROSS JOIN (VALUES (0), (128), (255)) AS as_(a)
+) WHERE plt_to_hex(plt_unpack(
+              plt_pack(plt_with_alpha(plt_srgb(r / 255.0, g / 255.0, b / 255.0), a / 255.0), 'argb'),
+              'argb'))
+      <> CASE WHEN a = 255 THEN printf('#%02x%02x%02x', r, g, b)
+              ELSE printf('#%02x%02x%02x%02x', r, g, b, a) END;
+----
+0
+
+# 四种顺序都能用同一顺序还原
+query I
+SELECT count(*) FROM (
+    SELECT o, r, g, b, a
+    FROM (VALUES ('argb'), ('rgba'), ('abgr'), ('bgra')) AS os(o)
+    CROSS JOIN (VALUES (0), (51), (128), (204), (255)) AS rs(r)
+    CROSS JOIN (VALUES (0), (51), (128), (204), (255)) AS gs(g)
+    CROSS JOIN (VALUES (0), (51), (128), (204), (255)) AS bs(b)
+    CROSS JOIN (VALUES (0), (128), (255)) AS as_(a)
+) WHERE plt_to_hex(plt_unpack(
+              plt_pack(plt_with_alpha(plt_srgb(r / 255.0, g / 255.0, b / 255.0), a / 255.0), o),
+              o))
+      <> CASE WHEN a = 255 THEN printf('#%02x%02x%02x', r, g, b)
+              ELSE printf('#%02x%02x%02x%02x', r, g, b, a) END;
+----
+0
+
+# ---- 类型 / NULL / 错误 ----
+
+query TT
+SELECT typeof(plt_pack(plt_srgb(1, 0, 0))),
+       typeof(plt_unpack(1));
+----
+BIGINT	STRUCT(space VARCHAR, c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, alpha DOUBLE)
+
+query T
+SELECT plt_unpack(1).space;
+----
+srgb
+
+query IIII
+SELECT plt_pack(NULL) IS NULL, plt_pack(NULL, 'rgba') IS NULL,
+       plt_unpack(NULL) IS NULL, plt_unpack(NULL, 'bgra') IS NULL;
+----
+true	true	true	true
+
+statement error
+SELECT plt_pack(plt_srgb(1, 0, 0), 'cmyk');
+----
+plt_pack: unknown channel order 'cmyk'; supported: argb, rgba, abgr, bgra
+
+statement error
+SELECT plt_unpack(1, 'nope');
+----
+plt_unpack: unknown channel order 'nope'; supported: argb, rgba, abgr, bgra
+
+statement error
+SELECT plt_unpack(-1);
+----
+plt_unpack: packed value must be within 0..4294967295, got -1
+
+statement error
+SELECT plt_unpack(4294967296);
+----
+plt_unpack: packed value must be within 0..4294967295, got 4294967296

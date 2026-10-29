@@ -1,0 +1,165 @@
+# name: test/sql/colorous.test
+# description: colorous 预设渐变与分类色板
+# group: [palette]
+
+require duckfn_palette
+
+query III
+SELECT count(*), (SELECT p FROM (SELECT unnest(plt_colorous_palettes()) AS p) LIMIT 1),
+       (SELECT p FROM (SELECT unnest(plt_colorous_palettes()) AS p) LIMIT 1 OFFSET 37)
+FROM (SELECT unnest(plt_colorous_palettes()) AS p) t;
+----
+38	turbo	sinebow
+
+query T
+SELECT plt_colorous_categoricals()::VARCHAR;
+----
+[category10, accent, dark2, paired, pastel1, pastel2, set1, set2, set3, tableau10]
+
+# ---- 连续渐变 ----
+
+# viridis 的两个端点与中点（d3-scale-chromatic 的 8 位色）
+query TTT
+SELECT plt_to_hex(plt_colorous_gradient('viridis', 0)),
+       plt_to_hex(plt_colorous_gradient('viridis', 0.5)),
+       plt_to_hex(plt_colorous_gradient('viridis', 1));
+----
+#440154	#20908c	#fde725
+
+# t 越界时夹到 [0, 1]
+query TTTT
+SELECT (plt_colorous_gradient('viridis', -1) = plt_colorous_gradient('viridis', 0))::VARCHAR,
+       (plt_colorous_gradient('viridis', 2) = plt_colorous_gradient('viridis', 1))::VARCHAR,
+       (plt_colorous_gradient('viridis', -1e9) = plt_colorous_gradient('viridis', 0))::VARCHAR,
+       (plt_colorous_gradient('viridis', 1e9) = plt_colorous_gradient('viridis', 1))::VARCHAR;
+----
+true	true	true	true
+
+query TTT
+SELECT plt_to_hex(plt_colorous_gradient('turbo', 0.5)),
+       plt_to_hex(plt_colorous_gradient('spectral', 0.25)),
+       plt_to_hex(plt_colorous_gradient('rainbow', 0.5));
+----
+#94fa50	#f78d53	#afef5a
+
+# 名字大小写不敏感，连字符与空格视作下划线
+query TTT
+SELECT (plt_colorous_gradient('Viridis', 0.5) = plt_colorous_gradient('viridis', 0.5))::VARCHAR,
+       (plt_colorous_gradient('blue-green', 0.5) = plt_colorous_gradient('blue_green', 0.5))::VARCHAR,
+       (plt_colorous_gradient('Red Yellow Blue', 0.4) = plt_colorous_gradient('red_yellow_blue', 0.4))::VARCHAR;
+----
+true	true	true
+
+query TT
+SELECT plt_to_hex(plt_colorous_gradient('blue_green', 0.5)),
+       plt_to_hex(plt_colorous_gradient('Blues', 0.5));
+----
+#68c2a2	#6caed5
+
+# 每个渐变端点与首尾颜色都在 0..1 内
+query I
+SELECT count(*) FROM (SELECT unnest(plt_colorous_palettes()) AS p) u
+WHERE NOT (
+    (SELECT bool_and(c BETWEEN 0 AND 1) FROM (SELECT unnest(plt_components(plt_colorous_gradient(p, 0))) AS c) t)
+    AND (SELECT bool_and(c BETWEEN 0 AND 1) FROM (SELECT unnest(plt_components(plt_colorous_gradient(p, 0.3))) AS c) t)
+    AND (SELECT bool_and(c BETWEEN 0 AND 1) FROM (SELECT unnest(plt_components(plt_colorous_gradient(p, 1))) AS c) t)
+);
+----
+0
+
+# ---- 均匀取 n 个颜色 ----
+
+query T
+SELECT to_json(list_transform(plt_colorous_palette('viridis', 3), lambda x: plt_to_hex(x)));
+----
+["#440154","#20908c","#fde725"]
+
+query T
+SELECT to_json(list_transform(plt_colorous_palette('magma', 5), lambda x: plt_to_hex(x)));
+----
+["#000004","#50127b","#b53679","#fb8760","#fcfdbf"]
+
+# 首尾与 t=0 / t=1 一致
+query TTI
+SELECT (plt_colorous_palette('plasma', 7)[1] = plt_colorous_gradient('plasma', 0))::VARCHAR,
+       (plt_colorous_palette('plasma', 7)[7] = plt_colorous_gradient('plasma', 1))::VARCHAR,
+       length(plt_colorous_palette('plasma', 7));
+----
+true	true	7
+
+query T
+SELECT plt_to_hex(plt_colorous_palette('viridis', 1)[1]);
+----
+#fde725
+
+# ---- 分类色板 ----
+
+query T
+SELECT to_json(list_transform(plt_colorous_categorical('tableau10'), lambda x: plt_to_hex(x)));
+----
+["#4e79a7","#f28e2c","#e15759","#76b7b2","#59a14f","#edc949","#af7aa1","#ff9da7","#9c755f","#bab0ab"]
+
+query T
+SELECT to_json(list_transform(plt_colorous_categorical('set1'), lambda x: plt_to_hex(x)));
+----
+["#e41a1c","#377eb8","#4daf4a","#984ea3","#ff7f00","#ffff33","#a65628","#f781bf","#999999"]
+
+query T
+SELECT to_json(list_transform(plt_colorous_categorical('category10'), lambda x: plt_to_hex(x)));
+----
+["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#8c564b","#e377c2","#7f7f7f","#bcbd22","#17becf"]
+
+query III
+SELECT length(plt_colorous_categorical('set3')),
+       length(plt_colorous_categorical('pastel1')),
+       length(plt_colorous_categorical('dark2'));
+----
+12	9	8
+
+query I
+SELECT count(*) FROM (SELECT unnest(plt_colorous_categoricals()) AS c) u,
+     LATERAL (SELECT unnest(plt_colorous_categorical(u.c)) AS col) s,
+     LATERAL (SELECT unnest(plt_components(s.col)) AS ch) t
+WHERE NOT (ch BETWEEN 0 AND 1);
+----
+0
+
+# ---- 类型 / NULL / 错误 ----
+
+query TTT
+SELECT typeof(plt_colorous_gradient('viridis', 0.5)),
+       typeof(plt_colorous_palette('viridis', 2)),
+       typeof(plt_colorous_categorical('set1'));
+----
+STRUCT(space VARCHAR, c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, alpha DOUBLE)	STRUCT(space VARCHAR, c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, alpha DOUBLE)[]	STRUCT(space VARCHAR, c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, alpha DOUBLE)[]
+
+query TTT
+SELECT (plt_colorous_gradient(NULL, 0.5) IS NULL)::VARCHAR, (plt_colorous_palette(NULL, 2) IS NULL)::VARCHAR,
+       (plt_colorous_categorical(NULL) IS NULL)::VARCHAR;
+----
+true	true	true
+
+statement error
+SELECT plt_colorous_gradient('nope', 0.5);
+----
+plt_colorous_gradient: unknown gradient 'nope'
+
+statement error
+SELECT plt_colorous_palette('nope', 2);
+----
+plt_colorous_palette: unknown gradient 'nope'
+
+statement error
+SELECT plt_colorous_categorical('nope');
+----
+plt_colorous_categorical: unknown categorical palette 'nope'
+
+statement error
+SELECT plt_colorous_palette('viridis', 0);
+----
+plt_colorous_palette: n must be at least 1, got 0
+
+statement error
+SELECT plt_colorous_palette('viridis', -3);
+----
+plt_colorous_palette: n must be at least 1, got -3

@@ -1,0 +1,190 @@
+# name: test/sql/matrix.test
+# description: 3x3 矩阵：恒等、缩放、乘法、求逆、作用到向量与颜色
+# group: [palette]
+
+require duckfn_palette
+
+# ---- 恒等与缩放 ----
+
+query TT
+SELECT plt_matrix_identity()::VARCHAR, plt_matrix_scale(0.1, 0.2, 0.3)::VARCHAR;
+----
+[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]	[0.1, 0.0, 0.0, 0.0, 0.2, 0.0, 0.0, 0.0, 0.3]
+
+# palette Matrix3::identity / scale 的 doctest
+query T
+SELECT plt_apply_matrix(plt_matrix_scale(0.1, 0.2, 0.3), plt_srgb(1, 1, 1))::VARCHAR;
+----
+{'space': srgb, 'c1': 0.1, 'c2': 0.2, 'c3': 0.3, 'alpha': 1.0}
+
+query I
+SELECT count(*) FROM (
+    SELECT unnest(plt_components(plt_apply_matrix(plt_matrix_identity(), plt_srgb(0.1, 0.2, 0.3)))) AS comp,
+           unnest([0.1, 0.2, 0.3]) AS want
+) WHERE abs(comp - want) > 1e-12;
+----
+0
+
+# ---- 矩阵乘法（palette 的 multiply_3x3 上游断言） ----
+# plt_matrix_multiply(a, b) 先应用 a 再应用 b，因此与 multiply_3x3(b, a) 同值。
+
+query T
+SELECT plt_matrix_multiply([4.0, 5, 6, 6, 5, 4, 4, 6, 5], [1.0, 2, 3, 3, 2, 1, 2, 1, 3])::VARCHAR;
+----
+[28.0, 33.0, 29.0, 28.0, 31.0, 31.0, 26.0, 33.0, 31.0]
+
+query I
+SELECT count(*) FROM (
+    SELECT unnest(plt_matrix_multiply([4.0, 5, 6, 6, 5, 4, 4, 6, 5],
+                                      [1.0, 2, 3, 3, 2, 1, 2, 1, 3])) AS got,
+           unnest([28.0, 33.0, 29.0, 28.0, 31.0, 31.0, 26.0, 33.0, 31.0]) AS want
+) WHERE abs(got - want) > 1e-12;
+----
+0
+
+# 交换顺序后结果不同（先 a 后 b 的顺序有意义）
+query I
+SELECT plt_matrix_multiply([4.0, 5, 6, 6, 5, 4, 4, 6, 5], [1.0, 2, 3, 3, 2, 1, 2, 1, 3])
+    = plt_matrix_multiply([1.0, 2, 3, 3, 2, 1, 2, 1, 3], [4.0, 5, 6, 6, 5, 4, 4, 6, 5]);
+----
+false
+
+# 与恒等矩阵相乘不变
+query I
+SELECT count(*) FROM (
+    SELECT unnest(plt_matrix_multiply(plt_matrix_scale(2, 3, 4), plt_matrix_identity())) AS got,
+           unnest(plt_matrix_scale(2, 3, 4)) AS want
+) WHERE abs(got - want) > 1e-12;
+----
+0
+
+# 串起来 ≡ 依次作用
+query I
+SELECT count(*) FROM (
+    SELECT unnest(plt_matrix_apply(
+        plt_matrix_multiply(plt_matrix_scale(2, 3, 4), plt_matrix_scale(0.5, 0.5, 0.5)),
+        1, 2, 3)) AS chained,
+           unnest(plt_matrix_apply(plt_matrix_scale(0.5, 0.5, 0.5),
+               (plt_matrix_apply(plt_matrix_scale(2, 3, 4), 1, 2, 3))[1],
+               (plt_matrix_apply(plt_matrix_scale(2, 3, 4), 1, 2, 3))[2],
+               (plt_matrix_apply(plt_matrix_scale(2, 3, 4), 1, 2, 3))[3])) AS separate
+) WHERE abs(chained - separate) > 1e-12;
+----
+0
+
+# ---- 矩阵作用到向量（palette 的 multiply_3x3_and_vec3 上游断言） ----
+
+query T
+SELECT plt_matrix_apply([0.1, 0.2, 0.3, 0.3, 0.2, 0.1, 0.2, 0.1, 0.3], 0.4, 0.6, 0.8)::VARCHAR;
+----
+[0.4, 0.32, 0.38]
+
+# ---- 求逆（palette 的 matrix_inverse 上游断言） ----
+
+query I
+SELECT count(*) FROM (
+    SELECT unnest(plt_matrix_inverse([3.0, 0, 2, 2, 0, -2, 0, 1, 1])) AS got,
+           unnest([0.2, 0.2, 0.0, -0.2, 0.3, 1.0, 0.2, -0.3, 0.0]) AS want
+) WHERE abs(got - want) > 1e-12;
+----
+0
+
+query I
+SELECT count(*) FROM (
+    SELECT unnest(plt_matrix_inverse([1.0, 0, 1, 0, 2, 1, 1, 1, 1])) AS got,
+           unnest([-1.0, -1.0, 2.0, -1.0, 0.0, 1.0, 2.0, 1.0, -2.0]) AS want
+) WHERE abs(got - want) > 1e-12;
+----
+0
+
+# 逆 × 原矩阵 = 单位矩阵
+query I
+SELECT count(*) FROM (
+    SELECT unnest(plt_matrix_multiply(plt_matrix_inverse(m), m)) AS got,
+           unnest([1.0, 0, 0, 0, 1, 0, 0, 0, 1]) AS want
+    FROM (SELECT [1.0, 0, 1, 0, 2, 1, 1, 1, 1]::DOUBLE[] AS m)
+) WHERE abs(got - want) > 1e-12;
+----
+0
+
+# 二次求逆回到原矩阵
+query I
+SELECT count(*) FROM (
+    SELECT unnest(plt_matrix_inverse(plt_matrix_inverse([1.0, 0, 1, 0, 2, 1, 1, 1, 1]))) AS got,
+           unnest([1.0, 0, 1, 0, 2, 1, 1, 1, 1]) AS want
+) WHERE abs(got - want) > 1e-12;
+----
+0
+
+# 色适应矩阵的逆就是反向适应
+query I
+SELECT count(*) FROM (
+    SELECT unnest(plt_matrix_inverse(plt_adaptation_matrix('d65', 'd50', 'bradford'))) AS got,
+           unnest(plt_adaptation_matrix('d50', 'd65', 'bradford')) AS want
+) WHERE abs(got - want) > 1e-6;
+----
+0
+
+# ---- 作用到颜色 ----
+
+query TT
+SELECT plt_apply_matrix(plt_matrix_scale(2, 3, 4), plt_xyz(0.5, 0.4, 0.3))::VARCHAR,
+       plt_apply_matrix(plt_matrix_identity(), plt_oklch(0.7, 0.1, 120))::VARCHAR;
+----
+{'space': xyz, 'c1': 1.0, 'c2': 1.2000000000000002, 'c3': 1.2, 'alpha': 1.0}	{'space': oklch, 'c1': 0.7, 'c2': 0.1, 'c3': 120.0, 'alpha': 1.0}
+
+query IIII
+SELECT plt_apply_matrix(plt_matrix_scale(0.5, 0.5, 0.5), plt_srgb(1, 0, 0)).c1::DOUBLE,
+       plt_apply_matrix(plt_matrix_identity(), plt_srgb(1, 0, 0)).space = 'srgb',
+       plt_apply_matrix(plt_matrix_scale(0.5, 0.5, 0.5),
+           plt_with_alpha(plt_srgb(1, 0, 0), 0.25)).alpha::DOUBLE * 4,
+       plt_apply_matrix(plt_matrix_scale(0.5, 1, 1), plt_lab(50, 20, -30)).c2::DOUBLE;
+----
+0.5	1	1.0	20.0
+
+# ---- 类型 / NULL / 错误 ----
+
+query TTT
+SELECT typeof(plt_matrix_identity()), typeof(plt_matrix_apply(plt_matrix_identity(), 1, 2, 3)),
+       typeof(plt_apply_matrix(plt_matrix_identity(), plt_srgb(1, 0, 0)));
+----
+DOUBLE[]	DOUBLE[]	STRUCT(space VARCHAR, c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, alpha DOUBLE)
+
+query III
+SELECT plt_matrix_multiply(NULL, [1.0, 0, 0, 0, 1, 0, 0, 0, 1]) IS NULL,
+       plt_matrix_inverse(NULL::DOUBLE[]) IS NULL,
+       plt_apply_matrix(NULL::DOUBLE[], plt_srgb(1, 0, 0)) IS NULL;
+----
+true	true	true
+
+query II
+SELECT plt_matrix_apply(NULL::DOUBLE[], 1, 2, 3) IS NULL,
+       plt_matrix_multiply([1.0, 0, 0, 0, 1, 0, 0, 0, 1], NULL::DOUBLE[]) IS NULL;
+----
+true	true
+
+statement error
+SELECT plt_matrix_multiply([1.0, 0, 0, 0, 1, 0, 0, 0], plt_matrix_identity());
+----
+plt_matrix_multiply: expected a LIST(DOUBLE) with exactly 9 matrix elements (row-major), got 8
+
+statement error
+SELECT plt_matrix_inverse([1.0, 0, 0, 0, 1, 0, 0, 0, 1, 0]);
+----
+plt_matrix_inverse: expected a LIST(DOUBLE) with exactly 9 matrix elements (row-major), got 10
+
+statement error
+SELECT plt_matrix_apply([1.0, 0, 0, 0, 1, 0, 0, 0], 1, 2, 3);
+----
+plt_matrix_apply: expected a LIST(DOUBLE) with exactly 9 matrix elements (row-major), got 8
+
+statement error
+SELECT plt_apply_matrix([1.0, 2, 3], plt_srgb(1, 0, 0));
+----
+plt_apply_matrix: expected a LIST(DOUBLE) with exactly 9 matrix elements (row-major), got 3
+
+# palette 对不可逆矩阵直接 panic，这里表现为查询错误（上游 should_panic 用例）
+statement error
+SELECT plt_matrix_inverse([1.0, 0.0, 0.0, 2.0, 0.0, 0.0, -4.0, 6.0, 1.0]);
+----
+The given matrix is not invertible

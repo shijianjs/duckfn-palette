@@ -1,17 +1,16 @@
 ---
 title: Quick start
 sidebar_position: 1
-description: Rename the extension, build the .duckdb_extension with the official make toolchain, load it into DuckDB and call the sample functions.
+description: Build the .duckdb_extension with the official make toolchain, load it into DuckDB and call the plt_ functions.
 ---
 
 # Quick start
 
-The whole page in four steps:
+The whole page in three steps:
 
 ```mermaid
 flowchart LR
-    rename["just rename"] --> build["just build"]
-    build --> load["LOAD the artifact<br/>with -unsigned"]
+    build["just build"] --> load["LOAD the artifact<br/>with -unsigned"]
     load --> call["Call the functions<br/>from SQL"]
 ```
 
@@ -30,32 +29,22 @@ flowchart LR
 - A **DuckDB** binary 1.4 or newer (`duckdb` on `PATH`, or point at it with
   `just DUCKDB=/path/to/duckdb …`).
 
-## 1. Rename the extension
+## 1. The extension name
 
-```shell
-just rename csv_stats
-```
+This repository is `duckfn_palette` and the name is already consistent in the five places that have to
+agree — `Cargo.toml` (`[package] name` and `[[example]] name`), `EXTENSION_NAME` in the Makefile, the
+entry-point symbol in `src/extension/mod.rs`, the Justfile and the CI workflow. Keep it that way: editing
+one of them alone makes `LOAD` fail on the symbol lookup.
 
-`scripts/rename.sh` rewrites the five places the extension name has to match — `Cargo.toml`
-(`[package] name` and `[[example]] name`), `EXTENSION_NAME` in the Makefile, the entry-point symbol in
-`src/extension/mod.rs`, the Justfile and the CI workflow — plus every occurrence in the docs, and
-regenerates the `Cargo.lock` entry. It finishes by printing what still needs a human pass; the sample
-functions are the main item.
+A project freshly created from [duckfn-extension-template](https://github.com/shijianjs/duckfn-extension-template)
+runs `just rename <new_name>` (`scripts/rename.sh`), which rewrites all five plus every occurrence in the
+docs, and regenerates the `Cargo.lock` entry. What still needs a human pass afterwards:
 
-### After renaming
-
-What is left once the name is consistent everywhere:
-
-1. **`AGENTS.md`** — fill in the `{{PROJECT_GOAL}}` placeholder, and change the `my_` prefix in the naming
-   convention to your own.
-2. **The sample functions** (`my_greet` / `my_greet_checked` / `my_sum`) and `test/sql/*.test` — replace
-   them with your API; see [writing functions](./writing-functions.md) and
-   [testing](./testing.md).
-3. **`community-extension/description.yml`** — `extension.name` / `description` / `maintainers` / `repo`
-   are yours to fill in; the field-by-field reasoning is in
-   [community extensions](./community-extension.md).
-4. **`LICENSE`** — the copyright holder, and the duckfn version in `Cargo.toml`.
-5. **Before the first release**, make sure the repository has a `main` branch and an `origin` remote:
+1. **`AGENTS.md`** — fill in the `{{PROJECT_GOAL}}` placeholder and the function-name prefix.
+2. **`LICENSE`** — the copyright holder.
+3. **`community-extension/description.yml`** — `extension.name` / `description` / `maintainers` / `repo`;
+   the field-by-field reasoning is in [community extensions](./community-extension.md).
+4. **Before the first release**, make sure the repository has a `main` branch and an `origin` remote:
    `just release_tag` pushes both.
 
 ## 2. Build
@@ -79,33 +68,31 @@ just repl           # a DuckDB REPL with the extension already loaded
 duckdb -unsigned -c "LOAD './build/debug/duckfn_palette.duckdb_extension';"
 ```
 
-The sample functions, running right here — the site preloads the extension from the repository's latest
+Some of the functions, running right here — the site preloads the extension from the repository's latest
 release, so no local `LOAD` is needed here (a hand-built extension still needs `-unsigned`; see the
 traps below). Click **Run** on any block.
 
 ```sql {"type":"duckfn","show":"table"}
-SELECT name AS input, my_greet_checked(name) AS greeting
-FROM (VALUES ('world'), ('')) t(name);
+SELECT plt_to_hex(plt_convert(plt_srgb(1, 0.5, 0), 'oklch')) AS as_oklch,
+       plt_to_hex(plt_mix(plt_named('red'), plt_named('blue'), 0.5)) AS mixed;
 ```
 
 ```sql {"type":"duckfn","show":"table"}
--- my_sum skips NULLs, and a group with no value at all is NULL rather than 0.
-SELECT grp, my_sum(x) AS total
-FROM (VALUES ('rows', 1.5::DOUBLE), ('rows', 2.5), ('all NULL', NULL::DOUBLE)) t(grp, x)
-GROUP BY grp
-ORDER BY grp;
+-- A NULL argument is short-circuited to NULL before the function body ever runs.
+SELECT plt_to_hex(plt_convert(plt_srgb(1, 0, 0), 'lab')) AS converted,
+       plt_convert(NULL, 'lab') IS NULL AS null_in_null_out;
 ```
 
 The failure path is a runnable block too — it declares that it is supposed to fail:
 
 ```sql {"type":"duckfn","expect":"error"}
-SELECT my_greet_checked(' x ');    -- error: no surrounding whitespace
+SELECT plt_convert(plt_srgb(1, 0, 0), 'nope');    -- error: unknown color space
 ```
 
 A single query from the command line, without a REPL:
 
 ```shell
-just sql "SELECT my_greet('world')"
+just sql "SELECT plt_to_hex(plt_named('rebeccapurple'))"
 ```
 
 ## 4. Run the tests

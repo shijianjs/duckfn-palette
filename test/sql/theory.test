@@ -1,0 +1,113 @@
+# name: test/sql/theory.test
+# description: palette 的传统色彩理论（互补 / 分裂互补 / 邻近 / 三角 / 四方）
+#   （src/extension/functions/theory.rs）。
+#   期望值来源：palette 0.7.7 src/color_theory.rs 各 trait 的文档示例
+#   （Hsl::new_srgb(120, 0.8, 0.5) 得到 300 / (270, 330) / (90, 150) / (60, 180) /
+#   (240, 0) / (210, 300, 30)）；其余为实跑输出。色相归一到 0..360。
+# group: [duckfn_palette]
+
+require duckfn_palette
+
+query T
+SELECT plt_color_schemes();
+----
+[complementary, split_complementary, analogous, analogous_secondary, triadic, tetradic]
+
+# ---- palette 文档示例：Hsl(120°, 0.8, 0.5) ----
+
+query T
+SELECT plt_components(plt_complementary(plt_hsl(120,0.8,0.5)));
+----
+[300.0, 0.8, 0.5]
+
+query TTT
+SELECT plt_component(plt_split_complementary(plt_hsl(120,0.8,0.5))[1], 1),
+       plt_component(plt_split_complementary(plt_hsl(120,0.8,0.5))[2], 1),
+       plt_component(plt_split_complementary(plt_hsl(120,0.8,0.5))[1], 2);
+----
+270.0	330.0	0.8
+
+query TTT
+SELECT plt_component(plt_analogous(plt_hsl(120,0.8,0.5))[1], 1),
+       plt_component(plt_analogous(plt_hsl(120,0.8,0.5))[2], 1),
+       plt_component(plt_analogous(plt_hsl(120,0.8,0.5))[2], 3);
+----
+90.0	150.0	0.5
+
+query TT
+SELECT plt_component(plt_analogous_secondary(plt_hsl(120,0.8,0.5))[1], 1),
+       plt_component(plt_analogous_secondary(plt_hsl(120,0.8,0.5))[2], 1);
+----
+60.0	180.0
+
+query TT
+SELECT plt_component(plt_triadic(plt_hsl(120,0.8,0.5))[1], 1),
+       plt_component(plt_triadic(plt_hsl(120,0.8,0.5))[2], 1);
+----
+240.0	0.0
+
+query TTT
+SELECT plt_component(plt_tetradic(plt_hsl(120,0.8,0.5))[1], 1),
+       plt_component(plt_tetradic(plt_hsl(120,0.8,0.5))[2], 1),
+       plt_component(plt_tetradic(plt_hsl(120,0.8,0.5))[3], 1);
+----
+210.0	300.0	30.0
+
+# 通用入口按名字取；方案名规范化（大小写、- / 空格）
+query TT
+SELECT list_transform(plt_harmony(plt_hsl(120,0.8,0.5), 'split-complementary'), lambda c: plt_component(c, 1)),
+       list_transform(plt_harmony(plt_hsl(120,0.8,0.5), 'Split Complementary'), lambda c: plt_component(c, 1));
+----
+[270.0, 330.0]	[270.0, 330.0]
+
+# 其他色相空间：oklch / lch / CAM16 部分空间（分量顺序与 palette 的构造参数一致）
+query TTTT
+SELECT plt_components(plt_complementary(plt_oklch(0.7,0.1,250))),
+       plt_components(plt_complementary(plt_lch(50,20,120))),
+       plt_components(plt_complementary(plt_cam16_jch(50,40,120))),
+       plt_components(plt_complementary(plt_cam16_ucs_jmh(50,40,120)));
+----
+[0.7, 0.1, 70.0]	[50.0, 20.0, 300.0]	[50.0, 40.0, 300.0]	[50.0, 40.0, 300.0]
+
+query TT
+SELECT list_transform(plt_harmony(plt_oklch(0.7,0.1,120), 'triadic'), lambda c: plt_component(c, 3)),
+       plt_components(plt_shift_hue(plt_cam16_jmh(50,40,120), 120));
+----
+[240.0, 0.0]	[50.0, 40.0, 240.0]
+
+# 空间与 alpha 保持不变
+query TT
+SELECT plt_space(plt_complementary(plt_oklch(0.7,0.1,250))),
+       plt_alpha(plt_complementary(plt_with_alpha(plt_hsl(120,0.8,0.5), 0.25)));
+----
+oklch	0.25
+
+# NULL 短路
+query III
+SELECT plt_complementary(NULL) IS NULL,
+       plt_split_complementary(NULL) IS NULL,
+       plt_harmony(plt_hsl(0,1,0.5), NULL) IS NULL;
+----
+true	true	true
+
+query TT
+SELECT typeof(plt_split_complementary(plt_hsl(120,0.8,0.5))),
+       typeof(plt_complementary(plt_hsl(120,0.8,0.5)));
+----
+STRUCT(space VARCHAR, c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, alpha DOUBLE)[]	STRUCT(space VARCHAR, c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, alpha DOUBLE)
+
+# 错误路径
+statement error
+SELECT plt_harmony(plt_srgb(1,0,0), 'triadic');
+----
+has no hue
+
+statement error
+SELECT plt_complementary(plt_xyz(0.5,0.4,0.3));
+----
+has no hue
+
+statement error
+SELECT plt_harmony(plt_hsl(120,0.8,0.5), 'nope');
+----
+unknown color scheme 'nope'

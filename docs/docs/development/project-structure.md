@@ -12,14 +12,27 @@ src/wasm_lib.rs        wasm crate root    ->  mod extension;   (the same mods, m
 src/extension/mod.rs   ->  duckfn_entrypoint!("duckfn_palette"); + mod functions; mod types;
 src/bin/duckfn.rs      duckfn CLI entry   ->  #[path] mod extension; + duckfn::cli::run(...)
 
-src/extension/functions/
-    mod.rs             mod aggregate_sum; mod scalar_greet;
-    scalar_greet.rs    my_greet / my_greet_checked  (the two scalar return shapes)
-    aggregate_sum.rs   my_sum                       (aggregate state + output semantics)
-src/extension/types/
-    mod.rs             an empty slot: SQL-facing types go here
+src/extension/functions/          one file per palette module (the tree mirrors the upstream crate)
+    convert.rs           constructors for all 44 spaces, plt_convert / clamp / alpha accessors
+    manipulate.rs        Mix / Lighten / Darken / Saturate / hue / premultiply
+    blend.rs             Blend, Compose, BlendWith (custom equations)
+    difference.rs        color_difference metrics, WCAG relative luminance and contrast
+    theory.rs            the ColorScheme harmonies
+    named.rs             palette's named colors
+    css.rs               csscolorparser: parse / serialize, plus hex in and out
+    cast.rs              cast::Packed: 8-bit pack / unpack
+    encoding.rs          transfer functions, primaries, RGB<->XYZ matrices
+    adaptation.rs        white points, LMS matrices, chromatic adaptation
+    matrix.rs            matrix / convert::Matrix3 arithmetic
+    cam16.rs             CAM16 with explicit viewing conditions
+    colorous.rs          colorous gradients and categorical palettes
+    random.rs            random_sampling
+src/extension/types/              same file names: the SQL-facing shape of each module
+    color.rs             PltColor, the plt_color STRUCT, and the space table
+    ops.rs / blend.rs / difference.rs / theory.rs / adaptation.rs / encoding.rs /
+    matrix.rs / cam16.rs / cast.rs / colorous.rs / random.rs
 
-test/sql/                   one .test per sample function, plus a duckfn_palette.test smoke test
+test/sql/                   one .test per module, plus a duckfn_palette.test smoke test
 scripts/rename.sh           rename the extension after cloning
 scripts/release.sh          version bump, tag, development version
 Justfile                    the everyday commands
@@ -60,26 +73,32 @@ The `#[path]` attribute is not a shortcut, it is necessary: the documentation me
 are really linked into the final binary. With `use duckfn_palette::…` the linker may drop those modules
 and the exported CSV comes out empty — silently.
 
-## One function per file, the prefix as a namespace
+## One file per upstream module, the prefix as a namespace
 
-Files under `functions/` are named "kind + what it does" (`scalar_greet.rs`, `aggregate_sum.rs`). When a
-feature outgrows a single file, split it into a subdirectory the way the duckfn example does
-(`functions/<feature>/mod.rs` plus one file per concern).
+Files under `functions/` are named after the palette module they wrap (`blend.rs` for `palette::Blend`,
+`encoding.rs` for `palette::encoding`, …), and `types/` keeps the same names for the SQL-facing shape of
+that module. Following the upstream tree is what makes a missing function visible: a palette trait with
+no file next to it is a gap, not an oversight buried in a 2000-line file.
 
-Every registered name carries a short prefix (`my_` in this template); the reasoning is in `AGENTS.md`:
-community extensions almost never put the package name into function names, and a short prefix is enough
-to search `duckdb_functions()` by.
+Every registered name carries the same short prefix (`plt_`); the reasoning is in `AGENTS.md`: community
+extensions almost never put the package name into function names, and a short prefix is enough to search
+`duckdb_functions()` by. Constructors are named after the space itself, so `plt_oklch` both constructs an
+Oklch color and matches the `oklch` space tag.
 
-## `types/` is a slot waiting for you
+## `types/` holds the shared shape
 
-The sample functions need no custom type, so `types/mod.rs` holds comments only. What goes in there are
-three kinds of thing:
+`types/color.rs` defines `PltColor`, the `plt_color` STRUCT every function takes and returns
+(`space`, `c1`, `c2`, `c3`, `alpha`), plus the space table that maps a SQL space name onto the palette
+type. The other files hold what palette exposes beyond a color: `cam16.rs` the `Parameters` struct and
+its surrounds, `matrix.rs` the row-major nine-double encoding, `adaptation.rs` the white-point and
+method names, and each module's list of accepted option strings.
 
-- named types defined with `#[duck_struct]` / `#[duck_enum]` and registered into DuckDB at load time;
+Three kinds of thing belong there:
+
+- named types defined with `#[derive(DuckStruct)]` and registered into DuckDB at load time;
 - the row type of a `list<struct<...>>` result (a plain Rust struct deriving `DuckStruct`);
-- the options STRUCT a `DuckLazy` argument takes (parsed once inside the function).
-
-Delete the whole directory if you never need it (and the `mod types;` line in `extension/mod.rs`).
+- the constants and parsers that give a function its error messages, shared by every signature in the
+  module.
 
 ## Dependencies
 
@@ -98,29 +117,44 @@ shape the build:
 - **[libduckdb-sys](https://crates.io/crates/libduckdb-sys)** — headers only (`loadable-extension`),
   which is what keeps a local DuckDB build unnecessary.
 
-The sample functions need nothing else. For anything date/time related, enable duckfn's `chrono` feature
-and add `chrono` as a dependency (duckfn re-exports none of those crates); the two ready-made lines are
-at the bottom of `Cargo.toml`.
+The domain crates are the reason this extension exists:
 
-## What the template deliberately leaves out
+- **[palette](https://crates.io/crates/palette)** — color types, conversion, blending, color
+  difference, chromatic adaptation, named colors and random sampling. The `random` feature is on for the
+  per-space `Standard` distributions; `named`, `std` and `approx` come by default.
+- **[csscolorparser](https://crates.io/crates/csscolorparser)** — CSS Color Level 4 strings in both
+  directions; palette covers the arithmetic, not the formats.
+- **[colorous](https://crates.io/crates/colorous)** — the d3-scale-chromatic gradients and categorical
+  palettes.
+- **[rand](https://crates.io/crates/rand)** — the seeded PRNG behind `plt_random_color`. It is pinned to
+  the same major version palette's `random` feature uses (0.8), so only one `rand` enters the graph.
 
-The template demonstrates the **registration paths** and the **engineering loop**; none of the following
-is in it. Write them from duckfn's docs and example extension rather than from memory:
+For anything date/time related, enable duckfn's `chrono` feature and add `chrono` as a dependency (duckfn
+re-exports none of those crates); the two ready-made lines are at the bottom of `Cargo.toml`.
+
+## What this extension does not use
+
+The extension is all scalar functions and custom STRUCT types. None of the following is in it. Write them
+from duckfn's docs and example extension rather than from memory:
 
 - table functions / `COPY` / casts / replacement scans / SQL macros (one attribute macro each; see
   duckfn's `docs/docs/guide/` and its example extension under `src/extension/`);
-- `DuckLazy<T>` arguments ("parse the options once"), named types, `list<struct>` results;
-- `overloads_name` (several signatures merged into one function set under one name);
+- `DuckLazy<T>` arguments ("parse the options once") — every option here is a plain `VARCHAR` name;
 - DuckDB's host file system (`duckfn::duck_vfs`; enable `owned-connection` explicitly) and the
   chrono / uuid / rust_decimal bridges;
 - platform-specific dependencies (the `[target.'cfg(...)'.dependencies]` pattern).
+
+What it does use beyond the simplest shape: `overloads_name` (several signatures merged under one name —
+`plt_pack`, `plt_difference`, `plt_chromatic_adapt`, `plt_cam16_params`), `#[derive(DuckStruct)]` for the
+`plt_color`, `plt_cam16_params` and `plt_cam16_full` STRUCTs, and `Vec<T>` results for the list-returning
+functions.
 
 ## Naming rules
 
 | Rule | Why |
 | --- | --- |
 | The extension name is lowercase with underscores, and identical in five places. | It is the entry-point symbol and the artifact file name; DuckDB looks the symbol up by the file name. `just rename` writes all five. |
-| Every registered SQL name carries one short prefix (`my_` here). | DuckDB has no namespaces, and community extensions almost never put the package name into function names. See the conventions in `AGENTS.md`. |
+| Every registered SQL name carries one short prefix (`plt_` here). | DuckDB has no namespaces, and community extensions almost never put the package name into function names. See the conventions in `AGENTS.md`. |
 | `src/lib.rs` and `src/wasm_lib.rs` always declare the same set of `mod`s. | Otherwise the wasm build fails to compile the module tree. |
 | Temporary files (scripts, data, logs) go to `target/`. | `target/` is git-ignored and never pollutes the tracked tree. |
 | Text files use LF. | The repository stores LF; the `.gitattributes` normalization relies on it. |

@@ -1,0 +1,265 @@
+# name: test/sql/adaptation.test
+# description: 白点、色适应方法、矩阵与 plt_chromatic_adapt
+# group: [palette]
+
+require duckfn_palette
+
+# ---- 白点清单 ----
+
+query III
+SELECT count(*), count(DISTINCT w), (SELECT w FROM (SELECT unnest(plt_white_points()) AS w) LIMIT 1)
+FROM (SELECT unnest(plt_white_points()) AS w);
+----
+16	16	a
+
+query T
+SELECT plt_white_points()[16];
+----
+dci_p3
+
+# palette 的 WhitePoint::get_xyz() 数值（Y 归一化为 1）
+query TTT
+SELECT plt_white_point_xyz('a')::VARCHAR, plt_white_point_xyz('b')::VARCHAR,
+       plt_white_point_xyz('c')::VARCHAR;
+----
+[1.0985, 1.0, 0.35585]	[0.99072, 1.0, 0.85223]	[0.98074, 1.0, 1.18232]
+
+query TTT
+SELECT plt_white_point_xyz('d50')::VARCHAR, plt_white_point_xyz('d55')::VARCHAR,
+       plt_white_point_xyz('d65')::VARCHAR;
+----
+[0.96422, 1.0, 0.82521]	[0.95682, 1.0, 0.92149]	[0.95047, 1.0, 1.08883]
+
+query TTT
+SELECT plt_white_point_xyz('d75')::VARCHAR, plt_white_point_xyz('e')::VARCHAR,
+       plt_white_point_xyz('f2')::VARCHAR;
+----
+[0.94972, 1.0, 1.22638]	[1.0, 1.0, 1.0]	[0.99186, 1.0, 0.67393]
+
+query TTT
+SELECT plt_white_point_xyz('f7')::VARCHAR, plt_white_point_xyz('f11')::VARCHAR,
+       plt_white_point_xyz('d50_degree10')::VARCHAR;
+----
+[0.95041, 1.0, 1.08747]	[1.00962, 1.0, 0.6435]	[0.9672, 1.0, 0.8143]
+
+query TTT
+SELECT plt_white_point_xyz('d55_degree10')::VARCHAR, plt_white_point_xyz('d65_degree10')::VARCHAR,
+       plt_white_point_xyz('d75_degree10')::VARCHAR;
+----
+[0.958, 1.0, 0.9093]	[0.9481, 1.0, 1.073]	[0.94416, 1.0, 1.2064]
+
+# DCI-P3 的影院白点 (0.314, 0.351)
+query TT
+SELECT plt_white_point_xyz('dci_p3')::VARCHAR, plt_white_point_xy('dci_p3')::VARCHAR;
+----
+[0.8945868945868947, 1.0, 0.9544159544159545]	[0.31400000000000006, 0.35100000000000003]
+
+# xy 色度坐标
+query TTT
+SELECT plt_white_point_xy('d65')::VARCHAR, plt_white_point_xy('d50')::VARCHAR,
+       plt_white_point_xy('e')::VARCHAR;
+----
+[0.3127266146810121, 0.32902313032606195]	[0.3456691868948136, 0.3584961802231997]	[0.3333333333333333, 0.3333333333333333]
+
+# 别名与大小写
+query IIII
+SELECT plt_white_point_xyz('illuminant_a') = plt_white_point_xyz('a'),
+       plt_white_point_xyz('D65-10') = plt_white_point_xyz('d65_degree10'),
+       plt_white_point_xyz('  D50 ') = plt_white_point_xyz('d50'),
+       plt_white_point_xyz('d65_10deg') = plt_white_point_xyz('d65_degree10');
+----
+true	true	true	true
+
+# ---- 色适应方法 ----
+
+query IIIT
+SELECT count(*), count(DISTINCT m), max(m),
+       (SELECT min(m) FROM (SELECT unnest(plt_adaptation_methods()) AS m))
+FROM (SELECT unnest(plt_adaptation_methods()) AS m);
+----
+3	3	von_kries	bradford
+
+# palette 的 lms::matrix 常量
+query TTT
+SELECT plt_lms_matrix('bradford')::VARCHAR, plt_lms_matrix('von_kries')::VARCHAR,
+       plt_lms_matrix('unit_matrix')::VARCHAR;
+----
+[0.8951, 0.2664, -0.1614, -0.7502, 1.7135, 0.0367, 0.0389, -0.0685, 1.0296]	[0.40024, 0.7076, -0.08081, -0.2263, 1.16532, 0.0457, 0.0, 0.0, 0.91822]	[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+
+query TTT
+SELECT plt_lms_to_xyz_matrix('bradford')::VARCHAR, plt_lms_to_xyz_matrix('von_kries')::VARCHAR,
+       plt_lms_to_xyz_matrix('unit_matrix')::VARCHAR;
+----
+[0.9869929, -0.1470543, 0.1599627, 0.4323053, 0.5183603, 0.0492912, -0.0085287, 0.0400428, 0.9684867]	[1.8599364, -1.1293816, 0.2198974, 0.3611914, 0.6388125, -6.4e-06, 0.0, 0.0, 1.0890636]	[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+
+# 方法别名：xyz_scaling / identity / hpe
+query III
+SELECT plt_adaptation_matrix('d65','d50','xyz_scaling') = plt_adaptation_matrix('d65','d50','unit_matrix'),
+       plt_adaptation_matrix('d65','d50','identity') = plt_adaptation_matrix('d65','d50','unit_matrix'),
+       plt_adaptation_matrix('d65','d50','hpe') = plt_adaptation_matrix('d65','d50','von_kries');
+----
+true	true	true
+
+# ---- 完整适应矩阵：D65 → D50（palette 上游断言，epsilon 1e-4） ----
+
+query TIT
+SELECT max(abs(a - e)) < 0.0001, count(*), max(abs(a - e)) < 1e-6
+FROM (
+    SELECT unnest(plt_adaptation_matrix('d65','d50','bradford')) AS a,
+           unnest([1.0478112, 0.0228866, -0.0501270, 0.0295424, 0.9904844, -0.0170491,
+                   -0.0092345, 0.0150436, 0.7521316]) AS e
+);
+----
+true	9	true
+
+query TIT
+SELECT max(abs(a - e)) < 0.0001, count(*), max(abs(a - e)) < 1e-6
+FROM (
+    SELECT unnest(plt_adaptation_matrix('d65','d50','von_kries')) AS a,
+           unnest([1.0160803, 0.0552297, -0.0521326, 0.0060666, 0.9955661, -0.0012235,
+                   0.0, 0.0, 0.7578869]) AS e
+);
+----
+true	9	true
+
+query TIT
+SELECT max(abs(a - e)) < 0.0001, count(*), max(abs(a - e)) < 1e-6
+FROM (
+    SELECT unnest(plt_adaptation_matrix('d65','d50','xyz_scaling')) AS a,
+           unnest([1.0144665, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.7578869]) AS e
+);
+----
+true	9	true
+
+# 完整矩阵 = 逆 · 对角增益 · 正向（自己拼出来与 API 一致）
+query I
+SELECT count(*) FROM (
+    SELECT unnest(plt_matrix_multiply(
+        plt_matrix_multiply(plt_lms_matrix('bradford'),
+                            plt_diagonal_adaptation_matrix('a','c','bradford')),
+        plt_lms_to_xyz_matrix('bradford'))) AS a,
+           unnest(plt_adaptation_matrix('a','c','bradford')) AS b
+) WHERE abs(a - b) >= 1e-12;
+----
+0
+
+query T
+SELECT plt_diagonal_adaptation_matrix('d65','d50','bradford')::VARCHAR;
+----
+[1.0582687808586553, 0.0, 0.0, 0.0, 0.9807864586725552, 0.0, 0.0, 0.0, 0.7513720430944661]
+
+# 白点适应到自身是单位矩阵（浮点误差内）
+query I
+SELECT count(*) FROM (
+    SELECT unnest(plt_adaptation_matrix('d50','d50','bradford')) AS m,
+           unnest([1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]) AS i
+) WHERE abs(m - i) >= 1e-6;
+----
+0
+
+# ---- plt_chromatic_adapt：A → C（palette 上游断言，epsilon 1e-4） ----
+
+query III
+SELECT abs(plt_chromatic_adapt(plt_xyz(0.315756,0.162732,0.015905),'a','c','bradford').c1 - 0.257963) < 0.0001,
+       abs(plt_chromatic_adapt(plt_xyz(0.315756,0.162732,0.015905),'a','c','bradford').c2 - 0.139776) < 0.0001,
+       abs(plt_chromatic_adapt(plt_xyz(0.315756,0.162732,0.015905),'a','c','bradford').c3 - 0.058825) < 0.0001;
+----
+true	true	true
+
+query III
+SELECT abs(plt_chromatic_adapt(plt_xyz(0.315756,0.162732,0.015905),'a','c','von_kries').c1 - 0.268446) < 0.0001,
+       abs(plt_chromatic_adapt(plt_xyz(0.315756,0.162732,0.015905),'a','c','von_kries').c2 - 0.159139) < 0.0001,
+       abs(plt_chromatic_adapt(plt_xyz(0.315756,0.162732,0.015905),'a','c','von_kries').c3 - 0.052843) < 0.0001;
+----
+true	true	true
+
+query III
+SELECT abs(plt_chromatic_adapt(plt_xyz(0.315756,0.162732,0.015905),'a','c','xyz_scaling').c1 - 0.281868) < 0.0001,
+       abs(plt_chromatic_adapt(plt_xyz(0.315756,0.162732,0.015905),'a','c','xyz_scaling').c2 - 0.162732) < 0.0001,
+       abs(plt_chromatic_adapt(plt_xyz(0.315756,0.162732,0.015905),'a','c','xyz_scaling').c3 - 0.052844) < 0.0001;
+----
+true	true	true
+
+# 白点本身适应后回到目标白点
+query T
+SELECT plt_chromatic_adapt(plt_xyz(0.95047,1.0,1.08883),'d50','bradford')::VARCHAR;
+----
+{'space': xyz, 'c1': 0.9642199896546001, 'c2': 1.0000000361124661, 'c3': 0.8252099460588787, 'alpha': 1.0}
+
+# 3 参数重载默认从 D65 出发
+query II
+SELECT plt_chromatic_adapt(plt_xyz(0.95047,1.0,1.08883),'d50','bradford')
+     = plt_chromatic_adapt(plt_xyz(0.95047,1.0,1.08883),'d65','d50','bradford'),
+       plt_chromatic_adapt(plt_xyz(0.315756,0.162732,0.015905),'c','bradford').c1::DOUBLE
+     - plt_chromatic_adapt(plt_xyz(0.315756,0.162732,0.015905),'d65','c','bradford').c1 = 0;
+----
+true	true
+
+# alpha 保持不变
+query TT
+SELECT plt_chromatic_adapt(plt_with_alpha(plt_xyz(0.5,0.4,0.3),0.25),'d50','bradford')::VARCHAR,
+       plt_chromatic_adapt(plt_with_alpha(plt_xyz(0.5,0.4,0.3),0.25),'d50','bradford').alpha::VARCHAR;
+----
+{'space': xyz, 'c1': 0.5180221643028867, 'c2': 0.40585025064606056, 'c3': 0.22703966766880854, 'alpha': 0.25}	0.25
+
+# 适应前后亮度分量按 Y 缩放；XYZ 空间标签不变
+query I
+SELECT plt_chromatic_adapt(plt_xyz(0.5,0.4,0.3),'d50','bradford').space;
+----
+xyz
+
+# ---- 类型 / NULL / 错误 ----
+
+query TTT
+SELECT typeof(plt_white_point_xyz('e')), typeof(plt_adaptation_matrix('a','c','bradford')),
+       typeof(plt_lms_matrix('bradford'));
+----
+DOUBLE[]	DOUBLE[]	DOUBLE[]
+
+query TT
+SELECT typeof(plt_chromatic_adapt(plt_xyz(0.5,0.4,0.3),'d50','bradford')),
+       typeof(plt_diagonal_adaptation_matrix('a','c','bradford'));
+----
+STRUCT(space VARCHAR, c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, alpha DOUBLE)	DOUBLE[]
+
+query IIII
+SELECT plt_white_point_xyz(NULL) IS NULL, plt_white_point_xy(NULL) IS NULL,
+       plt_adaptation_matrix(NULL,'c','bradford') IS NULL,
+       plt_chromatic_adapt(NULL,'d50','bradford') IS NULL;
+----
+true	true	true	true
+
+statement error
+SELECT plt_white_point_xyz('nope');
+----
+plt_white_point_xyz: unknown white point 'nope'
+
+statement error
+SELECT plt_white_point_xy('d66');
+----
+plt_white_point_xy: unknown white point 'd66'
+
+statement error
+SELECT plt_adaptation_matrix('a','c','nope');
+----
+plt_adaptation_matrix: unknown adaptation method 'nope'
+
+statement error
+SELECT plt_lms_matrix('cat02');
+----
+plt_lms_matrix: unknown adaptation method 'cat02'
+
+statement error
+SELECT plt_lms_to_xyz_matrix('nope');
+----
+plt_lms_to_xyz_matrix: unknown adaptation method 'nope'
+
+statement error
+SELECT plt_diagonal_adaptation_matrix('a','nope','bradford');
+----
+plt_diagonal_adaptation_matrix: unknown white point 'nope'
+
+statement error
+SELECT plt_chromatic_adapt(plt_srgb(1,0,0),'d50','bradford');
+----
+plt_chromatic_adapt: expected a color in the 'xyz' space

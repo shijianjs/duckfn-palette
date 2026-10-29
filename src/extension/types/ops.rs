@@ -121,13 +121,15 @@ components_hue_first!(Hsluv, [Wp]; saturation, l);
 components_hue_first!(Okhsl, []; saturation, lightness);
 components_hue_first!(Okhsv, []; saturation, value);
 components_hue_first!(Okhwb, []; whiteness, blackness);
-components_hue_first!(Cam16Jch, []; lightness, chroma);
-components_hue_first!(Cam16Jmh, []; lightness, colorfulness);
-components_hue_first!(Cam16Jsh, []; lightness, saturation);
-components_hue_first!(Cam16Qch, []; brightness, chroma);
-components_hue_first!(Cam16Qmh, []; brightness, colorfulness);
-components_hue_first!(Cam16Qsh, []; brightness, saturation);
-components_hue_first!(Cam16UcsJmh, []; lightness, colorfulness);
+
+// CAM16 部分类型的构造参数是 `(luminance/brightness, chromaticity, hue)`，hue 在最后。
+components_hue_last!(Cam16Jch, []; lightness, chroma);
+components_hue_last!(Cam16Jmh, []; lightness, colorfulness);
+components_hue_last!(Cam16Jsh, []; lightness, saturation);
+components_hue_last!(Cam16Qch, []; brightness, chroma);
+components_hue_last!(Cam16Qmh, []; brightness, colorfulness);
+components_hue_last!(Cam16Qsh, []; brightness, saturation);
+components_hue_last!(Cam16UcsJmh, []; lightness, colorfulness);
 
 components_hue_last!(Lch, [Wp]; l, chroma);
 components_hue_last!(Lchuv, [Wp]; l, chroma);

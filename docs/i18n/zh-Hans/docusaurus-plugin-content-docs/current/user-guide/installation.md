@@ -68,7 +68,7 @@ WHERE extension_name = 'duckfn_palette';
 ```sql
 SELECT function_name, function_type, return_type
 FROM duckdb_functions()
-WHERE function_name LIKE 'my%';
+WHERE function_name LIKE 'plt%';
 ```
 
-三个函数就是三行；如果一行都没有，说明你查的这个会话里没有加载这个扩展。
+145 个名字就是 145 行（152 个签名，有些名字是重载）；如果一行都没有，说明你查的这个会话里没有加载这个扩展。

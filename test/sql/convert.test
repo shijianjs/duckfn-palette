@@ -1,0 +1,223 @@
+# name: test/sql/convert.test
+# description: palette 的构造、读写、alpha 与转换（src/extension/functions/convert.rs）。
+#   期望值来源：本仓库实跑输出；往返检查（每个空间 → srgb）覆盖 5 个 sRGB 端点/中间色，
+#   容差 1e-5 是 palette 内置转换矩阵的精度，不是本仓库的近似。
+#   luma* 是一维空间（不可逆），srgb_gamma 的 gamma 2.2 编码会把 -0 附近的舍入残差送进
+#   powf 得到 NaN（palette 的上游行为），两者不进往返检查。
+# group: [duckfn_palette]
+
+require duckfn_palette
+
+# 44 个空间入口都在
+query I
+SELECT list_count(plt_color_spaces());
+----
+44
+
+query T
+SELECT list_sort([plt_space(plt_srgb(0.1,0.2,0.3)), plt_space(plt_srgb_linear(0.1,0.2,0.3)),
+  plt_space(plt_srgb_gamma(0.1,0.2,0.3)), plt_space(plt_adobe_rgb(0.1,0.2,0.3)),
+  plt_space(plt_adobe_rgb_linear(0.1,0.2,0.3)), plt_space(plt_display_p3(0.1,0.2,0.3)),
+  plt_space(plt_display_p3_linear(0.1,0.2,0.3)), plt_space(plt_dci_p3(0.1,0.2,0.3)),
+  plt_space(plt_dci_p3_linear(0.1,0.2,0.3)), plt_space(plt_prophoto_rgb(0.1,0.2,0.3)),
+  plt_space(plt_prophoto_rgb_linear(0.1,0.2,0.3)), plt_space(plt_rec709(0.1,0.2,0.3)),
+  plt_space(plt_rec709_linear(0.1,0.2,0.3)), plt_space(plt_rec2020(0.1,0.2,0.3)),
+  plt_space(plt_rec2020_linear(0.1,0.2,0.3)), plt_space(plt_hsl(0.1,0.2,0.3)),
+  plt_space(plt_hsv(0.1,0.2,0.3)), plt_space(plt_hwb(0.1,0.2,0.3)),
+  plt_space(plt_lab(0.1,0.2,0.3)), plt_space(plt_lch(0.1,0.2,0.3)),
+  plt_space(plt_luv(0.1,0.2,0.3)), plt_space(plt_lchuv(0.1,0.2,0.3)),
+  plt_space(plt_hsluv(0.1,0.2,0.3)), plt_space(plt_xyz(0.1,0.2,0.3)),
+  plt_space(plt_xyz_d50(0.1,0.2,0.3)), plt_space(plt_yxy(0.1,0.2,0.3)),
+  plt_space(plt_luma(0.5)), plt_space(plt_luma_linear(0.5)), plt_space(plt_luma_gamma(0.5)),
+  plt_space(plt_oklab(0.1,0.2,0.3)), plt_space(plt_oklch(0.1,0.2,0.3)),
+  plt_space(plt_okhsl(0.1,0.2,0.3)), plt_space(plt_okhsv(0.1,0.2,0.3)),
+  plt_space(plt_okhwb(0.1,0.2,0.3)), plt_space(plt_cam16_jch(0.1,0.2,0.3)),
+  plt_space(plt_cam16_jmh(0.1,0.2,0.3)), plt_space(plt_cam16_jsh(0.1,0.2,0.3)),
+  plt_space(plt_cam16_qch(0.1,0.2,0.3)), plt_space(plt_cam16_qmh(0.1,0.2,0.3)),
+  plt_space(plt_cam16_qsh(0.1,0.2,0.3)), plt_space(plt_cam16_ucs_jab(0.1,0.2,0.3)),
+  plt_space(plt_cam16_ucs_jmh(0.1,0.2,0.3)), plt_space(plt_lms(0.1,0.2,0.3)),
+  plt_space(plt_lms_von_kries(0.1,0.2,0.3))]);
+----
+[adobe_rgb, adobe_rgb_linear, cam16_jch, cam16_jmh, cam16_jsh, cam16_qch, cam16_qmh, cam16_qsh, cam16_ucs_jab, cam16_ucs_jmh, dci_p3, dci_p3_linear, display_p3, display_p3_linear, hsl, hsluv, hsv, hwb, lab, lch, lchuv, lms, lms_von_kries, luma, luma_gamma, luma_linear, luv, okhsl, okhsv, okhwb, oklab, oklch, prophoto_rgb, prophoto_rgb_linear, rec2020, rec2020_linear, rec709, rec709_linear, srgb, srgb_gamma, srgb_linear, xyz, xyz_d50, yxy]
+
+# 分量顺序与 palette 的 new 一致：hue 在前的空间、hue 在后的空间、一维 luma
+query TTTTTT
+SELECT plt_components(plt_srgb(0.1,0.2,0.3)), plt_components(plt_hsl(120,0.5,0.4)),
+       plt_components(plt_lch(50,40,120)), plt_components(plt_cam16_jch(50,40,120)),
+       plt_components(plt_yxy(0.3,0.3,0.5)), plt_components(plt_luma(0.5));
+----
+[0.1, 0.2, 0.3]	[120.0, 0.5, 0.4]	[50.0, 40.0, 120.0]	[50.0, 40.0, 120.0]	[0.3, 0.3, 0.5]	[0.5, 0.0, 0.0]
+
+# 运行时构造器的两个 overload 与空间名别名（大小写、- / 空格、p3、cie-lab）
+query TTT
+SELECT plt_components(plt_color('lab', 50, 20, -30)), plt_alpha(plt_color('oklch', 0.7, 0.1, 120, 0.5)),
+       plt_space(plt_color('P3', 1,0,0));
+----
+[50.0, 20.0, -30.0]	0.5	display_p3
+
+query TTT
+SELECT plt_space(plt_color('xyz-d65',1,2,3)), plt_space(plt_color('CIE-LAB', 50,0,0)),
+       plt_space(plt_color('  OkLcH  ', 0.5,0.1,120));
+----
+xyz	lab	oklch
+
+# 单分量（1 起算）与 alpha 读写
+query RRR
+SELECT plt_component(plt_srgb(0.1,0.2,0.3), 1), plt_component(plt_srgb(0.1,0.2,0.3), 2),
+       plt_component(plt_srgb(0.1,0.2,0.3), 3);
+----
+0.1	0.2	0.3
+
+query T
+SELECT plt_alpha(plt_with_alpha(plt_srgb(1,0,0), 0.5));
+----
+0.5
+
+query T
+SELECT plt_alpha(plt_opaque(plt_color('srgb', 1, 0, 0, 0.25)));
+----
+1.0
+
+# 转换（不裁剪）：sRGB 红 → Lab / XYZ，Lab 蓝 → sRGB，XYZ → xyY
+query TTTTT
+SELECT plt_components(plt_convert(plt_srgb(1,0,0),'lab')),
+       plt_components(plt_convert(plt_srgb(0.2,0.4,0.6),'oklch')),
+       plt_components(plt_convert(plt_srgb(1,0,0),'xyz')),
+       plt_components(plt_convert(plt_lab(50,20,-30),'srgb')),
+       plt_components(plt_convert(plt_xyz(0.5,0.4,0.3),'yxy'));
+----
+[53.240794141307205, 80.09245959641115, 67.20319651585298]	[0.49930415069594763, 0.09864151193090323, 250.4280612914526]	[0.4124564, 0.2126729, 0.0193339]	[0.4963598786650189, 0.42925958771760553, 0.6668145211940549]	[0.4166666666666667, 0.33333333333333337, 0.4]
+
+# alpha 不参与转换
+query R
+SELECT plt_alpha(plt_convert(plt_with_alpha(plt_srgb(1,0,0), 0.25), 'lab'));
+----
+0.25
+
+# 裁剪：不裁剪的 Lab → sRGB 出界；clamp 收进本空间边界（Lab 的 a/b 到 ±127）
+query TTT
+SELECT plt_components(plt_convert(plt_lab(50,200,200),'srgb')),
+       plt_components(plt_convert_clamped(plt_lab(50,200,200),'srgb')),
+       plt_components(plt_clamp(plt_lab(50,200,200)));
+----
+[1.5054498191050465, -6.406904420899573, -0.9505628277826716]	[1.0, 0.0, 0.0]	[50.0, 127.0, 127.0]
+
+query III
+SELECT plt_is_within_bounds(plt_lab(50,200,200)),
+       plt_is_within_bounds(plt_clamp(plt_lab(50,200,200))),
+       plt_is_within_bounds(plt_srgb(1,0,0));
+----
+false	true	true
+
+# 暴力往返：5 个 sRGB 颜色 × 每个可逆空间（41 个），最大分量误差 ≤ 1e-5
+query I
+WITH src AS (
+  SELECT plt_srgb(r,g,b) AS c
+  FROM (VALUES (0.2,0.4,0.6),(0.0,0.0,0.0),(1.0,1.0,1.0),(0.9,0.1,0.5),(0.05,0.95,0.25)) t(r,g,b)
+), spaces AS (SELECT unnest(plt_color_spaces()) AS s)
+SELECT count(*) FROM src, spaces
+WHERE s NOT IN ('luma','luma_linear','luma_gamma','srgb_gamma')
+  AND list_max(list_transform(
+        list_zip(plt_components(plt_convert(plt_convert(c, s), 'srgb')), plt_components(c)),
+        lambda p: abs(p[1] - p[2]))) > 1e-5;
+----
+0
+
+# 同样的往返，但中间先按目标空间裁剪。只用 gamut 内部的颜色：纯原色转 hsluv/okh* 时
+# palette 会给出略超边界的 chroma（如 100.0217），裁剪后自然不再是同一个颜色。
+query I
+WITH src AS (
+  SELECT plt_srgb(r,g,b) AS c
+  FROM (VALUES (0.2,0.4,0.6),(0.5,0.5,0.9),(0.05,0.95,0.25),(0.3,0.7,0.4)) t(r,g,b)
+), spaces AS (SELECT unnest(plt_color_spaces()) AS s)
+SELECT count(*) FROM src, spaces
+WHERE s NOT IN ('luma','luma_linear','luma_gamma','srgb_gamma')
+  AND list_max(list_transform(
+        list_zip(plt_components(plt_convert(plt_convert_clamped(c, s), 'srgb')), plt_components(c)),
+        lambda p: abs(p[1] - p[2]))) > 1e-5;
+----
+0
+
+# 参数来自列而不是常量字面量
+query TT
+SELECT space, plt_components(plt_convert(c, space))
+FROM (VALUES ('lab', plt_srgb(1,0,0)), ('oklch', plt_srgb(0,1,0))) t(space, c)
+ORDER BY space;
+----
+lab	[53.240794141307205, 80.09245959641115, 67.20319651585298]
+oklch	[0.8664329568221967, 0.29482498517376693, 142.49533711605278]
+
+# NULL 从任意参数短路（含 LIST 参数与 LIST 里的 NULL 元素）
+query IIIIII
+SELECT plt_convert(NULL::STRUCT(space VARCHAR, c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, alpha DOUBLE), 'lab') IS NULL,
+       plt_color('srgb', NULL, 0, 0) IS NULL,
+       plt_from_components('srgb', NULL::DOUBLE[]) IS NULL,
+       plt_component(NULL, 1) IS NULL,
+       plt_alpha(NULL) IS NULL,
+       plt_from_components_alpha('srgb', [NULL, 0, 0, 1]) IS NULL;
+----
+true	true	true	true	true	true
+
+# LIST(DOUBLE) 与两个 overload 的还原
+query TT
+SELECT plt_components(plt_from_components('oklch', [0.7, 0.1, 120])),
+       plt_components(plt_from_components_alpha('oklch', [0.7, 0.1, 120, 0.5]));
+----
+[0.7, 0.1, 120.0]	[0.7, 0.1, 120.0]
+
+query R
+SELECT plt_alpha(plt_from_components_alpha('oklch', [0.7, 0.1, 120, 0.5]));
+----
+0.5
+
+# 跨 DataChunk（2048 行以上）不丢行
+query II
+SELECT count(*), count(plt_convert(plt_srgb(x / 4999.0, 0.2, 0.3), 'lab'))
+FROM range(5000) t(x);
+----
+5000	5000
+
+# 列里的 NULL 逐个跳过，不影响其它行
+query II
+SELECT count(*), count(plt_convert(c, 'lab'))
+FROM (VALUES (plt_srgb(1,0,0)), (NULL), (plt_srgb(0,1,0))) t(c);
+----
+3	2
+
+# 返回类型没被悄悄改掉
+query TTT
+SELECT typeof(plt_srgb(1,0,0)), typeof(plt_components(plt_srgb(1,0,0))),
+       typeof(plt_alpha(plt_srgb(1,0,0)));
+----
+STRUCT(space VARCHAR, c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, alpha DOUBLE)	DOUBLE[]	DOUBLE
+
+# 错误路径
+statement error
+SELECT plt_color('not-a-space', 1, 2, 3);
+----
+unknown color space 'not-a-space'
+
+statement error
+SELECT plt_convert(plt_srgb(1,0,0), 'not-a-space');
+----
+unknown color space 'not-a-space'
+
+statement error
+SELECT plt_component(plt_srgb(1,0,0), 4);
+----
+index must be 1, 2 or 3
+
+statement error
+SELECT plt_from_components('srgb', [1, 2]);
+----
+expected exactly 3 components
+
+statement error
+SELECT plt_from_components_alpha('srgb', [1, 2, 3]);
+----
+expected exactly 4 values
+
+statement error
+SELECT plt_from_components('not-a-space', [1, 2, 3]);
+----
+unknown color space 'not-a-space'

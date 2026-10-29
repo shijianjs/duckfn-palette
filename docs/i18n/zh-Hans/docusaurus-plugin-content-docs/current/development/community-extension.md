@@ -32,9 +32,9 @@ LOAD duckfn_palette;
 
 ```rust
 #[duck_scalar_function(
-    description = "Greets someone by name, the simplest possible scalar function",
+    description = "Convert a color to another space without gamut clamping",
     comment = "…",
-    example = "SELECT my_greet('world')"
+    example = "SELECT plt_to_hex(plt_convert(plt_srgb(1, 0.5, 0), 'oklch'))"
 )]
 ```
 

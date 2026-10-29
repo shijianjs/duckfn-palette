@@ -330,7 +330,7 @@
     "message": "开始使用"
   },
   "homepage.tagline": {
-    "message": "给 DuckDB 补充 SQL 函数",
+    "message": "把 palette 颜色库变成 SQL 函数",
     "description": "The tagline shown on the homepage hero"
   },
   "homepage.github": {
@@ -346,7 +346,7 @@
     "description": "Home page feature card title"
   },
   "homepage.features.sql.details": {
-    "message": "my_greet、my_greet_checked 与 my_sum 就是普通的 DuckDB 函数：放进任意查询，和内置函数一起用，调用处不需要 import 任何东西。",
+    "message": "145 个 plt_ 函数就是普通的 DuckDB 函数：44 个颜色空间、转换、混合、对比度、CSS 与 CAM16，放进任意查询就能用，调用处不需要 import 任何东西。",
     "description": "Home page feature card description"
   },
   "homepage.features.install.title": {
@@ -362,7 +362,7 @@
     "description": "Home page feature card title"
   },
   "homepage.features.platforms.details": {
-    "message": "每个版本都会把各平台各一份 .duckdb_extension 挂到 GitHub Release 上，LOAD 可以直接按 URL 取，中间不用先下载。",
+    "message": "每个版本都会把各平台各一份 .duckdb_extension 挂到 GitHub Release 上：下载你平台那一份，改名成 duckfn_palette.duckdb_extension 再 LOAD。",
     "description": "Home page feature card description"
   },
   "homepage.features.versions.title": {
@@ -398,7 +398,7 @@
     "description": "Home page paragraph introducing the SQL code blocks"
   },
   "homepage.showcase.caption": {
-    "message": "注释就是每次调用的返回值 —— 最后一行是对两行数据真实求和的结果。",
+    "message": "注释就是每次调用的返回值 —— 一次空间转换、一个 WCAG 对比度，以及把 viridis 均匀取三点后得到的十六进制列表。",
     "description": "Home page note under the SQL code block explaining the trailing comments"
   },
   "homepage.showcase.link": {

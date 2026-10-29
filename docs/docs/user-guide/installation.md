@@ -73,8 +73,8 @@ WHERE extension_name = 'duckfn_palette';
 ```sql
 SELECT function_name, function_type, return_type
 FROM duckdb_functions()
-WHERE function_name LIKE 'my%';
+WHERE function_name LIKE 'plt%';
 ```
 
-Three rows for three functions; if the list is empty, the extension is not loaded in the session you are
-querying.
+145 function names (152 signatures — several names are overloaded); if the list is empty, the extension
+is not loaded in the session you are querying.

@@ -28,7 +28,7 @@ import type {UrlPreloadEntry} from 'duckfn-docs-kit/sql/runtimeConfig';
 // preload all read it from here. **Repoint it at your repository after cloning** — `just rename` only
 // rewrites the extension name, not this URL — or the preload will look for a release in the template's
 // repository instead of yours.
-const REPO_URL = 'https://github.com/shijianjs/duckfn-extension-template';
+const REPO_URL = 'https://github.com/shijianjs/duckfn-palette';
 
 // `dfkExtensions` 要的是 `owner/repo` 这个 slug，而不是完整 URL（见下面 plugins 的 preload 列表）。
 //
@@ -68,7 +68,7 @@ const baseUrl = process.env.DOCS_BASE_URL ?? '/';
 
 const config: Config = {
   title: 'duckfn_palette',
-  tagline: 'Extra SQL functions for DuckDB',
+  tagline: 'The palette color library, as SQL functions',
   favicon: 'img/logo.svg',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future

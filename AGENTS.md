@@ -19,7 +19,10 @@ AGENTS.md（duckfn-extension-template 自带的那一份）：克隆模板后**�
 
 ## 项目事实（唯一需要人维护的一段）
 
-- 这个扩展做什么：{{PROJECT_GOAL}}
+- 这个扩展做什么：把 Rust 的 [palette](https://crates.io/crates/palette) 颜色库搬上 SQL —— 44 个颜色空间
+  的构造与互转、混合与合成、色差与 WCAG 对比度、配色方案、命名色、白点与色适应、编码矩阵、CAM16 与
+  8 位打包，全部注册成 `plt_` 前缀的标量函数；另加两个补充：csscolorparser 的 CSS 颜色字符串正反序列化、
+  colorous 的预设渐变与分类色板。颜色在 SQL 里是单个 STRUCT `plt_color(space, c1, c2, c3, alpha)`。
 - 本仓库来自 [duckfn-extension-template](https://github.com/shijianjs/duckfn-extension-template)：
   克隆后第一件事是 `just rename <新扩展名>`（见下面「扩展名与改名」）。
 
@@ -153,24 +156,24 @@ README 里出现的路径示例，并把 `Cargo.lock` 按新包名重写；脚�
 ### 注册到 DuckDB 的函数名统一加短前缀
 
 凡是出现在 SQL 里的名字都加同一个前缀：标量函数、聚合函数、表函数、COPY 格式、cast、SQL 宏、
-replacement scan。模板里这个前缀是 `my_`。
+replacement scan。**本项目的前缀是 `plt_`**（模板自带的是 `my_`）。
 
 社区扩展几乎都不把包名/扩展名写进函数名（见
 <https://duckdb.org/community_extensions/list_of_extensions>）：`duckfn_palette_greet` 这样的全名在每个
-调用点上都是纯噪声，而 `my_` 短到可以忽略，又足以在 `duckdb_functions()` 里按前缀检索。
+调用点上都是纯噪声，而 `plt_` 短到可以忽略，又足以在 `duckdb_functions()` 里按前缀检索。
 **前缀只是命名空间，不再是扩展名的缩写** —— 不要因为扩展名变了就跟着改。
 
-前缀之后的部分要能读懂，不要拿缩写堆砌。示例里的名字各只有一个签名：
+前缀之后的部分要能读懂，不要拿缩写堆砌。本仓的名字各只有一个签名（需要多个签名时用 `overloads_name`）：
 
 ```text
-my_greet(name)
-my_sum(value)
+plt_oklch(l, c, h)        构造函数用空间名
+plt_convert(color, space) 操作用上游 trait 名
+plt_blend_modes()         清单函数用被列举的东西
 ```
 
-`rename` 脚本不动函数名（那是你的域代码）：换完扩展名顺手把示例函数与 `test/sql/*.test` 一起改成
-你的 API，前缀也在这里一并定下来。
+`rename` 脚本不动函数名（那是你的域代码）。
 
-duckfn 的属性宏默认拿 **Rust 函数名**当注册名，所以直接把函数定义成 `fn my_xxx(...)` 即可。
+duckfn 的属性宏默认拿 **Rust 函数名**当注册名，所以直接把函数定义成 `fn plt_xxx(...)` 即可。
 宏还会为每个签名生成 `SQL_NAME` 常量：同一个名字要在多处出现（错误信息前缀、日志）时读它，
 不要再抄一份字面量。代价是这类函数得写成 `pub(super)`，因为生成的模块沿用函数的可见性。
 `overloads_name` 能把「同一名字下按参数个数/类型分派」的多个签名并成一个函数集，需要时再用
@@ -178,10 +181,10 @@ duckfn 的属性宏默认拿 **Rust 函数名**当注册名，所以直接把函
 
 ### 把一个 Rust 库映射成扩展
 
-模板的 `my_greet` / `my_sum` 只演示「怎么写一个函数」。当上游 crate 本身就是全部价值（把 statrs 搬上
-SQL 的 [duckfn_statrs](https://github.com/shijianjs/duckfn-statrs) 就是这种，34 个聚合 + 509 个标量），
-要做的事远不止写函数：范围盘点、形状映射、NULL 契约、测试期望值的来源、文档与社区扩展页，都要在
-动手前定下来。
+本仓就是这种项目：上游 crate（palette）本身就是全部价值，模板的 `my_greet` / `my_sum` 只演示「怎么写一个
+函数」。包装类项目要做的事远不止写函数：范围盘点、形状映射、NULL 契约、测试期望值的来源、文档与社区扩展页，
+都要在动手前定下来 —— 同类先例还有把 statrs 搬上 SQL 的
+[duckfn_statrs](https://github.com/shijianjs/duckfn-statrs)（34 个聚合 + 509 个标量）。
 
 **完整流程、决策表、验收清单与踩过的坑见 [`AGENTS/wrapping-a-rust-library.md`](AGENTS/wrapping-a-rust-library.md)**。
 落到具体目录时再读那两份文件夹级约定：

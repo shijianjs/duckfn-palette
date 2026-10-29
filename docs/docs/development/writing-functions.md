@@ -1,7 +1,7 @@
 ---
 title: Writing functions
 sidebar_position: 3
-description: The sample scalar and aggregate functions line by line, the rules duckfn applies to arguments and return values, and what to copy when you add your own.
+description: How the plt_ functions are written, the rules duckfn applies to arguments and return values, and what to copy when you add one.
 ---
 
 # Writing functions
@@ -20,16 +20,19 @@ flowchart LR
     cdylib --> load["LOAD in DuckDB"]
 ```
 
-## The samples
+## The shapes in use here
 
-| Function | Kind | Signature | Behaviour |
-| --- | --- | --- | --- |
-| `my_greet` | scalar | `VARCHAR -> VARCHAR` | Never NULL; the simplest possible shape. |
-| `my_greet_checked` | scalar | `VARCHAR -> VARCHAR` | `NULL` for an empty name, an error for surrounding whitespace. |
-| `my_sum` | aggregate | `DOUBLE -> DOUBLE` | Skips NULL inputs, `NULL` for a group with no valid row. |
+| Shape | Example | Meaning |
+| --- | --- | --- |
+| `-> T` | `plt_srgb(c1, c2, c3) -> PltColor` | A plain value, never NULL. |
+| `-> DuckOptionResult<T>` | `plt_convert(color, space)` | Nullable and fallible: `Ok(None)` is SQL `NULL`, `Err` fails the query. |
+| `-> Vec<T>` | `plt_colorous_palette(name, n)` | A SQL `LIST`, one row per input row. |
+| `-> DuckOptionResult<Vec<T>>` | `plt_rgb_primaries(space)` | A list that can also be NULL or fail. |
+| `overloads_name` | `plt_pack`, `plt_difference` | Several Rust functions registered under one SQL name. |
 
-All three live in `src/extension/functions/`, one file per function (or per small group of related
-ones).
+Everything is a scalar function — there is no aggregate, table function or `COPY` handler in this
+extension. `src/extension/functions/` mirrors palette's modules, so a new function goes into the file that
+covers its upstream trait.
 
 ## Scalars: three return shapes
 
@@ -42,92 +45,81 @@ The macro generates different code per return type:
 | `-> Option<T>` | Nullable but unable to fail. |
 
 ```rust
-use duckfn::{DuckOptionResult, duck_error, duck_scalar_function};
+use duckfn::{DuckOptionResult, duck_scalar_function};
 
 #[duck_scalar_function(
-    description = "Greets someone by name, returning NULL for an empty name and failing on whitespace",
-    comment = "The nullable-and-fallible return shape: Ok(None) is SQL NULL, Err fails the query",
-    example = "SELECT my_greet_checked('')"
+    description = "Convert a color to another space without gamut clamping (palette's unclamped conversion)",
+    example = "SELECT plt_components(plt_convert(plt_srgb(1, 0, 0), 'lab'))"
 )]
-fn my_greet_checked(name: String) -> DuckOptionResult<String> {
-    if name.is_empty() {
-        return Ok(None);
-    }
-    if name.trim() != name {
-        return Err(duck_error(
-            "my_greet_checked: the name must not have surrounding whitespace",
-        ));
-    }
-    Ok(Some(format!("Hello, {name}!")))
+fn plt_convert(color: PltColor, space: String) -> DuckOptionResult<PltColor> {
+    Ok(Some(color.convert("plt_convert", &space)?))
 }
 ```
 
+The three-state contract is the same in every file: a NULL argument gives NULL (duckfn short-circuits it
+before the body runs), something palette cannot compute gives `Ok(None)`, and a rejected argument gives
+`Err` with a message that starts with the function name.
+
 ### What happens to a NULL argument
 
-Argument nullability is decided by the parameter type, and it applies to aggregates too:
+Argument nullability is decided by the parameter type:
 
-- **`name: String`** — a NULL input row is short-circuited to SQL `NULL` by duckfn's argument reader;
+- **`space: String`** — a NULL input row is short-circuited to SQL `NULL` by duckfn's argument reader;
   the body never runs for that row. This is what you want most of the time.
-- **`name: Option<String>`** — NULL reaches the body as `None` and its meaning is yours to decide
-  (return NULL, substitute a default, count NULLs, …).
+- **`space: Option<String>`** — NULL reaches the body as `None` and its meaning is yours to decide
+  (return NULL, substitute a default, …).
 
 ### Errors and panics
 
 Return `Err(duck_error("…"))` for a value the function cannot handle; that fails the query with your
-message. A `panic!` in the body is caught and reported as a DuckDB error rather than unwinding across
-the FFI boundary. Error messages are user-facing: write them in English, and prefix them with the
-function name so a report makes sense on its own.
-
-## Aggregates: per-row inputs plus a state
-
-An aggregate signature is "the input columns plus one `&mut` state parameter" (in any position). The
-state needs `Default + Clone + Debug` — the wrapper struct the macro generates derives them — and an
-implementation of `DuckAggregateState`:
-
-- `combine` / `simple_combine` merges two states. This is what threads and group merging go through,
-  so it has to be associative.
-- `result` / `simple_result` turns a state into the group's value. `simple_result` can only produce a
-  never-NULL value; override `result` and return `Ok(None)` when a group has to come back as SQL NULL.
-- `Output` decides the SQL return type: `i64`, `f64`, `String`, `Vec<…>` (that is, `list<…>`) and so on.
+message. A `panic!` in the body is caught and reported as a DuckDB error rather than unwinding across the
+FFI boundary — which is what turns palette's own panics into query errors:
 
 ```rust
-#[derive(Default, Debug, Clone)]
-struct SumState {
-    total: f64,
-    rows: i64,
-}
+// palette panics on a singular matrix; the extension surfaces it as an error
+plt_matrix_inverse([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+// -> The given matrix is not invertible
+```
 
-impl DuckAggregateState for SumState {
-    type Output = f64;
+Error messages are user-facing: write them in English, and prefix them with the function name so a report
+makes sense on its own.
 
-    fn simple_combine(&mut self, other: &Self) {
-        self.total += other.total;
-        self.rows += other.rows;
-    }
+## Custom types
 
-    fn result(&self) -> DuckOptionResult<f64> {
-        if self.rows == 0 {
-            Ok(None)          // no row at all -> SQL NULL, not 0
-        } else {
-            Ok(Some(self.total))
-        }
-    }
+`types/color.rs` defines `PltColor`, the `plt_color` STRUCT that every function takes and returns:
+
+```rust
+#[derive(DuckStruct)]
+#[duck(sql_name = "plt_color", create_type = true)]
+pub struct PltColor {
+    pub space: String,
+    pub c1: f64,
+    pub c2: f64,
+    pub c3: f64,
+    pub alpha: f64,
 }
 ```
 
-`SumState` counts the rows it saw so "no input at all" is told apart from "input seen, the total is
-0". A state may equally hold a `String`, a `HashMap`, a `Vec<…>`, or one slot per group key — see the
-aggregate chapter of the duckfn guide for the shapes it supports.
+One STRUCT for all 44 spaces keeps the surface small: the space name travels with the value, so
+`plt_convert` needs no per-space function pair, and a color column round-trips through `SELECT *`. The
+price is that components are positional (`c1`, `c2`, `c3`), which is what `plt_component(color, index)`
+and `plt_components(color)` exist to smooth over.
+
+`cam16.rs` adds two more: `plt_cam16_params` (the five viewing conditions plus discounting) and
+`plt_cam16_full` (the six CAM16 attributes).
 
 ## Adding your own
 
-1. **Pick the attribute.** Scalar, aggregate, table function, `COPY`, cast, SQL macro or replacement
-   scan: each has one, and each accepts only its own arguments. The reference is
-   [the duckfn user guide](https://shijianjs.github.io/duckfn/) — the chapter for that kind.
-2. **Copy the closest sample** from `src/extension/functions/` and change the logic, rather than
-   inventing a signature from scratch.
-3. **Attach it to the module tree**: add `mod my_function;` to `src/extension/functions/mod.rs`. The
-   crate roots stay untouched.
+1. **Pick the attribute.** This extension only needs `duck_scalar_function`; duckfn also has table
+   functions, `COPY`, casts, SQL macros and replacement scans, each with its own macro and its own
+   accepted arguments. The reference is [the duckfn user guide](https://shijianjs.github.io/duckfn/) —
+   and the same guide ships inside the crate, in cargo's registry directory for the version in
+   `Cargo.toml`.
+2. **Copy the closest neighbor** from the file for that palette module rather than inventing a signature
+   from scratch.
+3. **Attach it to the module tree**: add `mod …;` to `src/extension/functions/mod.rs` (and to
+   `src/extension/types/mod.rs` if it needs a type). The crate roots stay untouched — except that
+   `src/wasm_lib.rs` mirrors them, so a new module must appear in both.
 4. **Write the documentation metadata** on the attribute — `description`, `comment`, `example` /
    `examples`:
 
@@ -135,7 +127,7 @@ aggregate chapter of the duckfn guide for the shapes it supports.
    #[duck_scalar_function(
        description = "One line for the function table of the community-extension page",
        comment = "The detail that does not fit the one-liner",
-       example = "SELECT my_greet('world')"
+       example = "SELECT plt_to_hex(plt_convert(plt_srgb(1, 0.5, 0), 'oklch'))"
    )]
    ```
 
@@ -147,21 +139,32 @@ aggregate chapter of the duckfn guide for the shapes it supports.
 
 ### Names
 
-Every SQL name carries one short prefix (`my_` in this template), and the part after it should read
-like what the function does. A prefixed name is also what users type, so resist `my_ext_my_thing`.
+Every SQL name carries the `plt_` prefix, and the part after it reads like what the function does — the
+space name for a constructor (`plt_oklch`), the palette trait for an operation (`plt_premultiply`), the
+thing listed for the inventory functions (`plt_blend_modes`). A prefixed name is also what users type, so
+resist `plt_palette_oklch`.
 
-The attribute registers the **Rust function name** by default, which is why the samples are called
-`my_greet` and `my_sum`. When one name needs several signatures (different argument types or counts),
-`overloads_name = "…"` merges them into one function set instead of registering each separately.
+The attribute registers the **Rust function name** by default, which is why the functions are literally
+called `plt_convert`. When one name needs several signatures (different argument types or counts),
+`overloads_name = "…"` merges them into one function set instead of registering each separately — that is
+how `plt_pack`, `plt_unpack`, `plt_difference`, `plt_chromatic_adapt` and `plt_cam16_params` each accept
+two shapes.
 
 The macro also generates a `SQL_NAME` constant per signature. Once a name appears in several places —
-error prefixes, log lines, hints — read that constant rather than repeating the literal; the price is
-that such a function has to be `pub(super)`, because the generated module inherits the function's
-visibility.
+error prefixes, log lines, hints — read that constant rather than repeating the literal; the price is that
+such a function has to be `pub(super)`, because the generated module inherits the function's visibility.
+
+### Volatile functions
+
+A function with a side effect (printing, writing a file, starting a process) or one that is
+non-deterministic must be declared `volatile = true`. Otherwise the planner constant-folds it during
+optimization, executes it once there and again inside the outer expression, and `EXPLAIN` runs it for
+real. `plt_random_color` and `plt_random_colors` take a seed argument precisely so the result stays
+reproducible — a random function without a seed would need `volatile = true`.
 
 ### Options arguments
 
-A configuration argument (`DuckLazy<T>`) is parsed once and read inside the function, so per-row
-parsing does not show up in profiles. The template does not use one; the pattern (a named STRUCT type,
-created at load time) is documented in the duckfn guide and used throughout
-[duckfn_quantstats](https://github.com/shijianjs/duckfn-quantstats).
+A configuration argument (`DuckLazy<T>`) is parsed once and read inside the function, so per-row parsing
+does not show up in profiles. This extension does not use one: every option here is a plain `VARCHAR`
+name, resolved by a small table in the matching `types/` file. The pattern is documented in the duckfn
+guide and used throughout [duckfn_quantstats](https://github.com/shijianjs/duckfn-quantstats).

@@ -133,7 +133,7 @@ pub fn method_arg(fn_name: &str, method: &str) -> Result<&'static str, Extension
     let normalized = normalize(method);
     let canonical = match normalized.as_str() {
         "vonkries" | "hpe" | "hunt_pointer_estevez" => "von_kries",
-        "unit" | "identity" | "none" => "unit_matrix",
+        "unit" | "identity" | "none" | "xyz_scaling" | "xyzscaling" => "unit_matrix",
         other => other,
     };
     ADAPTATION_METHODS

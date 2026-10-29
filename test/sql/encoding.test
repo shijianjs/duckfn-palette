@@ -1,0 +1,278 @@
+# name: test/sql/encoding.test
+# description: 传输函数、解码/编码、白点、RGB 原色与 RGB↔XYZ 矩阵
+# group: [palette]
+
+require duckfn_palette
+
+query T
+SELECT plt_encoding_spaces()::VARCHAR;
+----
+[srgb, srgb_linear, srgb_gamma, adobe_rgb, adobe_rgb_linear, display_p3, display_p3_linear, dci_p3, dci_p3_linear, prophoto_rgb, prophoto_rgb_linear, rec709, rec709_linear, rec2020, rec2020_linear, luma, luma_linear, luma_gamma]
+
+query T
+SELECT plt_transfer_functions()::VARCHAR;
+----
+[linear, gamma_2_2, srgb, adobe_rgb, prophoto_rgb, p3_gamma, rec_oetf]
+
+# ---- 每个空间使用的传输函数与白点 ----
+
+query TTT
+SELECT s, plt_transfer_function(s), plt_white_point_of(s)
+FROM (SELECT unnest(plt_encoding_spaces()) AS s);
+----
+srgb	srgb	d65
+srgb_linear	linear	d65
+srgb_gamma	gamma_2_2	d65
+adobe_rgb	adobe_rgb	d65
+adobe_rgb_linear	linear	d65
+display_p3	srgb	d65
+display_p3_linear	linear	d65
+dci_p3	p3_gamma	dci_p3
+dci_p3_linear	linear	dci_p3
+prophoto_rgb	prophoto_rgb	d50
+prophoto_rgb_linear	linear	d50
+rec709	rec_oetf	d65
+rec709_linear	linear	d65
+rec2020	rec_oetf	d65
+rec2020_linear	linear	d65
+luma	srgb	d65
+luma_linear	linear	d65
+luma_gamma	gamma_2_2	d65
+
+# 名字规范化：大小写、连字符、空格
+query III
+SELECT plt_transfer_function('Display-P3') = 'srgb',
+       plt_transfer_function('  SRGB ') = 'srgb',
+       plt_white_point_of('PROPHOTO-RGB') = 'd50';
+----
+true	true	true
+
+# ---- 解码 / 编码的已知值 ----
+
+query TT
+SELECT plt_decode('srgb', 0.5)::VARCHAR, plt_encode('srgb', 0.21404114048223255)::VARCHAR;
+----
+0.21404114048223244	0.5
+
+query TTTT
+SELECT plt_decode('adobe_rgb', 0.5)::VARCHAR, plt_encode('adobe_rgb', 0.5)::VARCHAR,
+       plt_decode('prophoto_rgb', 0.5)::VARCHAR, plt_encode('prophoto_rgb', 0.5)::VARCHAR;
+----
+0.21775552814439456	0.7296583817678015	0.2871745887492587	0.6803950000871885
+
+query TTTT
+SELECT plt_decode('dci_p3', 0.5)::VARCHAR, plt_encode('dci_p3', 0.5)::VARCHAR,
+       plt_decode('rec2020', 0.5)::VARCHAR, plt_encode('rec2020', 0.5)::VARCHAR;
+----
+0.16493848884661177	0.7659831786679869	0.2597194371011775	0.7054355530556183
+
+query TT
+SELECT plt_decode('srgb_gamma', 0.5)::VARCHAR, plt_encode('srgb_gamma', 0.5)::VARCHAR;
+----
+0.7297400528407231	0.217637640824031
+
+# 端点
+query IIII
+SELECT plt_decode('srgb', 0.0)::DOUBLE, plt_decode('srgb', 1.0)::DOUBLE,
+       plt_decode('srgb_linear', 0.42)::DOUBLE, plt_encode('srgb_linear', 0.42)::DOUBLE;
+----
+0.0	1.0	0.42	0.42
+
+# 同传输函数的空间给出相同的值
+query IIII
+SELECT plt_decode('display_p3', 0.5) = plt_decode('srgb', 0.5),
+       plt_decode('luma', 0.5) = plt_decode('srgb', 0.5),
+       plt_decode('rec709', 0.5) = plt_decode('rec2020', 0.5),
+       plt_decode('srgb_linear', 0.5) = 0.5;
+----
+true	true	true	true
+
+# ---- 线性 ↔ 编码往返（palette 上游对 0..1 的 101 点断言，epsilon 1e-7） ----
+
+query I
+SELECT count(*) FROM generate_series(0, 100) g
+WHERE abs(plt_decode('srgb', plt_encode('srgb', g / 100.0)) - g / 100.0) > 1e-7;
+----
+0
+
+query I
+SELECT count(*) FROM (
+    SELECT s, g FROM (SELECT unnest(['srgb', 'adobe_rgb', 'display_p3', 'dci_p3',
+                                     'prophoto_rgb', 'rec709', 'rec2020', 'luma']) AS s)
+    CROSS JOIN generate_series(0, 100) AS gs(g)
+) WHERE abs(plt_decode(s, plt_encode(s, g / 100.0)) - g / 100.0) > 1e-7;
+----
+0
+
+# 反向：编码 → 解码 → 编码
+query I
+SELECT count(*) FROM (
+    SELECT s, g FROM (SELECT unnest(['srgb', 'adobe_rgb', 'display_p3', 'dci_p3',
+                                     'prophoto_rgb', 'rec709', 'rec2020', 'luma']) AS s)
+    CROSS JOIN generate_series(0, 100) AS gs(g)
+) WHERE abs(plt_encode(s, plt_decode(s, g / 100.0)) - g / 100.0) > 1e-7;
+----
+0
+
+# ---- RGB 原色（yxy） ----
+
+query T
+SELECT plt_rgb_primaries('srgb')::VARCHAR;
+----
+[{'space': yxy, 'c1': 0.64, 'c2': 0.33, 'c3': 0.212656, 'alpha': 1.0}, {'space': yxy, 'c1': 0.3, 'c2': 0.6, 'c3': 0.715158, 'alpha': 1.0}, {'space': yxy, 'c1': 0.15, 'c2': 0.06, 'c3': 0.072186, 'alpha': 1.0}]
+
+query T
+SELECT plt_rgb_primaries('adobe_rgb')::VARCHAR;
+----
+[{'space': yxy, 'c1': 0.64, 'c2': 0.33, 'c3': 0.2974, 'alpha': 1.0}, {'space': yxy, 'c1': 0.21, 'c2': 0.71, 'c3': 0.6273, 'alpha': 1.0}, {'space': yxy, 'c1': 0.15, 'c2': 0.06, 'c3': 0.0753, 'alpha': 1.0}]
+
+query T
+SELECT plt_rgb_primaries('display_p3')::VARCHAR;
+----
+[{'space': yxy, 'c1': 0.68, 'c2': 0.32, 'c3': 0.229, 'alpha': 1.0}, {'space': yxy, 'c1': 0.265, 'c2': 0.69, 'c3': 0.69173, 'alpha': 1.0}, {'space': yxy, 'c1': 0.15, 'c2': 0.06, 'c3': 0.07927, 'alpha': 1.0}]
+
+query T
+SELECT plt_rgb_primaries('dci_p3')::VARCHAR;
+----
+[{'space': yxy, 'c1': 0.68, 'c2': 0.32, 'c3': 0.209492, 'alpha': 1.0}, {'space': yxy, 'c1': 0.265, 'c2': 0.69, 'c3': 0.721595, 'alpha': 1.0}, {'space': yxy, 'c1': 0.15, 'c2': 0.06, 'c3': 0.068913, 'alpha': 1.0}]
+
+query T
+SELECT plt_rgb_primaries('prophoto_rgb')::VARCHAR;
+----
+[{'space': yxy, 'c1': 0.7347, 'c2': 0.2653, 'c3': 0.28804, 'alpha': 1.0}, {'space': yxy, 'c1': 0.1596, 'c2': 0.8404, 'c3': 0.71187, 'alpha': 1.0}, {'space': yxy, 'c1': 0.0366, 'c2': 0.0001, 'c3': 8.5663e-05, 'alpha': 1.0}]
+
+query T
+SELECT plt_rgb_primaries('rec2020')::VARCHAR;
+----
+[{'space': yxy, 'c1': 0.708, 'c2': 0.292, 'c3': 0.2627, 'alpha': 1.0}, {'space': yxy, 'c1': 0.17, 'c2': 0.797, 'c3': 0.678, 'alpha': 1.0}, {'space': yxy, 'c1': 0.131, 'c2': 0.046, 'c3': 0.0593, 'alpha': 1.0}]
+
+# 三原色之和等于该空间的白点（palette 的 prophoto 上游断言，epsilon 1e-4）
+query I
+SELECT count(*) FROM (
+    SELECT sp, sum(plt_convert(c, 'xyz').c1) AS x,
+               sum(plt_convert(c, 'xyz').c2) AS y,
+               sum(plt_convert(c, 'xyz').c3) AS z
+    FROM (SELECT sp, unnest(plt_rgb_primaries(sp)) AS c
+          FROM (SELECT unnest(['srgb', 'adobe_rgb', 'display_p3', 'dci_p3',
+                               'prophoto_rgb', 'rec2020']) AS sp) u) v
+    GROUP BY sp) w
+CROSS JOIN LATERAL (SELECT plt_white_point_xyz(plt_white_point_of(w.sp)) AS wp) q
+WHERE abs(x - wp[1]) > 1e-3 OR abs(y - wp[2]) > 1e-3 OR abs(z - wp[3]) > 1e-3;
+----
+0
+
+query I
+SELECT count(*) FROM (
+    SELECT sum(plt_convert(c, 'xyz').c1) AS x,
+           sum(plt_convert(c, 'xyz').c2) AS y,
+           sum(plt_convert(c, 'xyz').c3) AS z
+    FROM (SELECT unnest(plt_rgb_primaries('prophoto_rgb')) AS c) u
+) v
+CROSS JOIN LATERAL (SELECT plt_white_point_xyz('d50') AS wp) q
+WHERE abs(x - wp[1]) > 0.0001 OR abs(y - wp[2]) > 0.0001 OR abs(z - wp[3]) > 0.0001;
+----
+0
+
+# linear / gamma 变体与原空间共享原色；luma 复用 sRGB 的原色
+query IIII
+SELECT plt_rgb_primaries('srgb_linear') = plt_rgb_primaries('srgb'),
+       plt_rgb_primaries('display_p3_linear') = plt_rgb_primaries('display_p3'),
+       plt_rgb_primaries('luma') = plt_rgb_primaries('srgb'),
+       plt_rgb_primaries('rec709') = plt_rgb_primaries('srgb');
+----
+true	true	true	true
+
+# ---- RGB → XYZ 矩阵 ----
+
+# palette 的 d65_rgb_conversion_matrix 上游断言（epsilon 1e-6）
+query I
+SELECT count(*) FROM (
+    SELECT unnest(plt_rgb_to_xyz_matrix('srgb')) AS got,
+           unnest([0.4124564, 0.3575761, 0.1804375,
+                   0.2126729, 0.7151522, 0.0721750,
+                   0.0193339, 0.1191920, 0.9503041]) AS want
+) WHERE abs(got - want) > 1e-6;
+----
+0
+
+query T
+SELECT plt_rgb_to_xyz_matrix('srgb')::VARCHAR;
+----
+[0.41245643908969243, 0.357576077643909, 0.1804374832663989, 0.21267285140562264, 0.715152155287818, 0.07217499330655958, 0.01933389558232931, 0.11919202588130297, 0.9503040785363678]
+
+query T
+SELECT plt_xyz_to_rgb_matrix('srgb')::VARCHAR;
+----
+[3.240454162114103, -1.5371385127977157, -0.49853140955601577, -0.9692660305051868, 1.8760108454466942, 0.0415560175303498, 0.05564343095911474, -0.20402591351675387, 1.0572251882231793]
+
+# 正反矩阵互为逆（所有 RGB 空间）
+query I
+SELECT count(*) FROM (
+    SELECT sp, unnest(plt_matrix_multiply(plt_rgb_to_xyz_matrix(sp), plt_xyz_to_rgb_matrix(sp))) AS got,
+           unnest([1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]) AS want
+    FROM (SELECT unnest(['srgb', 'adobe_rgb', 'display_p3', 'dci_p3', 'prophoto_rgb',
+                         'rec709', 'rec2020']) AS sp) u
+) v WHERE abs(got - want) > 1e-9;
+----
+0
+
+# 白点映射到 XYZ，矩阵作用后仍是白点
+query I
+SELECT count(*) FROM (
+    SELECT sp, unnest(plt_matrix_apply(plt_rgb_to_xyz_matrix(sp), 1, 1, 1)) AS got,
+           unnest(plt_white_point_xyz(plt_white_point_of(sp))) AS want
+    FROM (SELECT unnest(['srgb', 'adobe_rgb', 'display_p3', 'dci_p3', 'prophoto_rgb',
+                         'rec2020']) AS sp) u
+) v WHERE abs(got - want) > 1e-9;
+----
+0
+
+# ---- 类型 / NULL / 错误 ----
+
+query TTT
+SELECT typeof(plt_rgb_primaries('srgb')), typeof(plt_decode('srgb', 0.5)),
+       typeof(plt_rgb_to_xyz_matrix('srgb'));
+----
+STRUCT(space VARCHAR, c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, alpha DOUBLE)[]	DOUBLE	DOUBLE[]
+
+query III
+SELECT plt_transfer_function(NULL) IS NULL, plt_decode(NULL, 0.5) IS NULL,
+       plt_encode('srgb', NULL) IS NULL;
+----
+true	true	true
+
+query III
+SELECT plt_white_point_of(NULL) IS NULL, plt_rgb_primaries(NULL) IS NULL,
+       plt_rgb_to_xyz_matrix(NULL) IS NULL;
+----
+true	true	true
+
+statement error
+SELECT plt_transfer_function('xyz');
+----
+plt_transfer_function: color space 'xyz' has no transfer function
+
+statement error
+SELECT plt_decode('hsl', 0.5);
+----
+plt_decode: color space 'hsl' has no transfer function
+
+statement error
+SELECT plt_encode('cam16_jch', 0.5);
+----
+plt_encode: color space 'cam16_jch' has no transfer function
+
+statement error
+SELECT plt_transfer_function('nope');
+----
+plt_transfer_function: unknown color space 'nope'
+
+statement error
+SELECT plt_rgb_primaries('xyz');
+----
+plt_rgb_primaries: color space 'xyz' has no RGB primaries
+
+statement error
+SELECT plt_rgb_to_xyz_matrix('lch');
+----
+plt_rgb_to_xyz_matrix: color space 'lch' has no RGB→XYZ matrix

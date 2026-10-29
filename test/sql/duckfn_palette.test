@@ -1,0 +1,58 @@
+# name: test/sql/duckfn_palette.test
+# description: 冒烟测试：扩展加载前后、注册数量盘点。
+#   计数是活的：152 个签名 / 145 个函数名（overload 有 plt_color、plt_difference、
+#   plt_pack、plt_unpack、plt_chromatic_adapt、plt_cam16_params、plt_cam16_params_xyz），
+#   全部是标量，没有副作用函数。改函数数先跑一遍数出来再改这里。
+# group: [duckfn_palette]
+
+# 加载之前这些名字不存在（每个 .test 文件都从一个干净的实例开始）
+statement error
+SELECT plt_srgb(1, 0, 0);
+----
+Scalar Function with name plt_srgb does not exist
+
+statement error
+SELECT plt_color_spaces();
+----
+Scalar Function with name plt_color_spaces does not exist
+
+require duckfn_palette
+
+query I
+SELECT count(*) FROM duckdb_extensions() WHERE extension_name = 'duckfn_palette' AND loaded;
+----
+1
+
+query R
+SELECT plt_component(plt_srgb(1, 0.5, 0), 1);
+----
+1.0
+
+query I
+SELECT count(*) FROM duckdb_functions() WHERE starts_with(function_name, 'plt_');
+----
+152
+
+query I
+SELECT count(DISTINCT function_name) FROM duckdb_functions() WHERE starts_with(function_name, 'plt_');
+----
+145
+
+query I
+SELECT count(*) FROM duckdb_functions()
+WHERE starts_with(function_name, 'plt_') AND function_type = 'scalar';
+----
+152
+
+query I
+SELECT count(*) FROM duckdb_functions()
+WHERE starts_with(function_name, 'plt_') AND function_type = 'aggregate';
+----
+0
+
+# 所有函数都是纯函数（随机色用参数里的种子，不是隐藏状态）
+query I
+SELECT count(*) FROM duckdb_functions()
+WHERE starts_with(function_name, 'plt_') AND has_side_effects;
+----
+0

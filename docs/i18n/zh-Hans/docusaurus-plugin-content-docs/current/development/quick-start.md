@@ -1,17 +1,16 @@
 ---
 title: 快速开始
 sidebar_position: 1
-description: 改扩展名、用 cargo 构建出 .duckdb_extension、加载进 DuckDB，然后调用示例函数。
+description: 用官方 make 工具链构建出 .duckdb_extension、加载进 DuckDB，然后调用 plt_ 函数。
 ---
 
 # 快速开始
 
-整页就是四步：
+整页就是三步：
 
 ```mermaid
 flowchart LR
-    rename["just rename"] --> build["just build"]
-    build --> load["用 -unsigned<br/>LOAD 产物"]
+    build["just build"] --> load["用 -unsigned<br/>LOAD 产物"]
     load --> call["在 SQL 里<br/>调用函数"]
 ```
 
@@ -30,28 +29,21 @@ flowchart LR
 - 一个 **DuckDB** 1.4 或更新的可执行文件（`duckdb` 在 `PATH` 里，或者用
   `just DUCKDB=/path/to/duckdb …` 指定）。
 
-## 1. 改扩展名
+## 1. 扩展名
 
-```shell
-just rename csv_stats
-```
-
-`scripts/rename.sh` 会把扩展名必须一致的五处一次改齐 —— `Cargo.toml`（`[package] name` 与
+本仓库就是 `duckfn_palette`，名字在必须保持一致的五处已经对齐 —— `Cargo.toml`（`[package] name` 与
 `[[example]] name`）、Makefile 的 `EXTENSION_NAME`、`src/extension/mod.rs` 里的入口点符号、Justfile、
-CI 工作流 —— 以及文档里出现的每一处，并按新包名重写 `Cargo.lock`。它最后会打印还需要人工过一遍的清单，
-示例函数是其中主要的一项。
+CI 工作流。请让它继续保持：只改其中一处，`LOAD` 就会在符号查找这一步失败。
 
-### 改完之后
+从 [duckfn-extension-template](https://github.com/shijianjs/duckfn-extension-template) 新建的项目，
+第一件事是 `just rename <新扩展名>`（`scripts/rename.sh`）—— 它一次改齐那五处以及文档里出现的每一处，
+并按新包名重写 `Cargo.lock` 条目。之后还需要人工过一遍的：
 
-扩展名处处一致之后，还剩这些要人工过一遍：
-
-1. **`AGENTS.md`** —— 填上 `{{PROJECT_GOAL}}` 占位符，并把命名约定里的 `my_` 前缀改成你自己的。
-2. **示例函数**（`my_greet` / `my_greet_checked` / `my_sum`）与 `test/sql/*.test` —— 换成你自己的 API，
-   见[写函数](./writing-functions.md)与[测试](./testing.md)。
-3. **`community-extension/description.yml`** —— `extension.name` / `description` / `maintainers` / `repo`
-   由你填，逐个字段的说明在[社区扩展](./community-extension.md)。
-4. **`LICENSE`** —— 版权人，以及 `Cargo.toml` 里的 duckfn 版本。
-5. **首次发版前**，确认仓库有 `main` 分支和 `origin` 远程：`just release_tag` 会同时推送这两者。
+1. **`AGENTS.md`** —— 填上 `{{PROJECT_GOAL}}` 占位符，以及函数名的前缀。
+2. **`LICENSE`** —— 版权人。
+3. **`community-extension/description.yml`** —— `extension.name` / `description` / `maintainers` / `repo`；
+   逐个字段的依据在[社区扩展](./community-extension.md)。
+4. **首次发版前**，确认仓库有 `main` 分支和 `origin` 远程：`just release_tag` 会同时推送这两者。
 
 ## 2. 构建
 
@@ -73,32 +65,30 @@ just repl           # 已经 LOAD 好扩展的 DuckDB REPL
 duckdb -unsigned -c "LOAD './build/debug/duckfn_palette.duckdb_extension';"
 ```
 
-下面是几个示例函数，就地就能跑 —— 站点从仓库的最新 Release 预加载了这个扩展，这里不用写 `LOAD`
+下面是几个函数，就地就能跑 —— 站点从仓库的最新 Release 预加载了这个扩展，这里不用写 `LOAD`
 （本地自己构建的产物仍然要加 `-unsigned`，见下面的几个坑）。点任意块上的 **执行** 即可。
 
 ```sql {"type":"duckfn","show":"table"}
-SELECT name AS input, my_greet_checked(name) AS greeting
-FROM (VALUES ('world'), ('')) t(name);
+SELECT plt_to_hex(plt_convert(plt_srgb(1, 0.5, 0), 'oklch')) AS as_oklch,
+       plt_to_hex(plt_mix(plt_named('red'), plt_named('blue'), 0.5)) AS mixed;
 ```
 
 ```sql {"type":"duckfn","show":"table"}
--- my_sum 跳过 NULL；一组里一个有效值都没有时结果是 NULL 而不是 0。
-SELECT grp, my_sum(x) AS total
-FROM (VALUES ('rows', 1.5::DOUBLE), ('rows', 2.5), ('all NULL', NULL::DOUBLE)) t(grp, x)
-GROUP BY grp
-ORDER BY grp;
+-- NULL 参数会在函数体执行之前被短路成 NULL。
+SELECT plt_to_hex(plt_convert(plt_srgb(1, 0, 0), 'lab')) AS converted,
+       plt_convert(NULL, 'lab') IS NULL AS null_in_null_out;
 ```
 
 失败路径同样是个可运行块 —— 它自己声明了「应该失败」：
 
 ```sql {"type":"duckfn","expect":"error"}
-SELECT my_greet_checked(' x ');    -- 报错：首尾不允许有空格
+SELECT plt_convert(plt_srgb(1, 0, 0), 'nope');    -- 报错：未知的颜色空间
 ```
 
 不进 REPL、只跑一条语句：
 
 ```shell
-just sql "SELECT my_greet('world')"
+just sql "SELECT plt_to_hex(plt_named('rebeccapurple'))"
 ```
 
 ## 4. 跑测试

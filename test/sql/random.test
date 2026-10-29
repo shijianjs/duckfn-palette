@@ -1,0 +1,125 @@
+# name: test/sql/random.test
+# description: 可复现的随机色（palette 的 random_sampling）
+# group: [palette]
+
+require duckfn_palette
+
+query III
+SELECT count(*), (SELECT s FROM (SELECT unnest(plt_random_spaces()) AS s) LIMIT 1),
+       (SELECT s FROM (SELECT unnest(plt_random_spaces()) AS s) LIMIT 1 OFFSET 33)
+FROM (SELECT unnest(plt_random_spaces()) AS s) t;
+----
+34	srgb	lms_von_kries
+
+# 每个请求的空间都能被采样，且返回的颜色标签就是它
+query I
+SELECT count(*) FROM (SELECT unnest(plt_random_spaces()) AS s) u
+WHERE plt_random_color(s, 1).space <> s;
+----
+0
+
+# 同种子恒等，不同种子不同
+query TTT
+SELECT (plt_random_color('srgb', 42) = plt_random_color('srgb', 42))::VARCHAR,
+       (plt_random_color('srgb', 42) <> plt_random_color('srgb', 43))::VARCHAR,
+       (plt_random_color('srgb', 0) IS NOT NULL)::VARCHAR;
+----
+true	true	true
+
+query T
+SELECT plt_random_color('srgb', 42)::VARCHAR;
+----
+{'space': srgb, 'c1': 0.5265574090027738, 'c2': 0.5427252099031439, 'c3': 0.6364650991438949, 'alpha': 1.0}
+
+query T
+SELECT plt_random_color('oklch', 42)::VARCHAR;
+----
+{'space': oklch, 'c1': 0.5427252099031439, 'c2': 0.7977876278458416, 'c3': 189.56066724099858, 'alpha': 1.0}
+
+query T
+SELECT plt_random_color('lab', 7)::VARCHAR;
+----
+{'space': lab, 'c1': 3.0317360865101395, 'c2': -49.6929977395686, 'c3': -91.62625004130298, 'alpha': 1.0}
+
+# 序列：第 i 个与单次采样的前 i 个一致
+query TTII
+SELECT (plt_to_hex(plt_random_colors('srgb', 5, 42)[1]) = plt_to_hex(plt_random_color('srgb', 42)))::VARCHAR,
+       (plt_to_hex(plt_random_colors('srgb', 5, 42)[2]) = plt_to_hex(plt_random_colors('srgb', 2, 42)[2]))::VARCHAR,
+       length(plt_random_colors('srgb', 5, 42)),
+       length(plt_random_colors('srgb', 0, 42));
+----
+true	true	5	0
+
+query T
+SELECT to_json(list_transform(plt_random_colors('srgb', 3, 42), lambda x: plt_to_hex(x)));
+----
+["#868aa2","#68096a","#bcd921"]
+
+# 序列是确定的：同参数两次调用相同
+query T
+SELECT (plt_random_colors('lch', 10, 7) = plt_random_colors('lch', 10, 7))::VARCHAR;
+----
+true
+
+# 采样范围：sRGB 在 0..1，Lab 的 a/b 在 -128..127，HSL 的色相在 0..360
+query I
+SELECT count(*) FROM generate_series(0, 199) g
+WHERE NOT (
+    (SELECT bool_and(c BETWEEN 0 AND 1) FROM (SELECT unnest(plt_components(plt_random_color('srgb', g))) AS c) t)
+    AND (SELECT bool_and(c BETWEEN -128 AND 127)
+         FROM (SELECT unnest([x.c2, x.c3]) AS c FROM (SELECT plt_random_color('lab', g) AS x) q) t)
+    AND (SELECT c BETWEEN 0 AND 360 FROM (SELECT plt_random_color('hsl', g).c1 AS c) q)
+);
+----
+0
+
+# 全部空间的 alpha 都是 1
+query I
+SELECT count(*) FROM generate_series(0, 33) g
+WHERE plt_random_color(plt_random_spaces()[g + 1], g).alpha <> 1.0;
+----
+0
+
+# ---- 类型 / NULL / 错误 ----
+
+query TT
+SELECT typeof(plt_random_color('srgb', 1)), typeof(plt_random_colors('srgb', 2, 1));
+----
+STRUCT(space VARCHAR, c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, alpha DOUBLE)	STRUCT(space VARCHAR, c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, alpha DOUBLE)[]
+
+query TTT
+SELECT (plt_random_color(NULL, 1) IS NULL)::VARCHAR, (plt_random_colors(NULL, 2, 1) IS NULL)::VARCHAR,
+       (plt_random_color('srgb', NULL) IS NULL)::VARCHAR;
+----
+true	true	true
+
+statement error
+SELECT plt_random_color('nope', 1);
+----
+plt_random_color: unknown color space 'nope'
+
+statement error
+SELECT plt_random_colors('nope', 2, 1);
+----
+plt_random_colors: unknown color space 'nope'
+
+# palette 没有为这些空间实现 Standard 分布
+statement error
+SELECT plt_random_color('hsluv', 1);
+----
+plt_random_color: color space 'hsluv' has no random distribution
+
+statement error
+SELECT plt_random_color('okhsl', 1);
+----
+plt_random_color: color space 'okhsl' has no random distribution
+
+statement error
+SELECT plt_random_color('cam16_jch', 1);
+----
+plt_random_color: color space 'cam16_jch' has no random distribution
+
+statement error
+SELECT plt_random_colors('srgb', -1, 1);
+----
+plt_random_colors: count must be non-negative, got -1

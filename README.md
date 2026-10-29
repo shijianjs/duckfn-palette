@@ -4,35 +4,25 @@
 
 [![DuckDB 1.4+](https://img.shields.io/badge/DuckDB-1.4%2B-fff100?logo=duckdb&style=flat)](https://duckdb.org/)
 [![Weekly Downloads](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcommunity-extensions.duckdb.org%2Fdownloads-last-week.json&query=%24.duckfn_palette&label=Weekly%20Downloads&color=blue&logo=duckdb&logoColor=a899ff&style=flat)](https://duckdb.org/community_extensions/extensions/duckfn_palette)
-[![Release](https://img.shields.io/github/v/release/shijianjs/duckfn-extension-template?style=flat&logo=github)](https://github.com/shijianjs/duckfn-extension-template/releases)
-[![License](https://img.shields.io/badge/license-MIT-14459b.svg?style=flat&logo=github)](https://github.com/shijianjs/duckfn-extension-template/blob/main/LICENSE)
+[![Release](https://img.shields.io/github/v/release/shijianjs/duckfn-palette?style=flat&logo=github)](https://github.com/shijianjs/duckfn-palette/releases)
+[![License](https://img.shields.io/badge/license-MIT-14459b.svg?style=flat&logo=github)](https://github.com/shijianjs/duckfn-palette/blob/main/LICENSE)
 
-A DuckDB [loadable extension](https://duckdb.org/docs/stable/extensions/extension_development) written
-with [duckfn](https://crates.io/crates/duckfn): attribute macros turn ordinary Rust functions into DuckDB
-scalar / aggregate / table functions, and the C++ build is not involved at all (the C API is used
-headers-only, through DuckDB's API table).
+`duckfn_palette` puts Rust's [palette](https://crates.io/crates/palette) color library into SQL: 145
+scalar functions under the `plt_` prefix covering 44 color spaces, conversion between them, blending
+and compositing, color difference and contrast, color schemes, CSS and named colors, white points and
+chromatic adaptation, matrix arithmetic, CAM16 and 8-bit packing. Two additions: csscolorparser for
+CSS color strings in both directions, and colorous for preset gradients and categorical palettes.
 
-This repository is a **template**: [duckfn-extension-template](https://github.com/shijianjs/duckfn-extension-template).
-It carries the full working loop — build, sqllogictest, docs export, release — around two sample
-functions, so a new extension starts from a green build instead of from an empty directory. A real
-extension written the same way: [duckfn_quantstats](https://github.com/shijianjs/duckfn-quantstats).
+A color is a single STRUCT in SQL:
 
-## Starting a new extension from this template
-
-```shell
-git clone https://github.com/shijianjs/duckfn-extension-template my_new_extension
-cd my_new_extension
-rm -rf .git && git init    # optional: drop the template's history and start your own
-just rename my_new_extension
+```sql
+plt_color(space VARCHAR, c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, alpha DOUBLE)
 ```
 
-`just rename` (that is, `scripts/rename.sh`) rewrites every place the extension name has to match — the
-crate name and `[[example]] name`, `EXTENSION_NAME` in the Makefile, the entry-point symbol, the Justfile,
-the CI workflow and the docs — and regenerates the `Cargo.lock` entry. It ends by printing the few things
-left for a human, all of them listed in the development guide's
-[quick start](docs/docs/development/quick-start.md) (next steps) and
-[AGENTS.md](AGENTS.md) (conventions, including the `{{PROJECT_GOAL}}` placeholder).
-Replacing the two sample functions with your own API is one of them.
+Every space has a constructor of the same name (`plt_srgb`, `plt_oklch`, `plt_cam16_jch`, …) taking
+arguments in palette's `Color::new` order; `plt_convert` moves between any two spaces and keeps the
+space tag and alpha along the way. Written with [duckfn](https://crates.io/crates/duckfn): attribute
+macros register plain Rust functions as DuckDB scalar functions, with no C++ build involved.
 
 ## Quick start
 
@@ -46,34 +36,45 @@ Locally built extensions are unsigned, so DuckDB has to be started with `-unsign
 ```shell
 duckdb -unsigned -c "
 LOAD './build/debug/duckfn_palette.duckdb_extension';
-SELECT my_greet('world');
--- Hello, world!
-SELECT my_sum(x) FROM (VALUES (1.5::DOUBLE), (2.5::DOUBLE), (3.0::DOUBLE)) t(x);
--- 7.0
+SELECT plt_to_hex(plt_convert(plt_srgb(1, 0.5, 0), 'oklch'));             -- #ff8000
+SELECT plt_to_hex(plt_mix(plt_named('red'), plt_named('blue'), 0.5));     -- #800080
+SELECT plt_contrast(plt_named('white'), plt_named('black'));              -- 21.0
 "
 ```
 
-The `Justfile` wraps the same commands: `just build`, `just sql "SELECT my_greet('world')"`,
+The `Justfile` wraps the same commands: `just build`, `just sql "SELECT plt_to_hex(plt_named('red'))"`,
 `just repl` (a REPL with the extension already loaded).
 
 ## Functions
 
-Two sample functions, one per registration path. They are meant to be replaced — see
-`src/extension/functions/`.
+145 distinct names, 152 signatures (overloads share a name). The full signatures and runnable examples
+are in the [function reference](docs/docs/user-guide/functions.md).
 
-| Function | Kind | Input → output |
-| --- | --- | --- |
-| `my_greet(name)` | scalar | `VARCHAR` → `VARCHAR`, never NULL |
-| `my_greet_checked(name)` | scalar | `VARCHAR` → `VARCHAR`, `NULL` for an empty name, an error for surrounding whitespace |
-| `my_sum(value)` | aggregate | `DOUBLE` → `DOUBLE`, NULLs skipped, `NULL` for an empty group |
+| Category | Representative functions |
+| --- | --- |
+| Color structure | `plt_color`, `plt_space`, `plt_components`, `plt_component`, `plt_alpha`, `plt_with_alpha`, `plt_opaque`, `plt_from_components`, `plt_color_spaces` |
+| Constructors (one per space) | `plt_srgb`, `plt_oklch`, `plt_lab`, `plt_xyz`, `plt_hsl`, `plt_luma`, … 44 spaces |
+| Conversion | `plt_convert`, `plt_convert_clamped`, `plt_clamp`, `plt_is_within_bounds`, `plt_luma`, `plt_luma_linear`, `plt_luma_gamma` |
+| Manipulation | `plt_mix`, `plt_lighten`, `plt_darken`, `plt_saturate`, `plt_desaturate` (each with `_fixed`), `plt_shift_hue`, `plt_with_hue`, `plt_hue`, `plt_premultiply`, `plt_unpremultiply` |
+| Blending & compositing | `plt_blend`, `plt_compose`, `plt_blend_equations`, `plt_blend_modes`, `plt_compose_modes`, `plt_blend_parameters` |
+| Difference & contrast | `plt_difference`, `plt_difference_metrics`, `plt_relative_luminance`, `plt_contrast`, `plt_contrast_check`, `plt_contrast_criteria` |
+| Color schemes | `plt_complementary`, `plt_split_complementary`, `plt_analogous`, `plt_analogous_secondary`, `plt_triadic`, `plt_tetradic`, `plt_harmony`, `plt_color_schemes` |
+| Named colors / CSS | `plt_named`, `plt_named_names`, `plt_css_parse`, `plt_css_is_valid`, `plt_css_name`, `plt_css_serialize`, `plt_css_formats`, `plt_from_hex`, `plt_to_hex` |
+| White points, adaptation, encoding | `plt_white_points`, `plt_white_point_xyz`, `plt_white_point_xy`, `plt_adaptation_methods`, `plt_adaptation_matrix`, `plt_lms_matrix`, `plt_lms_to_xyz_matrix`, `plt_diagonal_adaptation_matrix`, `plt_chromatic_adapt`, `plt_encoding_spaces`, `plt_transfer_function`, `plt_transfer_functions`, `plt_decode`, `plt_encode`, `plt_white_point_of`, `plt_rgb_primaries`, `plt_rgb_to_xyz_matrix`, `plt_xyz_to_rgb_matrix` |
+| Matrices | `plt_matrix_identity`, `plt_matrix_scale`, `plt_matrix_multiply`, `plt_matrix_inverse`, `plt_matrix_apply`, `plt_apply_matrix` |
+| 8-bit packing | `plt_pack`, `plt_unpack`, `plt_pack_orders` |
+| CAM16 | `plt_cam16_params`, `plt_cam16_params_xyz`, `plt_cam16_default_params`, `plt_cam16_surrounds`, `plt_cam16_spaces`, `plt_cam16_from_xyz`, `plt_cam16_to_xyz`, `plt_cam16_partial_from_xyz`, `plt_cam16_partial_to_xyz` |
+| colorous presets | `plt_colorous_palettes`, `plt_colorous_gradient`, `plt_colorous_palette`, `plt_colorous_categoricals`, `plt_colorous_categorical` |
+| Random colors | `plt_random_spaces`, `plt_random_color`, `plt_random_colors` |
 
-Behaviour worth knowing, because it is duckfn's rule rather than this template's:
+Three rules hold across every function:
 
-- a non-`Option` argument short-circuits NULL to SQL NULL — the function body never runs for that row;
-  write the parameter as `Option<T>` to see the NULL and decide its meaning yourself;
-- `-> DuckOptionResult<T>` is how a scalar function returns NULL (`Ok(None)`) or fails the query (`Err`);
-- an aggregate is "a function with a `&mut` state parameter": the state's `Output` decides the SQL
-  return type, and `result` decides whether the group yields a value or NULL.
+- **NULL in, NULL out.** A NULL argument yields NULL; so does anything palette cannot compute (an
+  undefined space combination, for example) — never `NaN` or 0.
+- **A rejected argument fails the query**, and the message starts with the function name
+  (`plt_convert: unknown color space 'nope'`).
+- **Name arguments are case-insensitive** and treat hyphens and spaces as underscores: `'OKLCH'` and
+  `'blue-green'` both work.
 
 ## Build from source
 
@@ -122,12 +123,10 @@ just docs_start      # dev server at http://localhost:3000
 just docs_build      # the check that matters: onBrokenLinks is set to throw
 ```
 
-The template's pages describe the sample functions; rewrite them (and their translations under
-`docs/i18n/zh-Hans/`) as your API grows, or delete `docs/` — nothing else depends on it. The pages
-carry runnable SQL blocks (powered by [`duckfn-docs-kit`](https://www.npmjs.com/package/duckfn-docs-kit))
-that call the extension right in the browser; `cd docs && npm test` re-runs them. The conventions —
-layout, commands, translation workflow, deployment, the `{{EXTENSION_VERSION}}` version placeholder —
-are in [`docs/README.md`](docs/README.md).
+The pages carry runnable SQL blocks (powered by
+[`duckfn-docs-kit`](https://www.npmjs.com/package/duckfn-docs-kit)) that call the extension right in the
+browser; `cd docs && npm test` re-runs them. The conventions — layout, commands, translation workflow,
+deployment, the `{{EXTENSION_VERSION}}` version placeholder — are in [`docs/README.md`](docs/README.md).
 
 ## Installing the released extension
 
@@ -138,7 +137,7 @@ no URLs; that is what `INSTALL '<url>'` is for), and DuckDB takes the entry-poin
 the release name fails with `did not contain function "duckfn_palette-windows_amd64_init_c_api"`:
 
 ```shell
-curl -LO https://github.com/<owner>/<repo>/releases/latest/download/duckfn_palette-windows_amd64.duckdb_extension
+curl -LO https://github.com/shijianjs/duckfn-palette/releases/latest/download/duckfn_palette-windows_amd64.duckdb_extension
 mv duckfn_palette-windows_amd64.duckdb_extension duckfn_palette.duckdb_extension
 duckdb -unsigned -c "LOAD './duckfn_palette.duckdb_extension';"
 ```

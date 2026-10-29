@@ -1,0 +1,149 @@
+# name: test/sql/difference.test
+# description: palette 的七种色差度量与 WCAG 2.1 相对亮度 / 对比度 / 判定
+#   （src/extension/functions/difference.rs）。
+#   期望值来源：palette 0.7.7 src/color_difference.rs 的 relative_contrast / hyab 测试与
+#   src/relative_contrast.rs 的断言；其余为实跑输出。
+#   plt_difference 不给空间时一律在 CIE L*a*b* 里算。
+# group: [duckfn_palette]
+
+require duckfn_palette
+
+query TT
+SELECT plt_difference_metrics(), plt_contrast_criteria();
+----
+[euclidean, euclidean_squared, delta_e, improved_delta_e, hyab, ciede2000, improved_ciede2000]	[min_text, min_large_text, enhanced_text, enhanced_large_text, min_graphics]
+
+# ---- WCAG 2.1 对比度：palette 的 relative_contrast 断言 ----
+
+query TTT
+SELECT plt_contrast(plt_srgb(1,1,1), plt_srgb(1,1,1)),
+       plt_contrast(plt_srgb(1,1,1), plt_srgb(0,0,0)),
+       plt_contrast(plt_srgb(0,0,0), plt_srgb(1,1,1));
+----
+1.0	21.0	21.0
+
+query TTTTTT
+SELECT plt_contrast(plt_from_hex('#600'), plt_srgb(1,1,1)),
+       plt_contrast(plt_from_hex('#600'), plt_srgb(0,0,0)),
+       plt_contrast(plt_from_hex('#066'), plt_srgb(1,1,1)),
+       plt_contrast(plt_from_hex('#066'), plt_srgb(0,0,0)),
+       plt_contrast(plt_from_hex('#9f9'), plt_srgb(1,1,1)),
+       plt_contrast(plt_from_hex('#9f9'), plt_srgb(0,0,0));
+----
+13.417245851537624	1.5651498252596592	6.791244234254136	3.0922168715533425	1.2267937635339694	17.117791616013964
+
+query TTTTT
+SELECT plt_contrast_check(plt_from_hex('#600'), plt_srgb(1,1,1), 'min_text'),
+       plt_contrast_check(plt_from_hex('#600'), plt_srgb(1,1,1), 'min_large_text'),
+       plt_contrast_check(plt_from_hex('#600'), plt_srgb(1,1,1), 'enhanced_text'),
+       plt_contrast_check(plt_from_hex('#600'), plt_srgb(1,1,1), 'enhanced_large_text'),
+       plt_contrast_check(plt_from_hex('#600'), plt_srgb(1,1,1), 'min_graphics');
+----
+true	true	true	true	true
+
+query TTTTT
+SELECT plt_contrast_check(plt_from_hex('#600'), plt_srgb(0,0,0), 'min_text'),
+       plt_contrast_check(plt_from_hex('#600'), plt_srgb(0,0,0), 'min_large_text'),
+       plt_contrast_check(plt_from_hex('#600'), plt_srgb(0,0,0), 'enhanced_text'),
+       plt_contrast_check(plt_from_hex('#600'), plt_srgb(0,0,0), 'enhanced_large_text'),
+       plt_contrast_check(plt_from_hex('#600'), plt_srgb(0,0,0), 'min_graphics');
+----
+false	false	false	false	false
+
+query TTT
+SELECT plt_relative_luminance(plt_srgb(1,1,1)),
+       plt_relative_luminance(plt_srgb(0,0,0)),
+       plt_relative_luminance(plt_srgb(0.5,0.5,0.5));
+----
+1.0	0.0	0.2140411618863465
+
+# ---- 色差：palette 的 HyAb 断言（red #ff0000 vs green #008000 = 139.93576718451553） ----
+
+query T
+SELECT plt_difference(plt_from_hex('#ff0000'), plt_from_hex('#008000'), 'hyab');
+----
+139.93576718451553
+
+query T
+SELECT plt_difference(plt_srgb(1,0,0), plt_srgb(0,0.5019607843137255,0), 'hyab', 'oklab');
+----
+0.47386915934534873
+
+# CIEDE2000 / improved CIEDE2000（Sharma 2005 的第一对）
+query TT
+SELECT plt_difference(plt_lab(50,2.6772,-79.7751), plt_lab(50,0,-82.7485), 'ciede2000'),
+       plt_difference(plt_lab(50,2.6772,-79.7751), plt_lab(50,0,-82.7485), 'improved_ciede2000');
+----
+2.0424596801565738	2.3574553817411075
+
+# ΔE / improved ΔE / 欧氏距离 / 欧氏距离平方
+query TTTT
+SELECT plt_difference(plt_lab(50,20,-30), plt_lab(60,10,10), 'delta_e'),
+       plt_difference(plt_lab(50,20,-30), plt_lab(60,10,10), 'improved_delta_e'),
+       plt_difference(plt_lab(50,20,-30), plt_lab(60,10,10), 'euclidean'),
+       plt_difference(plt_lab(50,20,-30), plt_lab(60,10,10), 'euclidean_squared');
+----
+42.42640687119285	9.898524993962894	42.42640687119285	1800.0
+
+# palette 的 lch 测试：-730 vs +730 与 -10 vs +10 的 ΔE 相同（色相绕圈被归一）
+query TT
+SELECT plt_difference(plt_lch(50,64,-730), plt_lch(50,64,730), 'delta_e'),
+       plt_difference(plt_lch(50,64,-10), plt_lch(50,64,10), 'delta_e');
+----
+22.226966741366994	22.226966741367082
+
+# palette 的 lch 测试：Lab 与 Lch 的 ΔE 相同
+query TT
+SELECT plt_difference(plt_lch(50,64,-10), plt_lch(50,64,10), 'delta_e'),
+       plt_difference(plt_convert(plt_lch(50,64,-10), 'lab'), plt_convert(plt_lch(50,64,10), 'lab'), 'delta_e');
+----
+22.226966741367082	22.226966741367082
+
+# 显式空间与默认空间（lab）：欧氏距离在 oklab / srgb 里不同
+query TT
+SELECT plt_difference(plt_srgb(1,0,0), plt_srgb(0,1,0), 'euclidean', 'oklab'),
+       plt_difference(plt_srgb(1,0,0), plt_srgb(0,1,0), 'euclidean', 'srgb');
+----
+0.5198025570839947	1.4142135623730951
+
+# 第二个颜色先转到目标空间
+query T
+SELECT plt_difference(plt_srgb(1,0,0), plt_hsl(120,1,0.25), 'euclidean', 'oklab');
+----
+0.38136840234839703
+
+# NULL 短路
+query IIII
+SELECT plt_difference(NULL, plt_srgb(0,1,0), 'hyab') IS NULL,
+       plt_contrast(NULL, plt_srgb(0,1,0)) IS NULL,
+       plt_contrast_check(plt_srgb(1,1,1), NULL, 'min_text') IS NULL,
+       plt_relative_luminance(NULL) IS NULL;
+----
+true	true	true	true
+
+query TT
+SELECT typeof(plt_difference(plt_srgb(1,0,0), plt_srgb(0,1,0), 'hyab')),
+       typeof(plt_contrast_check(plt_srgb(1,1,1), plt_srgb(0,0,0), 'min_text'));
+----
+DOUBLE	BOOLEAN
+
+# 错误路径
+statement error
+SELECT plt_difference(plt_srgb(1,0,0), plt_srgb(0,1,0), 'nope');
+----
+unknown color difference metric 'nope'
+
+statement error
+SELECT plt_difference(plt_srgb(1,0,0), plt_srgb(0,1,0), 'ciede2000', 'oklab');
+----
+ciede2000 is not defined in color space 'oklab'
+
+statement error
+SELECT plt_difference(plt_srgb(1,0,0), plt_srgb(0,1,0), 'hyab', 'hsl');
+----
+hyab is not defined in color space 'hsl'
+
+statement error
+SELECT plt_contrast_check(plt_srgb(1,1,1), plt_srgb(0,0,0), 'nope');
+----
+unknown contrast criterion 'nope'

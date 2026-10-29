@@ -1,0 +1,275 @@
+# name: test/sql/cam16.test
+# description: CAM16 自定义观察条件、全属性与八个部分空间
+# group: [palette]
+
+require duckfn_palette
+
+query T
+SELECT plt_cam16_spaces()::VARCHAR;
+----
+[cam16_jch, cam16_jmh, cam16_jsh, cam16_qch, cam16_qmh, cam16_qsh, cam16_ucs_jab, cam16_ucs_jmh]
+
+query T
+SELECT plt_cam16_surrounds()::VARCHAR;
+----
+[dark, dim, average]
+
+# palette 的默认条件：D65、La=40、Yb=0.2、average(20%)、auto
+query T
+SELECT plt_cam16_default_params()::VARCHAR;
+----
+{'white_x': 0.95047, 'white_y': 1.0, 'white_z': 1.08883, 'adapting_luminance': 40.0, 'background_luminance': 0.2, 'surround': 20.0, 'discounting': 1.0, 'discounting_auto': true}
+
+query T
+SELECT (plt_cam16_params('d65', 40, 0.2, 'average') = plt_cam16_default_params())::VARCHAR;
+----
+true
+
+# 命名周边：dark = 0、dim = 10、average = 20；也接受百分比字符串
+query TTT
+SELECT plt_cam16_params('d65', 40, 0.2, 'dark')::VARCHAR,
+       plt_cam16_params('d65', 40, 0.2, 'dim')::VARCHAR,
+       plt_cam16_params('d65', 40, 0.2, '12.5')::VARCHAR;
+----
+{'white_x': 0.95047, 'white_y': 1.0, 'white_z': 1.08883, 'adapting_luminance': 40.0, 'background_luminance': 0.2, 'surround': 0.0, 'discounting': 1.0, 'discounting_auto': true}	{'white_x': 0.95047, 'white_y': 1.0, 'white_z': 1.08883, 'adapting_luminance': 40.0, 'background_luminance': 0.2, 'surround': 10.0, 'discounting': 1.0, 'discounting_auto': true}	{'white_x': 0.95047, 'white_y': 1.0, 'white_z': 1.08883, 'adapting_luminance': 40.0, 'background_luminance': 0.2, 'surround': 12.5, 'discounting': 1.0, 'discounting_auto': true}
+
+# 自定义折扣
+query T
+SELECT plt_cam16_params('d50', 10, 0.5, 'dark', 0.9)::VARCHAR;
+----
+{'white_x': 0.96422, 'white_y': 1.0, 'white_z': 0.82521, 'adapting_luminance': 10.0, 'background_luminance': 0.5, 'surround': 0.0, 'discounting': 0.9, 'discounting_auto': false}
+
+# 白点写成 XYZ 数值与写名字等价
+query T
+SELECT plt_cam16_params_xyz(0.95047, 1, 1.08883, 40, 0.2, 'average')::VARCHAR;
+----
+{'white_x': 0.95047, 'white_y': 1.0, 'white_z': 1.08883, 'adapting_luminance': 40.0, 'background_luminance': 0.2, 'surround': 20.0, 'discounting': 1.0, 'discounting_auto': true}
+
+query T
+SELECT plt_cam16_params_xyz(0.96422, 1, 0.82521, 40, 0.2, 'average', 0.8)::VARCHAR;
+----
+{'white_x': 0.96422, 'white_y': 1.0, 'white_z': 0.82521, 'adapting_luminance': 40.0, 'background_luminance': 0.2, 'surround': 20.0, 'discounting': 0.8, 'discounting_auto': false}
+
+# ---- 全属性（palette 上游对 observabnle 参考值的断言） ----
+
+# #5588cc：epsilon 0.01
+query I
+SELECT count(*) FROM (
+    SELECT unnest([p.lightness, p.chroma, p.hue, p.brightness, p.colorfulness, p.saturation]) AS got,
+           unnest([45.544264720360346, 45.07001048293764, 259.225345298129,
+                   132.96974182692045, 39.4130607870103, 54.4432031413259]) AS want
+    FROM (SELECT plt_cam16_from_xyz(plt_convert(plt_from_hex('5588cc'), 'xyz'),
+                                    plt_cam16_default_params()) AS p) t
+) WHERE abs(got - want) > 0.01;
+----
+0
+
+# 黑：epsilon 0.01
+query I
+SELECT count(*) FROM (
+    SELECT unnest([p.lightness, p.chroma, p.hue, p.brightness, p.colorfulness, p.saturation]) AS got,
+           unnest([0.0, 0.0, 0.0, 0.0, 0.0, 0.0]) AS want
+    FROM (SELECT plt_cam16_from_xyz(plt_convert(plt_from_hex('000000'), 'xyz'),
+                                    plt_cam16_default_params()) AS p) t
+) WHERE abs(got - want) > 0.01;
+----
+0
+
+# 白：epsilon 0.1
+query I
+SELECT count(*) FROM (
+    SELECT unnest([p.lightness, p.chroma, p.hue, p.brightness, p.colorfulness, p.saturation]) AS got,
+           unnest([99.99955537650459, 2.1815254387079435, 209.49854407518228,
+                   197.03120459014184, 1.9077118865271965, 9.839859256901553]) AS want
+    FROM (SELECT plt_cam16_from_xyz(plt_convert(plt_from_hex('ffffff'), 'xyz'),
+                                    plt_cam16_default_params()) AS p) t
+) WHERE abs(got - want) > 0.1;
+----
+0
+
+# 红：epsilon 0.01
+query I
+SELECT count(*) FROM (
+    SELECT unnest([p.lightness, p.chroma, p.hue, p.brightness, p.colorfulness, p.saturation]) AS got,
+           unnest([46.23623443823762, 113.27879472174797, 27.412485587695937,
+                   133.9760614641257, 99.06063864657237, 85.98782392745971]) AS want
+    FROM (SELECT plt_cam16_from_xyz(plt_convert(plt_from_hex('ff0000'), 'xyz'),
+                                    plt_cam16_default_params()) AS p) t
+) WHERE abs(got - want) > 0.01;
+----
+0
+
+# 绿：epsilon 0.01
+query I
+SELECT count(*) FROM (
+    SELECT unnest([p.lightness, p.chroma, p.hue, p.brightness, p.colorfulness, p.saturation]) AS got,
+           unnest([79.23121430933533, 107.77869525794452, 141.93451307926003,
+                   175.38164288466993, 94.25088262080988, 73.30787758114869]) AS want
+    FROM (SELECT plt_cam16_from_xyz(plt_convert(plt_from_hex('00ff00'), 'xyz'),
+                                    plt_cam16_default_params()) AS p) t
+) WHERE abs(got - want) > 0.01;
+----
+0
+
+# 蓝：epsilon 0.01
+query I
+SELECT count(*) FROM (
+    SELECT unnest([p.lightness, p.chroma, p.hue, p.brightness, p.colorfulness, p.saturation]) AS got,
+           unnest([25.22701796474445, 86.59618504567312, 282.81848901862566,
+                   98.96210767195342, 75.72708922311855, 87.47645277637828]) AS want
+    FROM (SELECT plt_cam16_from_xyz(plt_convert(plt_from_hex('0000ff'), 'xyz'),
+                                    plt_cam16_default_params()) AS p) t
+) WHERE abs(got - want) > 0.01;
+----
+0
+
+query T
+SELECT plt_cam16_from_xyz(plt_convert(plt_from_hex('5588cc'), 'xyz'),
+                          plt_cam16_default_params())::VARCHAR;
+----
+{'lightness': 45.54355957833133, 'chroma': 45.06730526739174, 'hue': 259.22753703022903, 'brightness': 132.9687124666152, 'colorfulness': 39.41069511583317, 'saturation': 54.441779933538335, 'alpha': 1.0}
+
+# ---- 全属性往返 ----
+
+query I
+SELECT count(*) FROM (
+    SELECT h, plt_to_hex(plt_convert(plt_cam16_to_xyz(
+               plt_cam16_from_xyz(plt_convert(plt_from_hex(h), 'xyz'), plt_cam16_default_params()),
+               plt_cam16_default_params()), 'srgb')) AS got
+    FROM (SELECT unnest(['000000', 'ffffff', 'ff0000', '00ff00', '0000ff', '5588cc', '808080']) AS h) u
+) WHERE got <> '#' || h;
+----
+0
+
+# 全属性回算与 Jch 部分类型一致（palette 的 converts_with_jch 断言）
+query T
+SELECT plt_to_hex(plt_convert(plt_cam16_to_xyz(
+           plt_cam16_from_xyz(plt_convert(plt_from_hex('5588cc'), 'xyz'), plt_cam16_default_params()),
+           plt_cam16_default_params()), 'srgb'));
+----
+#5588cc
+
+# ---- 八个部分空间 ----
+
+query T
+SELECT sp || ':' || plt_cam16_partial_from_xyz(
+              plt_convert(plt_from_hex('5588cc'), 'xyz'), sp, plt_cam16_default_params()).c1::VARCHAR
+       || ',' || plt_cam16_partial_from_xyz(
+              plt_convert(plt_from_hex('5588cc'), 'xyz'), sp, plt_cam16_default_params()).c2::VARCHAR
+       || ',' || plt_cam16_partial_from_xyz(
+              plt_convert(plt_from_hex('5588cc'), 'xyz'), sp, plt_cam16_default_params()).c3::VARCHAR
+FROM (SELECT unnest(plt_cam16_spaces()) AS sp) s;
+----
+cam16_jch:45.54355957833133,45.06730526739174,259.22753703022903
+cam16_jmh:45.54355957833133,39.41069511583317,259.22753703022903
+cam16_jsh:45.54355957833133,54.441779933538335,259.22753703022903
+cam16_qch:132.9687124666152,45.06730526739174,259.22753703022903
+cam16_qmh:132.9687124666152,39.41069511583317,259.22753703022903
+cam16_qsh:132.9687124666152,54.441779933538335,259.22753703022903
+cam16_ucs_jab:58.70773628631121,-5.2555728187173445,-27.622797846121436
+cam16_ucs_jmh:58.70773628631121,28.118321544866998,259.22753703022903
+
+# 部分空间往返（8 空间 × 7 色）
+query I
+SELECT count(*) FROM (
+    SELECT sp, h, plt_to_hex(plt_convert(plt_cam16_partial_to_xyz(
+               plt_cam16_partial_from_xyz(plt_convert(plt_from_hex(h), 'xyz'), sp,
+                                          plt_cam16_default_params()),
+               plt_cam16_default_params()), 'srgb')) AS got
+    FROM (SELECT unnest(['000000', 'ffffff', 'ff0000', '00ff00', '0000ff', '5588cc', '808080']) AS h) u
+    CROSS JOIN (SELECT unnest(plt_cam16_spaces()) AS sp) s
+) WHERE got <> '#' || h;
+----
+0
+
+# 与 plt_convert 的默认条件一致
+query IIII
+SELECT plt_convert(plt_from_hex('5588cc'), 'cam16_jch')
+     = plt_cam16_partial_from_xyz(plt_convert(plt_from_hex('5588cc'), 'xyz'), 'cam16_jch',
+                                  plt_cam16_default_params()),
+       plt_convert(plt_from_hex('5588cc'), 'cam16_ucs_jab')
+     = plt_cam16_partial_from_xyz(plt_convert(plt_from_hex('5588cc'), 'xyz'), 'cam16_ucs_jab',
+                                  plt_cam16_default_params()),
+       plt_to_hex(plt_convert(plt_convert(plt_from_hex('5588cc'), 'cam16_qsh'), 'srgb')) = '#5588cc',
+       plt_to_hex(plt_convert(plt_cam16_partial_to_xyz(plt_cam16_jch(50, 40, 120),
+                          plt_cam16_default_params()), 'srgb')) = '#8b9a46';
+----
+true	true	true	true
+
+# ---- 自定义观察条件确实改变结果 ----
+
+query T
+SELECT plt_cam16_from_xyz(plt_xyz(0.2, 0.2, 0.2), plt_cam16_params('d65', 40, 0.2, 'average', 0.8))::VARCHAR;
+----
+{'lightness': 41.694331444686, 'chroma': 5.596967700872483, 'hue': 27.78281974649811, 'brightness': 127.1883077308742, 'colorfulness': 4.894465873286886, 'saturation': 19.616840361317486, 'alpha': 1.0}
+
+query T
+SELECT plt_cam16_partial_from_xyz(plt_xyz(0.2, 0.2, 0.2), 'cam16_jch',
+                                  plt_cam16_params('d50', 30, 0.4, 'dim'))::VARCHAR;
+----
+{'space': cam16_jch, 'c1': 43.941360244546644, 'c2': 8.386922376142468, 'c3': 299.5328365858261, 'alpha': 1.0}
+
+query II
+SELECT plt_cam16_from_xyz(plt_xyz(0.2, 0.2, 0.2), plt_cam16_params('d65', 40, 0.2, 'average'))
+    <> plt_cam16_from_xyz(plt_xyz(0.2, 0.2, 0.2), plt_cam16_params('d65', 40, 0.2, 'average', 0.8)),
+       plt_cam16_from_xyz(plt_xyz(0.2, 0.2, 0.2), plt_cam16_params('d65', 40, 0.2, '12.5'))
+    <> plt_cam16_from_xyz(plt_xyz(0.2, 0.2, 0.2), plt_cam16_default_params());
+----
+true	true
+
+# alpha 保留
+query II
+SELECT plt_cam16_from_xyz(plt_with_alpha(plt_xyz(0.2, 0.2, 0.2), 0.25), plt_cam16_default_params()).alpha::DOUBLE,
+       plt_cam16_to_xyz(plt_cam16_from_xyz(plt_with_alpha(plt_xyz(0.2, 0.2, 0.2), 0.25),
+                        plt_cam16_default_params()), plt_cam16_default_params()).alpha::DOUBLE;
+----
+0.25	0.25
+
+# ---- 类型 / NULL / 错误 ----
+
+query TTT
+SELECT typeof(plt_cam16_default_params()),
+       typeof(plt_cam16_from_xyz(plt_xyz(0.2, 0.2, 0.2), plt_cam16_default_params())),
+       typeof(plt_cam16_partial_from_xyz(plt_xyz(0.2, 0.2, 0.2), 'cam16_jch',
+                                         plt_cam16_default_params()));
+----
+STRUCT(white_x DOUBLE, white_y DOUBLE, white_z DOUBLE, adapting_luminance DOUBLE, background_luminance DOUBLE, surround DOUBLE, discounting DOUBLE, discounting_auto BOOLEAN)	STRUCT(lightness DOUBLE, chroma DOUBLE, hue DOUBLE, brightness DOUBLE, colorfulness DOUBLE, saturation DOUBLE, alpha DOUBLE)	STRUCT(space VARCHAR, c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, alpha DOUBLE)
+
+query IIII
+SELECT plt_cam16_params(NULL, 40, 0.2, 'average') IS NULL,
+       plt_cam16_params_xyz(NULL, 1, 1.1, 40, 0.2, 'average') IS NULL,
+       plt_cam16_from_xyz(NULL, plt_cam16_default_params()) IS NULL,
+       plt_cam16_from_xyz(plt_xyz(0.2, 0.2, 0.2), NULL) IS NULL;
+----
+true	true	true	true
+
+query II
+SELECT plt_cam16_to_xyz(NULL, plt_cam16_default_params()) IS NULL,
+       plt_cam16_partial_to_xyz(NULL, plt_cam16_default_params()) IS NULL;
+----
+true	true
+
+statement error
+SELECT plt_cam16_from_xyz(plt_srgb(1, 0, 0), plt_cam16_default_params());
+----
+plt_cam16_from_xyz: expected a color in the 'xyz' space
+
+statement error
+SELECT plt_cam16_partial_to_xyz(plt_srgb(1, 0, 0), plt_cam16_default_params());
+----
+plt_cam16_partial_to_xyz: expected a CAM16 space
+
+statement error
+SELECT plt_cam16_partial_from_xyz(plt_xyz(0.2, 0.2, 0.2), 'cam16_nope', plt_cam16_default_params());
+----
+plt_cam16_partial_from_xyz: unknown color space 'cam16_nope'
+
+statement error
+SELECT plt_cam16_params('d65', 40, 0.2, 'nope');
+----
+plt_cam16_params: unknown surround 'nope'
+
+statement error
+SELECT plt_cam16_params('nope', 40, 0.2, 'average');
+----
+plt_cam16_params: unknown white point 'nope'

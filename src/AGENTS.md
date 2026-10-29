@@ -122,7 +122,8 @@ fn my_write_file(content: String, ext: String) -> DuckOptionResult<String> { …
 
 ## 命名
 
-- 前缀统一（模板 `my_`，statrs 项目 `sr_`），后面直接沿用上游名字：`Statistics::mean` → `sr_mean`。
+- 前缀统一（模板 `my_`，statrs 项目 `sr_`，**本仓 `plt_`**），后面直接沿用上游名字：
+  `Statistics::mean` → `sr_mean`、`Oklch::new` → `plt_oklch`。
 - 上游名字在 SQL 里读不通时改名，并把映射写进 `description` 与文档（`inverse_cdf` → `quantile`）。
 - 属性宏默认拿 **Rust 函数名**当注册名；同名多签名用 `overloads_name` 合并。
 - 宏为每个签名生成 `SQL_NAME` 常量：错误前缀、日志里读它，不要再抄字面量（代价是函数要写成

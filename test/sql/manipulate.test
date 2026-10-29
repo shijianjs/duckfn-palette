@@ -1,0 +1,152 @@
+# name: test/sql/manipulate.test
+# description: palette 的 Mix / Lighten / Darken / Saturate / Desaturate / ShiftHue / WithHue /
+#   GetHue / Premultiply（src/extension/functions/manipulate.rs）。
+#   期望值来源：palette 0.7.7 的 trait 文档示例（lib.rs 里每组 assert_relative_eq!），
+#   其余为实跑输出。所有操作都在颜色自己的空间里执行，不做隐式换空间。
+# group: [duckfn_palette]
+
+require duckfn_palette
+
+# Mix 文档示例：LinSrgb(0, 0.5, 1) 与 LinSrgb(1, 0.5, 0)，factor 0 / 0.5 / 1
+query TTT
+SELECT plt_components(plt_mix(plt_srgb_linear(0,0.5,1), plt_srgb_linear(1,0.5,0), 0.0)),
+       plt_components(plt_mix(plt_srgb_linear(0,0.5,1), plt_srgb_linear(1,0.5,0), 0.5)),
+       plt_components(plt_mix(plt_srgb_linear(0,0.5,1), plt_srgb_linear(1,0.5,0), 1.0));
+----
+[0.0, 0.5, 1.0]	[0.5, 0.5, 0.5]	[1.0, 0.5, 0.0]
+
+# 第二个操作数先转到第一个操作数的空间，alpha 一并插值
+query TT
+SELECT plt_components(plt_mix(plt_srgb(1,0,0), plt_lab(50,20,-30), 0.5)),
+       plt_space(plt_mix(plt_srgb(1,0,0), plt_lab(50,20,-30), 0.5));
+----
+[0.7481799393325095, 0.21462979385880276, 0.33340726059702747]	srgb
+
+query R
+SELECT plt_alpha(plt_mix(plt_with_alpha(plt_srgb(1,0,0), 0.0), plt_with_alpha(plt_srgb(0,1,0), 1.0), 0.25));
+----
+0.25
+
+# Lighten 文档示例：Hsl(0, 1, 0.5).lighten(0.5) -> 0.75；Hsl(0, 1, 0.4) + 0.2 -> 0.6
+query TT
+SELECT plt_components(plt_lighten(plt_hsl(0,1,0.5), 0.5)),
+       plt_components(plt_lighten_fixed(plt_hsl(0,1,0.4), 0.2));
+----
+[0.0, 1.0, 0.75]	[0.0, 1.0, 0.6000000000000001]
+
+# Darken 文档示例：Hsv(0, 1, 0.5).darken(0.5) -> 0.25；Hsv(0, 1, 0.4) - 0.2 -> 0.2
+query TT
+SELECT plt_components(plt_darken(plt_hsv(0,1,0.5), 0.5)),
+       plt_components(plt_darken_fixed(plt_hsv(0,1,0.4), 0.2));
+----
+[0.0, 1.0, 0.25]	[0.0, 1.0, 0.2]
+
+# Saturate 文档示例：Hsl(0, 0.5, 0.5) -> 0.75，Hsl(0, 0.4, 0.5) + 0.2 -> 0.6；
+# Hsv(0, 0.5, 1) -> 0.75，+0.5 -> 1.0
+query TTTT
+SELECT plt_components(plt_saturate(plt_hsl(0,0.5,0.5), 0.5)),
+       plt_components(plt_saturate_fixed(plt_hsl(0,0.4,0.5), 0.2)),
+       plt_components(plt_saturate(plt_hsv(0,0.5,1), 0.5)),
+       plt_components(plt_saturate_fixed(plt_hsv(0,0.5,1), 0.5));
+----
+[0.0, 0.75, 0.5]	[0.0, 0.6000000000000001, 0.5]	[0.0, 0.75, 1.0]	[0.0, 1.0, 1.0]
+
+# Desaturate 文档示例：Hsv(0, 0.5, 1) -> 0.25，-0.5 -> 0；
+# Hsv(0, 0.5, 0.5) -> 0.25；Hsv(0, 0.4, 0.5) - 0.2 -> 0.2
+query TTTT
+SELECT plt_components(plt_desaturate(plt_hsv(0,0.5,1), 0.5)),
+       plt_components(plt_desaturate_fixed(plt_hsv(0,0.5,1), 0.5)),
+       plt_components(plt_desaturate(plt_hsv(0,0.5,0.5), 0.5)),
+       plt_components(plt_desaturate_fixed(plt_hsv(0,0.4,0.5), 0.2));
+----
+[0.0, 0.25, 1.0]	[0.0, 0.0, 1.0]	[0.0, 0.25, 0.5]	[0.0, 0.2, 0.5]
+
+# ShiftHue / WithHue：正负与超过一圈都按 360 取模
+query TTTTT
+SELECT plt_components(plt_shift_hue(plt_hsl(120,1,0.5), 120)),
+       plt_components(plt_shift_hue(plt_hsl(120,1,0.5), -240)),
+       plt_components(plt_shift_hue(plt_hsl(120,1,0.5), 400)),
+       plt_components(plt_with_hue(plt_hsl(120,1,0.5), 240)),
+       plt_components(plt_with_hue(plt_hsl(120,1,0.5), -120));
+----
+[240.0, 1.0, 0.5]	[240.0, 1.0, 0.5]	[160.0, 1.0, 0.5]	[240.0, 1.0, 0.5]	[240.0, 1.0, 0.5]
+
+# GetHue 文档示例：LinSrgb 的红/绿/蓝为 0/120/240，灰阶为 0
+query RRRR
+SELECT plt_hue(plt_srgb_linear(1,0,0)), plt_hue(plt_srgb_linear(0,1,0)),
+       plt_hue(plt_srgb_linear(0,0,1)), plt_hue(plt_srgb_linear(0.5,0.5,0.5));
+----
+0.0	119.99999996517673	240.0000000348233	0.0
+
+# 有色相的空间都能读出色相（hue 在后的 Lch/Oklch 同样正确）
+query RR
+SELECT plt_hue(plt_lch(50,40,120)), plt_hue(plt_oklch(0.7,0.1,250));
+----
+120.0	250.0
+
+# Premultiply：分量乘 alpha，alpha 不变；unpremultiply 撤销
+query TTT
+SELECT plt_components(plt_premultiply(plt_with_alpha(plt_srgb(1,0.5,0.25), 0.5))),
+       plt_alpha(plt_premultiply(plt_with_alpha(plt_srgb(1,0.5,0.25), 0.5))),
+       plt_components(plt_unpremultiply(plt_premultiply(plt_with_alpha(plt_srgb(1,0.5,0.25), 0.5))));
+----
+[0.5, 0.25, 0.125]	0.5	[1.0, 0.5, 0.25]
+
+# alpha 为 0：premultiply 归零，unpremultiply 也归零（不产生 NaN）
+query TT
+SELECT plt_components(plt_premultiply(plt_with_alpha(plt_srgb(1,0.5,0.25), 0.0))),
+       plt_components(plt_unpremultiply(plt_with_alpha(plt_srgb(1,0.5,0.25), 0.0)));
+----
+[0.0, 0.0, 0.0]	[0.0, 0.0, 0.0]
+
+# 参数来自列：factor 0 / 0.25 / 0.5 / 1 对应 lightness 0.5 / 0.625 / 0.75 / 1
+query TT
+SELECT f::DOUBLE, plt_component(plt_lighten(plt_hsl(0,1,0.5), f), 3)
+FROM (VALUES (0.0),(0.25),(0.5),(1.0)) t(f) ORDER BY f;
+----
+0.0	0.5
+0.25	0.625
+0.5	0.75
+1.0	1.0
+
+# NULL 短路
+query IIIIII
+SELECT plt_mix(NULL, plt_srgb(1,0,0), 0.5) IS NULL,
+       plt_lighten(NULL, 0.5) IS NULL,
+       plt_shift_hue(NULL, 120) IS NULL,
+       plt_hue(NULL) IS NULL,
+       plt_premultiply(NULL) IS NULL,
+       plt_lighten(plt_hsl(0,1,0.5), NULL) IS NULL;
+----
+true	true	true	true	true	true
+
+query TT
+SELECT typeof(plt_lighten(plt_hsl(0,1,0.5), 0.5)), typeof(plt_hue(plt_srgb(1,0,0)));
+----
+STRUCT(space VARCHAR, c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, alpha DOUBLE)	DOUBLE
+
+# 错误路径：空间不支持该操作时给出换空间建议
+statement error
+SELECT plt_lighten(plt_cam16_jch(50,40,120), 0.5);
+----
+does not support this operation
+
+statement error
+SELECT plt_shift_hue(plt_xyz(0.5,0.4,0.3), 120);
+----
+does not support this operation
+
+statement error
+SELECT plt_hue(plt_xyz(0.5,0.4,0.3));
+----
+does not support this operation
+
+statement error
+SELECT plt_premultiply(plt_with_alpha(plt_srgb(1,0,0), 2));
+----
+alpha must be within [0, 1]
+
+statement error
+SELECT plt_unpremultiply(plt_with_alpha(plt_srgb(1,0,0), -0.5));
+----
+alpha must be within [0, 1]

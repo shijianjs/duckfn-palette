@@ -1,0 +1,254 @@
+# name: test/sql/blend.test
+# description: palette 的 Blend（11 种）、Compose（6 种）与 Equations（自定义因子）
+#   （src/extension/functions/blend.rs）。
+#   期望值来源：palette 0.7.7 src/blend/test.rs 的 assert_relative_eq!（over/inside/outside/
+#   atop/xor/plus 与 11 个混合模式，均用 LinSrgb/LinSrgba）；其余为实跑输出。
+#   参数顺序与 palette 一致：第一个是源，第二个是背景。
+# group: [duckfn_palette]
+
+require duckfn_palette
+
+# 模式与因子清单
+query T
+SELECT plt_blend_modes();
+----
+[multiply, screen, overlay, darken, lighten, dodge, burn, hard_light, soft_light, difference, exclusion]
+
+query T
+SELECT plt_compose_modes();
+----
+[over, inside, outside, atop, xor, plus]
+
+query T
+SELECT plt_blend_parameters();
+----
+[zero, one, source_color, one_minus_source_color, destination_color, one_minus_destination_color, source_alpha, one_minus_source_alpha, destination_alpha, one_minus_destination_alpha]
+
+# ---- Compose：palette 的 over / inside / outside / atop / xor / plus 断言 ----
+
+query TTTT
+SELECT
+  plt_components(plt_compose(plt_srgb_linear(0.5,0.0,0.3), plt_srgb_linear(1.0,0.2,0.0), 'over')),
+  plt_components(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'over')),
+  plt_components(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),0.5), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'over')),
+  plt_alpha(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),0.5), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'over'));
+----
+[0.5, 0.0, 0.3]	[0.5, 0.0, 0.3]	[0.6666666666666666, 0.06666666666666667, 0.19999999999999998]	0.75
+
+query TTT
+SELECT
+  plt_components(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.0), 'over')),
+  plt_components(plt_compose(plt_srgb_linear(0.5,0.0,0.3), plt_srgb_linear(1.0,0.2,0.0), 'inside')),
+  plt_components(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'inside'));
+----
+[0.5, 0.0, 0.3]	[0.5, 0.0, 0.3]	[0.5, 0.0, 0.3]
+
+query TT
+SELECT
+  plt_components(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.0), 'inside')),
+  plt_alpha(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'inside'));
+----
+[0.0, 0.0, 0.0]	0.5
+
+query TTTT
+SELECT
+  plt_components(plt_compose(plt_srgb_linear(0.5,0.0,0.3), plt_srgb_linear(1.0,0.2,0.0), 'outside')),
+  plt_components(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'outside')),
+  plt_components(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.0), 'outside')),
+  plt_alpha(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'outside'));
+----
+[0.0, 0.0, 0.0]	[0.5, 0.0, 0.3]	[0.5, 0.0, 0.3]	0.5
+
+query TTTTT
+SELECT
+  plt_components(plt_compose(plt_srgb_linear(0.5,0.0,0.3), plt_srgb_linear(1.0,0.2,0.0), 'atop')),
+  plt_components(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'atop')),
+  plt_components(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),0.5), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'atop')),
+  plt_components(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.0), 'atop')),
+  plt_alpha(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),0.5), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'atop'));
+----
+[0.5, 0.0, 0.3]	[0.5, 0.0, 0.3]	[0.75, 0.1, 0.15]	[0.0, 0.0, 0.0]	0.5
+
+query TTTTT
+SELECT
+  plt_components(plt_compose(plt_srgb_linear(0.5,0.0,0.3), plt_srgb_linear(1.0,0.2,0.0), 'xor')),
+  plt_components(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'xor')),
+  plt_components(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),0.5), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'xor')),
+  plt_components(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.0), 'xor')),
+  plt_alpha(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),0.5), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'xor'));
+----
+[0.0, 0.0, 0.0]	[0.5, 0.0, 0.3]	[0.75, 0.1, 0.15]	[0.5, 0.0, 0.3]	0.5
+
+query TTTT
+SELECT
+  plt_components(plt_compose(plt_srgb_linear(0.5,0.0,0.3), plt_srgb_linear(1.0,0.2,0.0), 'plus')),
+  plt_components(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'plus')),
+  plt_components(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),0.5), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'plus')),
+  plt_components(plt_compose(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.0), 'plus'));
+----
+[1.5, 0.2, 0.3]	[1.0, 0.1, 0.3]	[0.75, 0.1, 0.15]	[0.5, 0.0, 0.3]
+
+# ---- Blend：palette 的 11 个模式断言 ----
+
+query TTT
+SELECT
+  plt_components(plt_blend(plt_srgb_linear(0.5,0.0,0.3), plt_srgb_linear(0.5,0.2,0.0), 'multiply')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(0.5,0.2,0.0),0.5), 'multiply')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(0.5,0.2,0.0),0.0), 'multiply'));
+----
+[0.25, 0.0, 0.0]	[0.375, 0.0, 0.15]	[0.5, 0.0, 0.3]
+
+query TTT
+SELECT
+  plt_components(plt_blend(plt_srgb_linear(0.5,0.0,0.3), plt_srgb_linear(0.5,0.2,0.0), 'screen')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(0.5,0.2,0.0),0.5), 'screen')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(0.5,0.2,0.0),0.0), 'screen'));
+----
+[0.75, 0.2, 0.3]	[0.625, 0.1, 0.3]	[0.5, 0.0, 0.3]
+
+query TTTT
+SELECT
+  plt_components(plt_blend(plt_srgb_linear(0.5,0.0,0.3), plt_srgb_linear(0.5,0.2,0.0), 'overlay')),
+  plt_components(plt_blend(plt_srgb_linear(0.5,0.0,0.3), plt_srgb_linear(1.0,0.2,0.0), 'overlay')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'overlay')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.0), 'overlay'));
+----
+[0.5, 0.0, 0.0]	[1.0, 0.0, 0.0]	[0.75, 0.0, 0.15]	[0.5, 0.0, 0.3]
+
+query TTTT
+SELECT
+  plt_components(plt_blend(plt_srgb_linear(0.5,0.0,0.3), plt_srgb_linear(1.0,0.2,0.0), 'darken')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'darken')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),0.5), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'darken')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.0), 'darken'));
+----
+[0.5, 0.0, 0.0]	[0.5, 0.0, 0.15]	[0.6666666666666666, 0.06666666666666667, 0.09999999999999999]	[0.5, 0.0, 0.3]
+
+query TTTT
+SELECT
+  plt_components(plt_blend(plt_srgb_linear(0.5,0.0,0.3), plt_srgb_linear(1.0,0.2,0.0), 'lighten')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'lighten')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),0.5), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'lighten')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.0), 'lighten'));
+----
+[1.0, 0.2, 0.3]	[0.75, 0.1, 0.3]	[0.8333333333333334, 0.13333333333333333, 0.19999999999999998]	[0.5, 0.0, 0.3]
+
+query TTT
+SELECT
+  plt_components(plt_blend(plt_srgb_linear(0.5,0.0,0.3), plt_srgb_linear(1.0,0.2,0.0), 'dodge')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'dodge')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.0), 'dodge'));
+----
+[1.0, 0.2, 0.0]	[0.75, 0.1, 0.15]	[0.5, 0.0, 0.3]
+
+query TTT
+SELECT
+  plt_components(plt_blend(plt_srgb_linear(0.5,0.0,0.3), plt_srgb_linear(1.0,0.2,0.0), 'burn')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'burn')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.0), 'burn'));
+----
+[1.0, 0.0, 0.0]	[0.75, 0.0, 0.15]	[0.5, 0.0, 0.3]
+
+query TTTT
+SELECT
+  plt_components(plt_blend(plt_srgb_linear(0.5,0.0,0.3), plt_srgb_linear(1.0,0.2,0.0), 'hard_light')),
+  plt_components(plt_blend(plt_srgb_linear(1.0,0.2,0.0), plt_srgb_linear(0.5,0.0,0.3), 'hard_light')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'hard_light')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.0), 'hard_light'));
+----
+[1.0, 0.0, 0.0]	[1.0, 0.0, 0.0]	[0.75, 0.0, 0.15]	[0.5, 0.0, 0.3]
+
+query TTT
+SELECT
+  plt_components(plt_blend(plt_srgb_linear(0.5,0.0,0.3), plt_srgb_linear(1.0,0.2,0.0), 'soft_light')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'soft_light')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.0), 'soft_light'));
+----
+[1.0, 0.03999999999999998, 0.0]	[0.75, 0.01999999999999999, 0.15]	[0.5, 0.0, 0.3]
+
+query TTT
+SELECT
+  plt_components(plt_blend(plt_srgb_linear(0.5,0.0,0.3), plt_srgb_linear(1.0,0.2,0.0), 'difference')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'difference')),
+  plt_components(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.0), 'difference'));
+----
+[0.5, 0.2, 0.3]	[0.5, 0.1, 0.3]	[0.5, 0.0, 0.3]
+
+query TT
+SELECT
+  plt_components(plt_blend(plt_srgb_linear(1.0,0.5,0.0), plt_srgb_linear(0.8,0.4,0.3), 'exclusion')),
+  plt_alpha(plt_blend(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),1.0), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'exclusion'));
+----
+[0.19999999999999996, 0.5, 0.3]	1.0
+
+# ---- Equations：source_alpha / one_minus_source_alpha 等价于 over ----
+
+query TT
+SELECT plt_components(plt_blend_equations(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),0.5), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'source_alpha', 'one_minus_source_alpha')),
+       plt_alpha(plt_blend_equations(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),0.5), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'source_alpha', 'one_minus_source_alpha'));
+----
+[0.75, 0.1, 0.15]	0.5
+
+query TT
+SELECT plt_components(plt_blend_equations(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),0.5), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'one', 'one')),
+       plt_alpha(plt_blend_equations(plt_with_alpha(plt_srgb_linear(0.5,0.0,0.3),0.5), plt_with_alpha(plt_srgb_linear(1.0,0.2,0.0),0.5), 'one', 'one'));
+----
+[0.75, 0.1, 0.15]	1.0
+
+# 第二个颜色先转到第一个颜色的空间
+query TT
+SELECT plt_components(plt_blend(plt_srgb(1,0,0), plt_hsl(240,1,0.5), 'multiply')),
+       plt_space(plt_blend(plt_srgb(1,0,0), plt_hsl(240,1,0.5), 'multiply'));
+----
+[6.46985278121015e-07, 0.0, 0.0]	srgb
+
+# Compose / Equations 覆盖非 RGB 的可预乘空间（Xyz / Lab / Oklab）
+query TT
+SELECT plt_components(plt_compose(plt_xyz(0.5,0.4,0.3), plt_xyz(0.2,0.2,0.2), 'plus')),
+       plt_components(plt_compose(plt_lab(50,20,-30), plt_lab(60,10,10), 'plus'));
+----
+[0.7, 0.6000000000000001, 0.5]	[110.0, 30.0, -20.0]
+
+query T
+SELECT plt_components(plt_compose(plt_oklab(0.5,0.1,0.1), plt_oklab(0.6,0.0,0.0), 'over'));
+----
+[0.5, 0.1, 0.1]
+
+# NULL 短路
+query III
+SELECT plt_blend(NULL, plt_srgb(0,0,1), 'multiply') IS NULL,
+       plt_compose(plt_srgb(1,0,0), NULL, 'over') IS NULL,
+       plt_blend(plt_srgb(1,0,0), plt_srgb(0,0,1), NULL) IS NULL;
+----
+true	true	true
+
+query T
+SELECT typeof(plt_blend(plt_srgb(1,0,0), plt_srgb(0,0,1), 'multiply'));
+----
+STRUCT(space VARCHAR, c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, alpha DOUBLE)
+
+# 错误路径
+statement error
+SELECT plt_blend(plt_srgb(1,0,0), plt_srgb(0,0,1), 'nope');
+----
+unknown blend mode 'nope'
+
+statement error
+SELECT plt_compose(plt_srgb(1,0,0), plt_srgb(0,0,1), 'nope');
+----
+unknown compose mode 'nope'
+
+statement error
+SELECT plt_blend_equations(plt_srgb(1,0,0), plt_srgb(0,0,1), 'nope', 'one');
+----
+unknown blend factor 'nope'
+
+statement error
+SELECT plt_blend(plt_hsl(0,1,0.5), plt_srgb(1,0,0), 'multiply');
+----
+does not support the blend modes
+
+statement error
+SELECT plt_compose(plt_hsl(0,1,0.5), plt_hsl(0,1,0.5), 'over');
+----
+does not support composition

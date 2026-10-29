@@ -1,0 +1,351 @@
+# name: test/sql/css.test
+# description: 字符串互操作：palette 的十六进制读写与 csscolorparser 0.9 的 CSS Color Level 4
+#   （src/extension/functions/css.rs）。
+#   期望值来源：csscolorparser 0.9.0 的官方测试（tests/parser.rs、tests/to_css_xxx.rs、
+#   tests/named_colors.rs），用 VALUES 表整批搬过来；其余为实跑输出。
+# group: [duckfn_palette]
+
+require duckfn_palette
+
+query T
+SELECT plt_css_formats();
+----
+[hex, rgb, hsl, hwb, lab, lch, oklab, oklch]
+
+# ---- csscolorparser tests/parser.rs：解析结果（用 8 位十六进制比较） ----
+
+query I
+SELECT count(*) FROM (VALUES
+  ('transparent', '#00000000'),
+  ('TRANSPARENT', '#00000000'),
+  ('#ff00ff64', '#ff00ff64'),
+  ('ff00ff64', '#ff00ff64'),
+  ('rgb(247,179,99)', '#f7b363'),
+  ('rgb(50% 50% 50%)', '#808080'),
+  ('rgb(247,179,99,0.37)', '#f7b3635e'),
+  ('hsl(270 0% 50%)', '#808080'),
+  ('hwb(0 50% 50%)', '#808080'),
+  ('hsv(0 0% 50%)', '#808080'),
+  ('hsv(0 0% 100%)', '#ffffff'),
+  ('hsv(0 0% 19%)', '#303030')
+) t(s, expected) WHERE plt_to_hex(plt_css_parse(s)) <> expected;
+----
+0
+
+query I
+SELECT count(*) FROM (VALUES
+  ('lab(0% 0 0)', '#000000'),
+  ('lab(100% 0 0)', '#ffffff'),
+  ('lab(0% 0 0 / 0.5)', '#00000080'),
+  ('lch(0% 0 0)', '#000000'),
+  ('lch(100% 0 0)', '#ffffff'),
+  ('lch(0% 0 0 / 0.5)', '#00000080')
+) t(s, expected) WHERE plt_to_hex(plt_css_parse(s)) <> expected;
+----
+0
+
+# red / lime / black / lime_alpha 四组等价写法
+query I
+SELECT count(*) FROM (VALUES
+  ('#f00'), ('#f00f'), ('#ff0000'), ('#ff0000ff'), ('f00'), ('f00f'), ('ff0000'), ('ff0000ff'),
+  ('rgb(255,0,0)'), ('rgb(255 0 0)'), ('rgb(700, -99, 0)'), ('rgb(100% 0% 0%)'),
+  ('rgb(200% -10% -100%)'), ('rgb(255 0 0 100%)'), (' RGB ( 255 , 0 , 0 ) '),
+  ('RGB( 255   0   0 )'), ('rgb(255	0
+0)'), ('hsl(0,100%,50%)'), ('hsl(360 100% 50%)'), ('hwb(0 0% 0%)'),
+  ('hwb(360deg 0% 0% 100%)'), ('hwb(360DEG 0% 0% 100%)'), ('hsv(0 100% 100%)'),
+  ('oklab(0.62796, 0.22486, 0.12585)'), ('oklch(0.62796, 0.25768, 29.23388)'),
+  ('color(srgb 1 0 0)'), ('color(srgb 100% 0% 0%)')
+) t(s) WHERE plt_to_hex(plt_css_parse(s)) <> '#ff0000';
+----
+0
+
+query I
+SELECT count(*) FROM (VALUES
+  ('#0f0'), ('#0f0f'), ('#00ff00'), ('#00ff00ff'), ('0f0'), ('0f0f'), ('00ff00'), ('00ff00ff'),
+  ('rgb(0,255,0)'), ('rgb(0% 100% 0%)'), ('rgb(0 255 0 / 100%)'), ('rgba(0,255,0,1)'),
+  ('hsl(120,100%,50%)'), ('hsl(120deg 100% 50%)'), ('hsl(-240 100% 50%)'),
+  ('hsl(-240deg 100% 50%)'), ('hsl(0.3333turn 100% 50%)'), ('hsl(0.3333TURN 100% 50%)'),
+  ('hsl(133.333grad 100% 50%)'), ('hsl(133.333GRAD 100% 50%)'), ('hsl(2.0944rad 100% 50%)'),
+  ('hsl(2.0944RAD 100% 50%)'), ('hsla(120,100%,50%,100%)'), ('hwb(120 0% 0%)'),
+  ('hwb(480deg 0% 0% / 100%)'), ('hsv(120 100% 100%)'),
+  ('oklab(0.86644, -0.23389, 0.1795)'), ('oklch(0.86644, 0.29483, 142.49535)'),
+  ('color(srgb 0 1 0)'), ('color(srgb 0% 100% 0%)')
+) t(s) WHERE plt_to_hex(plt_css_parse(s)) <> '#00ff00';
+----
+0
+
+query I
+SELECT count(*) FROM (VALUES
+  ('#000'), ('#000f'), ('#000000'), ('#000000ff'), ('000'), ('000f'), ('000000'), ('000000ff'),
+  ('rgb(0,0,0)'), ('rgb(0% 0% 0%)'), ('rgb(0 0 0 100%)'), ('hsl(270,100%,0%)'),
+  ('hwb(90 0% 100%)'), ('hwb(120deg 0% 100% 100%)'), ('hsv(120 100% 0%)'),
+  ('oklab(0 0 0)'), ('oklch(0 0 180)'), ('color(srgb 0 0 0)')
+) t(s) WHERE plt_to_hex(plt_css_parse(s)) <> '#000000';
+----
+0
+
+query I
+SELECT count(*) FROM (VALUES
+  ('#00ff0080'), ('00ff0080'), ('rgb(0,255,0,50%)'), ('rgb(0% 100% 0% / 0.5)'),
+  ('rgba(0%,100%,0%,50%)'), ('hsl(120,100%,50%,0.5)'), ('hsl(120deg 100% 50% / 50%)'),
+  ('hsla(120,100%,50%,0.5)'), ('hwb(120 0% 0% / 50%)'), ('hsv(120 100% 100% / 50%)'),
+  ('color(srgb 0 1 0 / 50%)'), ('color(srgb 0% 100% 0% / 0.5)')
+) t(s) WHERE plt_to_hex(plt_css_parse(s)) <> '#00ff0080';
+----
+0
+
+# equal：两组写法量化后相同
+query I
+SELECT count(*) FROM (VALUES
+  ('transparent', 'rgb(0,0,0,0%)'),
+  ('#FF9900', '#f90'),
+  ('#aabbccdd', '#ABCD'),
+  ('#BAD455', 'BAD455'),
+  ('rgb(0 255 127 / 75%)', 'rgb(0,255,127,0.75)'),
+  ('hwb(180 0% 60%)', 'hwb(180,0%,60%)'),
+  ('hwb(290 30% 0%)', 'hwb(290 30 0)'),
+  ('hsl(180,50%,27%)', 'hsl(180,50,27)'),
+  ('hsl(120 50% 50%)', 'hsl(120 50 50)'),
+  ('hwb(194 50% 20%)', 'hwb(194 50 20)'),
+  ('rgb(255, 165, 0)', 'hsl(38.824 100% 50%)'),
+  ('#7654CD', 'rgb(46.27% 32.94% 80.39%)'),
+  ('#7654CD', 'lab(44.36% 36.05 -58.99)')
+) t(a, b) WHERE plt_to_hex(plt_css_parse(a)) <> plt_to_hex(plt_css_parse(b));
+----
+0
+
+# none 值：缺省分量的默认值
+query I
+SELECT count(*) FROM (VALUES
+  ('rgb(none none none)', '#000000'),
+  ('hwb(none none none)', '#ff0000'),
+  ('hsl(none none none)', '#000000'),
+  ('lab(none none none)', '#000000'),
+  ('lch(none none none)', '#000000'),
+  ('oklab(none none none)', '#000000'),
+  ('oklch(none none none)', '#000000'),
+  ('rgb(255 0 255 / none)', '#ff00ff00'),
+  ('rgb(90 none 210)', '#5a00d2'),
+  ('rgb(255 none 50%)', '#ff0080'),
+  ('rgb(none 50% 127)', '#00807f'),
+  ('rgb(90 35% none)', '#5a5900'),
+  ('hwb(none 60% 0%)', '#ff9999'),
+  ('hwb(137 55% none)', '#8cffad'),
+  ('hsl(none 45% 55%)', '#c05959'),
+  ('lab(50% -75 none)', '#009275'),
+  ('lch(50% 100 none)', '#ff007c'),
+  ('oklab(60% none -0.17)', '#5a76e4'),
+  ('oklch(60% 0.2 none)', '#d7397b')
+) t(s, expected) WHERE plt_to_hex(plt_css_parse(s)) <> expected;
+----
+0
+
+# invalid_format：全部都不是合法颜色
+query I
+SELECT count(*) FILTER (plt_css_is_valid(s)) FROM (VALUES
+  (''), ('bloodred'), ('#78afzd'), ('#fffff'), ('#a+5'), ('#+abc'), ('#+1+2+3'),
+  ('#+1+2+3+4'), ('#+a+b+c'), ('ab+'), ('abc+'), ('+1+2+3'), ('+a+b+c+d'),
+  ('rgb(255,0,0'), ('rgb(0,255,8s)'), ('rgb(100%,z9%,75%)'), ('rgb(255 0 0 0 0)'),
+  ('rgb(255 0 0 0 / 0)'), ('rgb(,255,0,0)'), ('rgb(255,0,,0)'), ('rgb(255,0,0,)'),
+  ('rgb(255,0,0/)'), ('rgb(255/0,0)'), ('cmyk(1 0 0)'), ('rgba(0 0)'),
+  ('hsl(90'',100%,50%)'), ('hsl(360,70%,50%,90%,100%)'), ('hsl(deg 100% 50%)'),
+  ('hsl(Xturn 100% 50%)'), ('hsl(Zgrad 100% 50%)'), ('hsl(180 1 x%)'), ('hsla(360)'),
+  ('hwb(Xrad,50%,50%)'), ('hwb(270 0% 0% 0% 0%)'), ('hsv(120 100% 100% 1 50%)'),
+  ('hsv(120 XXX 100%)'), ('lab(100%,0)'), ('lab(100% 0 X)'), ('lch(100%,0)'),
+  ('lch(100% 0 X)'), ('oklab(0,0)'), ('oklab(0,0,x,0)'), ('oklch(0,0,0,0,0)'),
+  ('oklch(0,0,0,x)'), ('color(srgb 1 0)'), ('color(srgb 1 0 0 1 1)'), ('æ'), ('#ß'),
+  ('rgb(ß,0,0)'), ('rgb(nan 0 0)'), ('oklch(0.5 0.1 nan)'), ('rgb(inf 0 0)'),
+  ('hsl(1e400deg 100% 50%)')
+) t(s);
+----
+0
+
+# 嵌套上限：32 层 rgb(from …) 合法，33 层非法（csscolorparser 的递归深度）
+query II
+WITH RECURSIVE n(d, s) AS (
+  SELECT 0, '#ff0000' UNION ALL SELECT d + 1, 'rgb(from ' || s || ' r g b)' FROM n WHERE d < 33
+)
+SELECT count(*) FILTER (d = 32 AND plt_to_hex(plt_css_parse(s)) = '#ff0000'),
+       count(*) FILTER (d = 33 AND NOT plt_css_is_valid(s))
+FROM n;
+----
+1	1
+
+# 嵌套 calc 同样在 32 层合法（32*5+2 = 162）、33 层非法
+query II
+WITH RECURSIVE c(d, s) AS (
+  SELECT 0, '(3 - 1)' UNION ALL SELECT d + 1, '(5 + ' || s || ')' FROM c WHERE d < 33
+), q(d, s) AS (
+  SELECT d, 'rgb(from #000 calc' || s || ' 100 0)' FROM c
+)
+SELECT count(*) FILTER (d = 32 AND plt_to_hex(plt_css_parse(s)) = '#a26400'),
+       count(*) FILTER (d = 33 AND NOT plt_css_is_valid(s))
+FROM q;
+----
+1	1
+
+# ---- csscolorparser tests/to_css_xxx.rs：parse → serialize 往返 ----
+
+query I
+SELECT count(*) FROM (VALUES
+  ('#71fe15'), ('#d6e3c9'), ('#2a7719'), ('#b53717'), ('#5b0b8d'), ('#aff632'),
+  ('#65ec8d'), ('#d35493'), ('#289e5f'), ('#b46152'), ('#e0afee'), ('#ac2be4'),
+  ('#233490'), ('#1afbc5'), ('#e41755'), ('#e052ee'), ('#4d1b5e'), ('#230cde'),
+  ('#f8a243'), ('#a130d1'), ('#b38373'), ('#6b9fa203'), ('#0e5e0be6'), ('#84f9a716'),
+  ('#48651550'), ('#1adc2cf4'), ('#c191a31c'), ('#a25518c5'), ('#cb33f2c9'),
+  ('#89b21d36'), ('#cbb97f3e')
+) t(s) WHERE plt_css_serialize(plt_css_parse(s), 'hex') <> s;
+----
+0
+
+query I
+SELECT count(*) FROM (VALUES
+  ('rgb(71 175 99)'), ('rgb(170 203 72)'), ('rgb(45 232 237)'), ('rgb(119 1 124)'),
+  ('rgb(243 93 86)'), ('rgb(223 25 119)'), ('rgb(6 44 133)'), ('rgb(167 240 237)'),
+  ('rgb(97 71 129)'), ('rgb(125 68 93)'), ('rgb(139 187 62)'), ('rgb(100 51 80)'),
+  ('rgb(27 249 123)'), ('rgb(230 63 99)'), ('rgb(241 34 4)'), ('rgb(149 222 185)'),
+  ('rgb(3 129 213)'), ('rgb(88 220 108)'), ('rgb(199 169 6)'), ('rgb(54 70 163)'),
+  ('rgb(90 42 106)')
+) t(s) WHERE plt_css_serialize(plt_css_parse(s), 'rgb') <> s;
+----
+0
+
+query I
+SELECT count(*) FROM (VALUES
+  ('hsl(0 48% 83%)'), ('hsl(17 73% 13%)'), ('hsl(35 40% 84%)'), ('hsl(53 88% 21%)'),
+  ('hsl(71 11% 45%)'), ('hsl(89 12% 89%)'), ('hsl(107 49% 68%)'), ('hsl(125 96% 72%)'),
+  ('hsl(143 15% 92%)'), ('hsl(161 80% 93%)'), ('hsl(179 45% 76%)'), ('hsl(197 99% 84%)'),
+  ('hsl(215 33% 15%)'), ('hsl(233 69% 59%)'), ('hsl(251 34% 46%)'), ('hsl(269 43% 18%)'),
+  ('hsl(287 89% 69%)'), ('hsl(305 87% 36%)'), ('hsl(323 97% 26%)'), ('hsl(341 61% 66%)'),
+  ('hsl(359 15% 74%)')
+) t(s) WHERE plt_css_serialize(plt_css_parse(s), 'hsl') <> s;
+----
+0
+
+query I
+SELECT count(*) FROM (VALUES
+  ('hwb(0 87% 0%)'), ('hwb(17 0% 23%)'), ('hwb(35 0% 7%)'), ('hwb(53 66% 0%)'),
+  ('hwb(71 0% 66%)'), ('hwb(89 22% 0%)'), ('hwb(107 0% 2%)'), ('hwb(125 51% 0%)'),
+  ('hwb(143 10% 0%)'), ('hwb(161 0% 76%)'), ('hwb(179 72% 0%)'), ('hwb(197 0% 60%)'),
+  ('hwb(215 0% 39%)'), ('hwb(233 0% 18%)'), ('hwb(251 0% 3%)'), ('hwb(269 57% 0%)'),
+  ('hwb(287 21% 0%)'), ('hwb(305 15% 0%)'), ('hwb(323 55% 0%)'), ('hwb(341 0% 72%)'),
+  ('hwb(359 0% 2%)')
+) t(s) WHERE plt_css_serialize(plt_css_parse(s), 'hwb') <> s;
+----
+0
+
+query I
+SELECT count(*) FROM (VALUES
+  ('oklab(0.623 0.019 -0.359)'), ('oklab(0.362 -0.314 -0.035)'), ('oklab(0.804 0.166 -0.072)'),
+  ('oklab(0.832 0.089 0.265)'), ('oklab(0.681 0.038 -0.3)'), ('oklab(0.117 -0.192 0.24)'),
+  ('oklab(0.651 -0.241 -0.158)'), ('oklab(0.421 -0.248 0.053)'), ('oklab(0.923 -0.119 -0.288)'),
+  ('oklab(0.811 -0.295 0.347)'), ('oklab(0.485 -0.368 0.066)'), ('oklab(0.905 0.13 -0.163)'),
+  ('oklab(0.778 -0.001 0.4)'), ('oklab(0.672 0.136 -0.03)'), ('oklab(0.926 0.281 0.279)'),
+  ('oklab(0.247 0.155 0.379)'), ('oklab(0.503 0.042 0.202)'), ('oklab(0.792 -0.34 -0.372)'),
+  ('oklab(0.877 -0.13 0.222)'), ('oklab(0.898 -0.068 -0.239)'), ('oklab(0.725 -0.343 -0.352)')
+) t(s) WHERE plt_css_serialize(plt_css_parse(s), 'oklab') <> s;
+----
+0
+
+query I
+SELECT count(*) FROM (VALUES
+  ('oklch(0.284 0.132 0)'), ('oklch(0.314 0.136 17)'), ('oklch(0.935 0.398 35)'),
+  ('oklch(0.729 0.175 53)'), ('oklch(0.157 0.29 71)'), ('oklch(0.266 0.365 89)'),
+  ('oklch(0.12 0.225 107)'), ('oklch(0.532 0.274 125)'), ('oklch(0.571 0.201 143)'),
+  ('oklch(0.948 0.217 161)'), ('oklch(0.501 0.2 179)'), ('oklch(0.184 0.308 197)'),
+  ('oklch(0.308 0.273 215)'), ('oklch(0.874 0.143 233)'), ('oklch(0.544 0.186 251)'),
+  ('oklch(0.144 0.255 269)'), ('oklch(0.997 0.327 287)'), ('oklch(0.544 0.22 305)'),
+  ('oklch(0.578 0.203 323)'), ('oklch(0.819 0.343 341)'), ('oklch(0.497 0.188 359)')
+) t(s) WHERE plt_css_serialize(plt_css_parse(s), 'oklch') <> s;
+----
+0
+
+# lab / lch：serialize 回去与 to_hex 都对得上
+query I
+SELECT count(*) FROM (VALUES
+  ('#765400', 'lab(38.44 8.73 60.33)'), ('#00dcb1', 'lab(75.22 -82.94 2.86)'),
+  ('#be0020', 'lab(22.82 120.44 25.72)'), ('#9aacc8', 'lab(69.75 -2.02 -16.62)'),
+  ('#002d20', 'lab(6.23 -79.5 -10.83)'), ('#f90000', 'lab(43.14 107.06 119.25)'),
+  ('#0098ff', 'lab(48.3 -87.94 -114.5)'), ('#50593c', 'lab(36.3 -7.83 15.58)'),
+  ('#00a3ff', 'lab(61.37 -19.6 -72.08)'), ('#4b5f00', 'lab(37.11 -19.68 77.5)'),
+  ('#ff009e', 'lab(73.32 105.19 16.2)'), ('#005ebd', 'lab(28.62 -81.68 -76.06)'),
+  ('#ffc100', 'lab(90.88 43.51 119.32)'), ('#5a0000', 'lab(4.5 61.43 123.56)'),
+  ('#a40000', 'lab(25.8 83.7 61.52)'), ('#ff0044', 'lab(65.09 96.52 55.35)'),
+  ('#c40016', 'lab(25.56 116.81 38.38)'), ('#00e158', 'lab(75.93 -97.22 47.69)'),
+  ('#ddeaff', 'lab(96.28 22.2 -71.83)'), ('#ffd663', 'lab(94.47 32.05 70.52)'),
+  ('#5d00ff', 'lab(36.38 87.93 -122.38)')
+) t(hex, s) WHERE plt_css_serialize(plt_css_parse(s), 'lab') <> s OR plt_to_hex(plt_css_parse(s)) <> hex;
+----
+0
+
+query I
+SELECT count(*) FROM (VALUES
+  ('#ad115d', 'lch(38.46 61.14 0)'), ('#2e191a', 'lch(11.69 11.88 17.95)'),
+  ('#af0000', 'lch(30.68 97.2 35.9)'), ('#ff914f', 'lch(71.59 65.69 53.85)'),
+  ('#392000', 'lch(14.96 29.96 71.8)'), ('#eac800', 'lch(81.62 95.83 89.75)'),
+  ('#a0db00', 'lch(80.75 131.77 107.7)'), ('#009700', 'lch(53.95 98.36 125.65)'),
+  ('#286835', 'lch(39.08 38.24 143.6)'), ('#004f12', 'lch(25.34 74.61 161.55)'),
+  ('#00785a', 'lch(39.6 85.74 179.5)'), ('#00363a', 'lch(17.38 37.39 197.45)'),
+  ('#004153', 'lch(22.44 35.1 215.4)'), ('#00284f', 'lch(11.01 44.71 233.35)'),
+  ('#40617b', 'lch(39.37 19.77 251.3)'), ('#aee7ff', 'lch(90.52 51.04 269.25)'),
+  ('#033ca4', 'lch(28.24 64.39 287.2)'), ('#d7b7fe', 'lch(79.12 38.01 305.15)'),
+  ('#ab55b3', 'lch(49.94 57.7 323.1)'), ('#ff00ff', 'lch(72.03 148.23 341.05)'),
+  ('#ff00a7', 'lch(63.48 148.37 359)')
+) t(hex, s) WHERE plt_css_serialize(plt_css_parse(s), 'lch') <> s OR plt_to_hex(plt_css_parse(s)) <> hex;
+----
+0
+
+# ---- 命名色（csscolorparser tests/named_colors.rs） ----
+
+query I
+SELECT count(*) FROM (VALUES
+  ('aliceblue', '#f0f8ff'), ('bisque', '#ffe4c4'), ('black', '#000000'),
+  ('chartreuse', '#7fff00'), ('coral', '#ff7f50'), ('crimson', '#dc143c'),
+  ('dodgerblue', '#1e90ff'), ('firebrick', '#b22222'), ('gold', '#ffd700'),
+  ('hotpink', '#ff69b4'), ('indigo', '#4b0082'), ('lavender', '#e6e6fa'),
+  ('lime', '#00ff00'), ('plum', '#dda0dd'), ('red', '#ff0000'), ('salmon', '#fa8072'),
+  ('skyblue', '#87ceeb'), ('tomato', '#ff6347'), ('violet', '#ee82ee'),
+  ('yellowgreen', '#9acd32')
+) t(name, hex)
+WHERE plt_to_hex(plt_css_parse(name)) <> hex OR plt_css_name(plt_from_hex(hex)) <> name;
+----
+0
+
+# 大小写不敏感；没有名字的 sRGB 颜色反查为 NULL
+query IIII
+SELECT plt_css_parse('red') = plt_css_parse('RED'),
+       plt_css_parse('skyblue') = plt_css_parse('SkyBlue'),
+       plt_css_name(plt_srgb(0.7,0.8,0.9)) IS NULL,
+       plt_css_name(plt_srgb(1,0.5,0)) IS NULL;
+----
+true	true	true	true
+
+# ---- 十六进制读写（palette 的 from_hex / LowerHex） ----
+
+query TTTTTT
+SELECT plt_to_hex(plt_from_hex('#f00')), plt_to_hex(plt_from_hex('f00')),
+       plt_to_hex(plt_from_hex('#f008')), plt_to_hex(plt_from_hex('#ff000080')),
+       plt_to_hex(plt_from_hex('ff000080')), plt_to_hex(plt_from_hex('#ff800080'));
+----
+#ff0000	#ff0000	#ff000088	#ff000080	#ff000080	#ff800080
+
+query II
+SELECT plt_from_hex('#78afzd') IS NULL, plt_from_hex(NULL) IS NULL;
+----
+true	true
+
+# NULL 短路与类型
+query III
+SELECT plt_css_parse(NULL) IS NULL, plt_css_is_valid(NULL) IS NULL, plt_css_name(NULL) IS NULL;
+----
+true	true	true
+
+query TT
+SELECT typeof(plt_css_parse('#f00')), typeof(plt_to_hex(plt_srgb(1,0,0)));
+----
+STRUCT(space VARCHAR, c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, alpha DOUBLE)	VARCHAR
+
+statement error
+SELECT plt_css_serialize(plt_srgb(1,0,0), 'nope');
+----
+unknown format 'nope'
