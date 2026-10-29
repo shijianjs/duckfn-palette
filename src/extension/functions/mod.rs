@@ -54,7 +54,9 @@
 
 pub(crate) mod adaptation;
 pub(crate) mod blend;
+pub(crate) mod cam16;
 pub(crate) mod cast;
+pub(crate) mod colorous;
 pub(crate) mod convert;
 pub(crate) mod css;
 pub(crate) mod difference;
@@ -62,6 +64,7 @@ pub(crate) mod encoding;
 pub(crate) mod manipulate;
 pub(crate) mod matrix;
 pub(crate) mod named;
+pub(crate) mod random;
 pub(crate) mod theory;
 
 use duckfn::duck_error;
