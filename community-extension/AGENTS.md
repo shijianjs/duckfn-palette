@@ -85,7 +85,7 @@ cp target/function_descriptions.csv community-extension/docs/function_descriptio
 
 ```powershell
 $p = 'S:\workspace\github\shijianjs\duckdb-community-extensions'
-$ext = 'my_extension'                                # 与 extension.name 逐字一致
+$ext = 'duckfn_palette'                                # 与 extension.name 逐字一致
 git -C $p checkout main; git -C $p pull              # 先和 fork 的 main 同步
 git -C $p checkout -b add-$ext                       # 已有同名分支就跳过这步
 

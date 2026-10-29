@@ -11,7 +11,7 @@ mod extension;
 //
 // 本文件唯一的作用是把 lib 的内容以 example 的形式重新映射一份，请勿修改其内容。
 // 显式构建 Wasm 目标：
-//   cargo build --example my_extension
+//   cargo build --example duckfn_palette
 //
 // To build the Wasm target, a `staticlib` crate-type is required
 //
@@ -22,4 +22,4 @@ mod extension;
 // example, do not change the content of the file.
 //
 // To build the Wasm target explicitly, use:
-//   cargo build --example my_extension
+//   cargo build --example duckfn_palette

@@ -2,12 +2,12 @@
 title: 简介
 sidebar_position: 1
 slug: /intro
-description: my_extension 给 DuckDB 加了什么，以及怎么开始用。
+description: duckfn_palette 给 DuckDB 加了什么，以及怎么开始用。
 ---
 
 # 简介
 
-`my_extension` 是一个 [DuckDB 可加载扩展](https://duckdb.org/docs/stable/extensions/overview)：它给 DuckDB
+`duckfn_palette` 是一个 [DuckDB 可加载扩展](https://duckdb.org/docs/stable/extensions/overview)：它给 DuckDB
 加了一批 SQL 函数，加载之后它们和 DuckDB 自带的函数没有区别。你不需要知道它是怎么写出来的，也不用编译
 任何东西 —— CLI、Python / R 会话与浏览器里的构建接受的都同一份 `.duckdb_extension` 文件。
 
@@ -22,8 +22,8 @@ description: my_extension 给 DuckDB 加了什么，以及怎么开始用。
 ## 装上它
 
 ```sql
-INSTALL my_extension FROM community;
-LOAD my_extension;
+INSTALL duckfn_palette FROM community;
+LOAD duckfn_palette;
 ```
 
 然后在任意查询里调用：
@@ -38,7 +38,7 @@ FROM (VALUES ('world'), ('')) t(name);
 
 :::note[这些页面是模板的起点]
 
-`my_extension` 是 [duckfn-extension-template](https://github.com/shijianjs/duckfn-extension-template) 的
+`duckfn_palette` 是 [duckfn-extension-template](https://github.com/shijianjs/duckfn-extension-template) 的
 示例扩展。站点这一部分描述的就是它的三个示例函数；从模板生成的项目会换成自己的 API，并把这些页面一并
 改掉。
 

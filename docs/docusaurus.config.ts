@@ -15,11 +15,11 @@ import type {UrlPreloadEntry} from 'duckfn-docs-kit/sql/runtimeConfig';
 // 克隆模板后要改的就是这一段
 //
 // 仓库地址出现在导航栏的 Links 下拉、页脚与首页按钮上，所以只写一份、由下面各处引用，
-// 而不是逐个页面硬编码。`my_extension` 那几处由 `just rename <新名字>` 自动改写。
+// 而不是逐个页面硬编码。`duckfn_palette` 那几处由 `just rename <新名字>` 自动改写。
 //
 // What to edit after cloning the template. The repository URL shows up in the navbar dropdown, the
 // footer and the home page button, so it is written once and referenced everywhere else. The
-// `my_extension` occurrences are rewritten by `just rename <new-name>`.
+// `duckfn_palette` occurrences are rewritten by `just rename <new-name>`.
 // ============================================================================
 // 模板自己的仓库地址：首页徽章、导航栏、页脚与可运行 SQL 的扩展预加载都从这里取。克隆后**要改成你的
 // 仓库**（`just rename` 只改扩展名，不动这个 URL），否则预加载会去模板仓库找 Release。
@@ -49,13 +49,13 @@ const REPO_SLUG = REPO_URL.replace(/^https:\/\/github\.com\//, '');
 const preloadedExtension: UrlPreloadEntry =
   process.env.DOCS_EXTENSION_FROM_RELEASE === '1'
     ? {
-        // Served at <baseUrl>/duckdb-extensions/my_extension.duckdb_extension.wasm. The name must
-        // keep `my_extension` before the first dot: that base is the entry symbol DuckDB looks up,
+        // Served at <baseUrl>/duckdb-extensions/duckfn_palette.duckdb_extension.wasm. The name must
+        // keep `duckfn_palette` before the first dot: that base is the entry symbol DuckDB looks up,
         // hence the rename from the release asset (which carries the wasm suffix).
-        url: 'duckdb-extensions/my_extension.duckdb_extension.wasm',
-        release: {repository: REPO_SLUG, asset: 'my_extension-wasm_eh.duckdb_extension.wasm'},
+        url: 'duckdb-extensions/duckfn_palette.duckdb_extension.wasm',
+        release: {repository: REPO_SLUG, asset: 'duckfn_palette-wasm_eh.duckdb_extension.wasm'},
       }
-    : {url: 'duckdb-extensions/my_extension.duckdb_extension.wasm'};
+    : {url: 'duckdb-extensions/duckfn_palette.duckdb_extension.wasm'};
 
 // GitHub Pages 把项目站挂在子路径下（https://<owner>.github.io/<repo>），所以 `url` / `baseUrl`
 // 由工作流注入（见 ../.github/workflows/DeployDocs.yml）。下面两个是本地开发的兜底值。
@@ -67,7 +67,7 @@ const url = process.env.DOCS_URL ?? 'http://localhost:3000';
 const baseUrl = process.env.DOCS_BASE_URL ?? '/';
 
 const config: Config = {
-  title: 'my_extension',
+  title: 'duckfn_palette',
   tagline: 'Extra SQL functions for DuckDB',
   favicon: 'img/logo.svg',
 
@@ -218,9 +218,9 @@ const config: Config = {
       // past it, and slides back in on the way up. The theme already ships that animation as hashed
       // CSS-module classes on the <nav>, so this needs no CSS and no client module.
       hideOnScroll: true,
-      title: 'my_extension',
+      title: 'duckfn_palette',
       logo: {
-        alt: 'my_extension logo',
+        alt: 'duckfn_palette logo',
         src: 'img/logo.svg',
       },
       items: [
@@ -331,7 +331,7 @@ const config: Config = {
       // The copyright line is rendered as HTML, so no angle-bracket placeholder belongs here: `<owner>`
       // would be read as an unclosed element and every page's HTML minification would complain. The
       // extension name is used instead, and `just rename` rewrites it.
-      copyright: `Copyright © ${new Date().getFullYear()} my_extension contributors. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} duckfn_palette contributors. Built with Docusaurus.`,
     },
     prism: {
       theme: prismThemes.github,

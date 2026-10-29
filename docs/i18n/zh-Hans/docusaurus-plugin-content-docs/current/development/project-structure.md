@@ -9,7 +9,7 @@ description: 从两个 crate root 到注册函数的模块链，以及让它保�
 ```text
 src/lib.rs             原生 crate root  ->  mod extension;
 src/wasm_lib.rs        wasm crate root  ->  mod extension;   （同一组 mod，镜像）
-src/extension/mod.rs   ->  duckfn_entrypoint!("my_extension"); + mod functions; mod types;
+src/extension/mod.rs   ->  duckfn_entrypoint!("duckfn_palette"); + mod functions; mod types;
 src/bin/duckfn.rs      duckfn CLI 入口  ->  #[path] mod extension; + duckfn::cli::run(...)
 
 src/extension/functions/
@@ -19,7 +19,7 @@ src/extension/functions/
 src/extension/types/
     mod.rs             空的槽：面向 SQL 的类型放这一层
 
-test/sql/                  每个示例函数一份 .test，外加 my_extension.test 冒烟测试
+test/sql/                  每个示例函数一份 .test，外加 duckfn_palette.test 冒烟测试
 scripts/rename.sh           克隆后改扩展名
 scripts/release.sh          提版本号、打 tag、切开发版本
 Justfile                    日常命令
@@ -52,7 +52,7 @@ flowchart LR
 `duckfn::cli::run(...)`。它存在的意义是导出函数描述 CSV（`just docs_csv`），不参与扩展本体。
 
 那里的 `#[path]` 不是省事的写法，而是必需的：`#[duck_*]` 的文档元数据靠 `inventory` 的静态构造器收集，
-只有**真正被链接进最终二进制**的目标文件才会生效。写成 `use my_extension::…` 时，链接器可能把这些模块
+只有**真正被链接进最终二进制**的目标文件才会生效。写成 `use duckfn_palette::…` 时，链接器可能把这些模块
 整块丢掉，导出的 CSV 就会静默变空。
 
 ## 每个函数一个文件，前缀即命名空间

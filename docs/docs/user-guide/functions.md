@@ -1,7 +1,7 @@
 ---
 title: Functions
 sidebar_position: 3
-description: Every SQL function my_extension registers, with examples you can run in the browser.
+description: Every SQL function duckfn_palette registers, with examples you can run in the browser.
 ---
 
 # Functions

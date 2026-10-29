@@ -119,8 +119,8 @@ function mountNextSteps(node: HTMLElement, content: NextStepsContent): void {
  * session.
  */
 const INSTALL_SAMPLE = `-- once per installation, then once per session
-INSTALL my_extension FROM community;
-LOAD my_extension;`;
+INSTALL duckfn_palette FROM community;
+LOAD duckfn_palette;`;
 
 /**
  * The other half: the functions the extension registers, called exactly like
@@ -145,7 +145,7 @@ SELECT my_sum(x) FROM (VALUES (1.5::DOUBLE), (2.5::DOUBLE)) t(x);
  * The labels that are words rather than identifiers follow the site locale, so
  * the same badge reads "Weekly Downloads" in English and "周下载" in Chinese.
  *
- * The weekly-downloads badge carries the placeholder extension name `my_extension`
+ * The weekly-downloads badge carries the placeholder extension name `duckfn_palette`
  * only because a clone still goes by it; `scripts/rename.sh` rewrites that string
  * everywhere, this URL included, so nothing has to be remembered here.
  *
@@ -167,8 +167,8 @@ function badges(repoUrl: string, locale: string): HeroBadge[] {
       alt: 'DuckDB 1.4 or newer',
     },
     {
-      href: 'https://duckdb.org/community_extensions/extensions/my_extension',
-      src: `https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcommunity-extensions.duckdb.org%2Fdownloads-last-week.json&query=%24.my_extension&label=${weeklyLabel}&color=blue&logo=duckdb&logoColor=a899ff&style=flat`,
+      href: 'https://duckdb.org/community_extensions/extensions/duckfn_palette',
+      src: `https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcommunity-extensions.duckdb.org%2Fdownloads-last-week.json&query=%24.duckfn_palette&label=${weeklyLabel}&color=blue&logo=duckdb&logoColor=a899ff&style=flat`,
       alt: weeklyAlt,
     },
     ...(hasRepo
@@ -222,7 +222,7 @@ function featuresContent(): FeaturesContent {
     sectionTitle: translate({
       id: 'homepage.features.title',
       description: 'Home page section title above the feature cards',
-      message: 'What my_extension gives you',
+      message: 'What duckfn_palette gives you',
     }),
     items: [
       {
@@ -250,7 +250,7 @@ function featuresContent(): FeaturesContent {
           id: 'homepage.features.install.details',
           description: 'Home page feature card description',
           message:
-            'INSTALL my_extension FROM community; then LOAD my_extension; \u2014 signed builds matched to your DuckDB version and platform, so no -unsigned flag is needed.',
+            'INSTALL duckfn_palette FROM community; then LOAD duckfn_palette; \u2014 signed builds matched to your DuckDB version and platform, so no -unsigned flag is needed.',
         }),
       },
       {
@@ -334,7 +334,7 @@ function nextStepsContent(
         details: translate({
           id: 'homepage.next.intro.details',
           description: 'Home page link card description',
-          message: 'What my_extension adds to DuckDB, in one page.',
+          message: 'What duckfn_palette adds to DuckDB, in one page.',
         }),
       },
       {

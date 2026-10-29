@@ -1,5 +1,5 @@
 extension:
-  name: my_extension
+  name: duckfn_palette
   description: <one line about what this extension does, shown in the community extension list>
   version: 0.1.0
   language: Rust

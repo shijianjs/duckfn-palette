@@ -9,7 +9,7 @@ description: The module chain from the two crate roots to the registered functio
 ```text
 src/lib.rs             native crate root  ->  mod extension;
 src/wasm_lib.rs        wasm crate root    ->  mod extension;   (the same mods, mirrored)
-src/extension/mod.rs   ->  duckfn_entrypoint!("my_extension"); + mod functions; mod types;
+src/extension/mod.rs   ->  duckfn_entrypoint!("duckfn_palette"); + mod functions; mod types;
 src/bin/duckfn.rs      duckfn CLI entry   ->  #[path] mod extension; + duckfn::cli::run(...)
 
 src/extension/functions/
@@ -19,7 +19,7 @@ src/extension/functions/
 src/extension/types/
     mod.rs             an empty slot: SQL-facing types go here
 
-test/sql/                   one .test per sample function, plus a my_extension.test smoke test
+test/sql/                   one .test per sample function, plus a duckfn_palette.test smoke test
 scripts/rename.sh           rename the extension after cloning
 scripts/release.sh          version bump, tag, development version
 Justfile                    the everyday commands
@@ -57,7 +57,7 @@ extension;` and calls `duckfn::cli::run(...)`. It exists to export the function-
 
 The `#[path]` attribute is not a shortcut, it is necessary: the documentation metadata behind
 `#[duck_*]` is collected by `inventory`'s static constructors, which only fire for object files that
-are really linked into the final binary. With `use my_extension::…` the linker may drop those modules
+are really linked into the final binary. With `use duckfn_palette::…` the linker may drop those modules
 and the exported CSV comes out empty — silently.
 
 ## One function per file, the prefix as a namespace

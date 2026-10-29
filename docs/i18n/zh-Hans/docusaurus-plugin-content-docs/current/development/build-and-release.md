@@ -13,7 +13,7 @@ description: 官方 make 构建路径、Justfile 命令、产出 GitHub Release 
 ```shell
 make configure           # 只做一次：建 configure/venv（Python 与 sqllogictest 运行器）
 make debug               # 官方路径，CI 也走它
-# -> build/debug/my_extension.duckdb_extension
+# -> build/debug/duckfn_palette.duckdb_extension
 ```
 
 产物落在哪里、又是怎么加载的：
@@ -89,14 +89,14 @@ PR 只构建 + 测试，不发布：发布那一步由「当前 ref 是版本 ta
 
 ### 安装一份发布产物
 
-Release 里的资产命名是 `my_extension-<平台>.duckdb_extension`，加载之前必须改名：`LOAD` 收的是扩展名或本地
+Release 里的资产命名是 `duckfn_palette-<平台>.duckdb_extension`，加载之前必须改名：`LOAD` 收的是扩展名或本地
 路径 —— 它不会去下载 URL（下载那条路是 `INSTALL '<url>'`）—— 而入口点符号由文件名决定，直接用 Release 里的
-名字会报 `did not contain function "my_extension-windows_amd64_init_c_api"`。
+名字会报 `did not contain function "duckfn_palette-windows_amd64_init_c_api"`。
 
 ```shell
-curl -LO https://github.com/<owner>/<repo>/releases/latest/download/my_extension-windows_amd64.duckdb_extension
-mv my_extension-windows_amd64.duckdb_extension my_extension.duckdb_extension
-duckdb -unsigned -c "LOAD './my_extension.duckdb_extension';"
+curl -LO https://github.com/<owner>/<repo>/releases/latest/download/duckfn_palette-windows_amd64.duckdb_extension
+mv duckfn_palette-windows_amd64.duckdb_extension duckfn_palette.duckdb_extension
+duckdb -unsigned -c "LOAD './duckfn_palette.duckdb_extension';"
 ```
 
 本地构建的产物要 `duckdb -unsigned`；从 Release 下载的产物同样要加这个参数，因为它没有 DuckDB 分发密钥

@@ -338,7 +338,7 @@
     "description": "Home page button linking to the repository"
   },
   "homepage.features.title": {
-    "message": "my_extension 能给你什么",
+    "message": "duckfn_palette 能给你什么",
     "description": "Home page section title above the feature cards"
   },
   "homepage.features.sql.title": {
@@ -354,7 +354,7 @@
     "description": "Home page feature card title"
   },
   "homepage.features.install.details": {
-    "message": "INSTALL my_extension FROM community; 再 LOAD my_extension; —— 构建签过名、且与你的 DuckDB 版本和平台匹配，所以不用加 -unsigned。",
+    "message": "INSTALL duckfn_palette FROM community; 再 LOAD duckfn_palette; —— 构建签过名、且与你的 DuckDB 版本和平台匹配，所以不用加 -unsigned。",
     "description": "Home page feature card description"
   },
   "homepage.features.platforms.title": {
@@ -414,7 +414,7 @@
     "description": "Home page link card title"
   },
   "homepage.next.intro.details": {
-    "message": "一页说清 my_extension 给 DuckDB 加了什么。",
+    "message": "一页说清 duckfn_palette 给 DuckDB 加了什么。",
     "description": "Home page link card description"
   },
   "homepage.next.installation.title": {

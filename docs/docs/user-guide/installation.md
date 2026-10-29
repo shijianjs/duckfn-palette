@@ -1,12 +1,12 @@
 ---
 title: Installation
 sidebar_position: 2
-description: The three ways to install my_extension — DuckDB's community repository, a GitHub release, or a local build — and how to check that it loaded.
+description: The three ways to install duckfn_palette — DuckDB's community repository, a GitHub release, or a local build — and how to check that it loaded.
 ---
 
 # Installation
 
-`my_extension` needs **DuckDB 1.4 or newer**. The release binaries are built against DuckDB 2.0.0 and
+`duckfn_palette` needs **DuckDB 1.4 or newer**. The release binaries are built against DuckDB 2.0.0 and
 also load into 1.4.x and 1.5.x (the C API is binary compatible across these versions), so there is
 no separate 1.5 build: on an older DuckDB, install the same 2.0 release asset. It is an ordinary loadable extension, so `INSTALL` and
 `LOAD` are all it takes; there is no separate download, library or setup step.
@@ -16,8 +16,8 @@ no separate 1.5 build: on an older DuckDB, install the same 2.0 release asset. I
 The simplest route, and the only one that needs no flags:
 
 ```sql
-INSTALL my_extension FROM community;
-LOAD my_extension;
+INSTALL duckfn_palette FROM community;
+LOAD duckfn_palette;
 ```
 
 DuckDB downloads a build that is signed and matched to your DuckDB version and platform. `INSTALL` is a
@@ -35,16 +35,16 @@ local build instead.
 ## From a GitHub release
 
 Every version is published as a GitHub Release carrying one `.duckdb_extension` per platform, named
-`my_extension-<platform>.duckdb_extension` (`windows_amd64`, `linux_amd64`, `osx_arm64`, and so on), plus a
+`duckfn_palette-<platform>.duckdb_extension` (`windows_amd64`, `linux_amd64`, `osx_arm64`, and so on), plus a
 WebAssembly build for the browser. Download the one matching your platform and **rename it to
-`my_extension.duckdb_extension`** before loading it — `LOAD` takes an extension name or a local path (it fetches
+`duckfn_palette.duckdb_extension`** before loading it — `LOAD` takes an extension name or a local path (it fetches
 no URLs; that is what `INSTALL '<url>'` is for), and DuckDB takes the entry-point symbol from the file name, so
-the release name fails with `did not contain function "my_extension-windows_amd64_init_c_api"`:
+the release name fails with `did not contain function "duckfn_palette-windows_amd64_init_c_api"`:
 
 ```shell
-curl -LO https://github.com/<owner>/<repo>/releases/latest/download/my_extension-windows_amd64.duckdb_extension
-mv my_extension-windows_amd64.duckdb_extension my_extension.duckdb_extension
-duckdb -unsigned -c "LOAD './my_extension.duckdb_extension';"
+curl -LO https://github.com/<owner>/<repo>/releases/latest/download/duckfn_palette-windows_amd64.duckdb_extension
+mv duckfn_palette-windows_amd64.duckdb_extension duckfn_palette.duckdb_extension
+duckdb -unsigned -c "LOAD './duckfn_palette.duckdb_extension';"
 ```
 
 A release file is not signed by DuckDB's distribution key, hence `-unsigned`.
@@ -55,7 +55,7 @@ If you built the extension from source yourself, point `LOAD` at the artifact �
 with `-unsigned`:
 
 ```sql
-LOAD './build/debug/my_extension.duckdb_extension';
+LOAD './build/debug/duckfn_palette.duckdb_extension';
 ```
 
 Building it is the subject of the [Development guide](../development/quick-start.md).
@@ -67,7 +67,7 @@ Building it is the subject of the [Development guide](../development/quick-start
 ```sql
 SELECT extension_name, installed, loaded
 FROM duckdb_extensions()
-WHERE extension_name = 'my_extension';
+WHERE extension_name = 'duckfn_palette';
 ```
 
 ```sql

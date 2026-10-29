@@ -5,13 +5,22 @@
 //   - `ops.rs`：逐空间操作（mix / lighten / saturate / hue / premultiply）的分派；
 //   - `blend.rs`：混合（`Blend`）、合成（`Compose`）与 OpenGL 式 `Equations`；
 //   - `difference.rs`：色差（`Ciede2000` / `DeltaE` / `EuclideanDistance` / `HyAb`）与 WCAG 对比度；
-//   - `theory.rs`：传统色彩理论（互补 / 邻近 / 三角 / 四方）。
+//   - `theory.rs`：传统色彩理论（互补 / 邻近 / 三角 / 四方）；
+//   - `encoding.rs`：传输函数、白点归属、原色与 RGB↔XYZ 矩阵；
+//   - `adaptation.rs`：白点数值、色适应矩阵与方法；
+//   - `matrix.rs`：3x3 矩阵的校验与运算；
+//   - `cast.rs`：8 位打包/解包（`cast::Packed`）。
 //
 // SQL-facing types: the tagged color value `plt_color` plus the full CAM16 struct in `color.rs`,
-// the per-space operation dispatch in `ops.rs`, blending/composition in `blend.rs`, color
-// difference plus WCAG contrast in `difference.rs`, and color theory in `theory.rs`.
+// per-space operation dispatch in `ops.rs`, blending/composition in `blend.rs`, color difference
+// plus WCAG contrast in `difference.rs`, color theory in `theory.rs`, encoding/adaptation/matrix
+// helpers in `encoding.rs` / `adaptation.rs` / `matrix.rs`, and packed integers in `cast.rs`.
+pub(crate) mod adaptation;
 pub(crate) mod blend;
+pub(crate) mod cast;
 pub(crate) mod color;
 pub(crate) mod difference;
+pub(crate) mod encoding;
+pub(crate) mod matrix;
 pub(crate) mod ops;
 pub(crate) mod theory;

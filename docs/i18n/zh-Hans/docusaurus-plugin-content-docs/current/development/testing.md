@@ -12,7 +12,7 @@ description: test/sql 下的 SQLLogicTest 用例、三种跑法（make、just �
 
 | 文件 | 覆盖什么 |
 | --- | --- |
-| `my_extension.test` | 冒烟：LOAD 之前函数不存在、`require` 之后示例函数都在。它也是「扩展能被加载」的最小证明。 |
+| `duckfn_palette.test` | 冒烟：LOAD 之前函数不存在、`require` 之后示例函数都在。它也是「扩展能被加载」的最小证明。 |
 | `scalar_greet.test` | 标量：正常值（含非 ASCII）、常量 `NULL` 被折叠、运行期 `NULL` 行被短路、`DuckOptionResult` 的 NULL 与报错两条路、参数个数/类型的 binder 报错、跨 DataChunk。 |
 | `aggregate_sum.test` | 聚合：返回类型、NULL 行跳过、空组返回 `NULL`、`GROUP BY` 逐组计算、跨 DataChunk 的 `combine`。 |
 
@@ -22,7 +22,7 @@ description: test/sql 下的 SQLLogicTest 用例、三种跑法（make、just �
 
 ```mermaid
 flowchart LR
-    file["test/sql/*.test"] --> req["require my_extension<br/>加载产物"]
+    file["test/sql/*.test"] --> req["require duckfn_palette<br/>加载产物"]
     req --> blocks["query / statement 块<br/>期望结果写在原地"]
     blocks --> runner["duckdb_sqllogictest<br/>比对并报告"]
 ```
@@ -47,14 +47,14 @@ DuckDB 的测试运行器可以直接驱动产物，完全跳过 `make`。它需
 # Linux / macOS
 ./configure/venv/bin/python -m duckdb_sqllogictest \
     --test-dir test/sql \
-    --external-extension build/debug/my_extension.duckdb_extension
+    --external-extension build/debug/duckfn_palette.duckdb_extension
 ```
 
 ```powershell
 # Windows
 .\configure\venv\Scripts\python.exe -m duckdb_sqllogictest `
     --test-dir test/sql `
-    --external-extension build/debug/my_extension.duckdb_extension
+    --external-extension build/debug/duckfn_palette.duckdb_extension
 ```
 
 `--test-dir` 必给：它同时是 `__TEST_DIR__` 的取值，也就是会落盘写文件的用例拿到的目录。只跑一份就再加
@@ -62,8 +62,8 @@ DuckDB 的测试运行器可以直接驱动产物，完全跳过 `make`。它需
 
 ## 约定
 
-- **每个文件都从干净的数据库开始**，所以 `my_extension.test` 可以断言加载前函数不存在，其余文件开头写
-  `require my_extension`。
+- **每个文件都从干净的数据库开始**，所以 `duckfn_palette.test` 可以断言加载前函数不存在，其余文件开头写
+  `require duckfn_palette`。
 - **错误是子串匹配。** `statement error` 下面写有辨识度的那一段就够了，不必抄 DuckDB 整条错误消息 ——
   抄全了反而会把用例绑死在一个随时可能改的文案上。
 - **留意值怎么打印。** `DOUBLE` 打印成 `7.0`；用例关心的是数字而不是类型时，转一下

@@ -92,15 +92,15 @@ The blocks call the extension, so the extension has to be there before the first
 decided by `DOCS_EXTENSION_FROM_RELEASE`:
 
 - **Set — only the GitHub Pages deployment sets it.** The build fetches the repository's latest
-  release asset `my_extension-wasm_eh.duckdb_extension.wasm` into
-  `static/duckdb-extensions/my_extension.duckdb_extension.wasm`. That is safe there because Deploy
+  release asset `duckfn_palette-wasm_eh.duckdb_extension.wasm` into
+  `static/duckdb-extensions/duckfn_palette.duckdb_extension.wasm`. That is safe there because Deploy
   Docs runs *after* the pipeline which creates that release (see Deployment below).
 - **Unset — every local run.** Nothing is fetched: the plugin serves whatever already sits under
   `static/duckdb-extensions/`, i.e. the wasm `just build_wasm_eh` wrote. `just test_wasm` builds it and
   then runs the SQL test, so a local run never touches a release; `just docs_build` / `docs_start` on
   their own fail until that file exists.
 
-Either way the file name must keep `my_extension` before the first dot — that base is the entry symbol
+Either way the file name must keep `duckfn_palette` before the first dot — that base is the entry symbol
 DuckDB looks up, hence the rename from the release asset, which carries the wasm suffix.
 
 Two more things worth knowing:

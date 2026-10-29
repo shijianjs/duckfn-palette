@@ -1,9 +1,9 @@
 [English](README.md) | [简体中文](README.zh.md)
 
-# my_extension
+# duckfn_palette
 
 [![DuckDB 1.4+](https://img.shields.io/badge/DuckDB-1.4%2B-fff100?logo=duckdb&style=flat)](https://duckdb.org/)
-[![Weekly Downloads](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcommunity-extensions.duckdb.org%2Fdownloads-last-week.json&query=%24.my_extension&label=Weekly%20Downloads&color=blue&logo=duckdb&logoColor=a899ff&style=flat)](https://duckdb.org/community_extensions/extensions/my_extension)
+[![Weekly Downloads](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcommunity-extensions.duckdb.org%2Fdownloads-last-week.json&query=%24.duckfn_palette&label=Weekly%20Downloads&color=blue&logo=duckdb&logoColor=a899ff&style=flat)](https://duckdb.org/community_extensions/extensions/duckfn_palette)
 [![Release](https://img.shields.io/github/v/release/shijianjs/duckfn-extension-template?style=flat&logo=github)](https://github.com/shijianjs/duckfn-extension-template/releases)
 [![License](https://img.shields.io/badge/license-MIT-14459b.svg?style=flat&logo=github)](https://github.com/shijianjs/duckfn-extension-template/blob/main/LICENSE)
 
@@ -38,14 +38,14 @@ Replacing the two sample functions with your own API is one of them.
 
 ```shell
 make configure   # once: builds configure/venv (Python + the sqllogictest runner)
-make debug       # -> build/debug/my_extension.duckdb_extension
+make debug       # -> build/debug/duckfn_palette.duckdb_extension
 ```
 
 Locally built extensions are unsigned, so DuckDB has to be started with `-unsigned`:
 
 ```shell
 duckdb -unsigned -c "
-LOAD './build/debug/my_extension.duckdb_extension';
+LOAD './build/debug/duckfn_palette.duckdb_extension';
 SELECT my_greet('world');
 -- Hello, world!
 SELECT my_sum(x) FROM (VALUES (1.5::DOUBLE), (2.5::DOUBLE), (3.0::DOUBLE)) t(x);
@@ -81,7 +81,7 @@ The official DuckDB `extension-ci-tools` makefiles are the build path:
 
 ```shell
 make configure           # once: builds configure/venv (Python + the sqllogictest runner)
-make debug               # -> build/debug/my_extension.duckdb_extension
+make debug               # -> build/debug/duckfn_palette.duckdb_extension
 ```
 
 `make release` is the optimized version of the same flow. On Windows `make` has to run inside Git Bash.
@@ -132,19 +132,19 @@ are in [`docs/README.md`](docs/README.md).
 ## Installing the released extension
 
 Releases are GitHub Releases carrying the build matrices' `.duckdb_extension` files, one per platform, named
-`my_extension-<platform>.duckdb_extension`. Download the one for your platform and **rename it to
-`my_extension.duckdb_extension`** before loading it — `LOAD` takes an extension name or a local path (it fetches
+`duckfn_palette-<platform>.duckdb_extension`. Download the one for your platform and **rename it to
+`duckfn_palette.duckdb_extension`** before loading it — `LOAD` takes an extension name or a local path (it fetches
 no URLs; that is what `INSTALL '<url>'` is for), and DuckDB takes the entry-point symbol from the file name, so
-the release name fails with `did not contain function "my_extension-windows_amd64_init_c_api"`:
+the release name fails with `did not contain function "duckfn_palette-windows_amd64_init_c_api"`:
 
 ```shell
-curl -LO https://github.com/<owner>/<repo>/releases/latest/download/my_extension-windows_amd64.duckdb_extension
-mv my_extension-windows_amd64.duckdb_extension my_extension.duckdb_extension
-duckdb -unsigned -c "LOAD './my_extension.duckdb_extension';"
+curl -LO https://github.com/<owner>/<repo>/releases/latest/download/duckfn_palette-windows_amd64.duckdb_extension
+mv duckfn_palette-windows_amd64.duckdb_extension duckfn_palette.duckdb_extension
+duckdb -unsigned -c "LOAD './duckfn_palette.duckdb_extension';"
 ```
 
 Publishing to DuckDB's [community extensions](https://duckdb.org/community_extensions/list_of_extensions)
-makes it `INSTALL my_extension FROM community` instead; the two files that requires are prepared in
+makes it `INSTALL duckfn_palette FROM community` instead; the two files that requires are prepared in
 [`community-extension/`](community-extension/AGENTS.md).
 
 ## Documentation

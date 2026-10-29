@@ -12,7 +12,7 @@ the expected result inline, so a test doubles as a worked example of the functio
 
 | File | What it covers |
 | --- | --- |
-| `my_extension.test` | Smoke test: the function is missing before `LOAD`, the sample functions exist after `require`. Also the smallest proof that the extension loads at all. |
+| `duckfn_palette.test` | Smoke test: the function is missing before `LOAD`, the sample functions exist after `require`. Also the smallest proof that the extension loads at all. |
 | `scalar_greet.test` | Scalars: ordinary values (non-ASCII included), a constant `NULL` folded to `NULL`, runtime `NULL` rows short-circuited, both `DuckOptionResult` paths (NULL and error), binder errors for wrong arity and type, inputs spanning several DataChunks. |
 | `aggregate_sum.test` | Aggregates: the return type, NULL rows skipped, an empty group yielding `NULL`, per-group results under `GROUP BY`, `combine` across DataChunks. |
 
@@ -22,7 +22,7 @@ How a file reaches the runner:
 
 ```mermaid
 flowchart LR
-    file["test/sql/*.test"] --> req["require my_extension<br/>loads the artifact"]
+    file["test/sql/*.test"] --> req["require duckfn_palette<br/>loads the artifact"]
     req --> blocks["query / statement blocks<br/>expected output inline"]
     blocks --> runner["duckdb_sqllogictest<br/>compares and reports"]
 ```
@@ -49,14 +49,14 @@ Python environment with `duckdb_sqllogictest` installed — `make configure` cre
 # Linux / macOS
 ./configure/venv/bin/python -m duckdb_sqllogictest \
     --test-dir test/sql \
-    --external-extension build/debug/my_extension.duckdb_extension
+    --external-extension build/debug/duckfn_palette.duckdb_extension
 ```
 
 ```powershell
 # Windows
 .\configure\venv\Scripts\python.exe -m duckdb_sqllogictest `
     --test-dir test/sql `
-    --external-extension build/debug/my_extension.duckdb_extension
+    --external-extension build/debug/duckfn_palette.duckdb_extension
 ```
 
 `--test-dir` is required: it is also the value of `__TEST_DIR__`, the directory a test writing files is
@@ -64,8 +64,8 @@ given. To run a single file, add `--file-path test/sql/scalar_greet.test`.
 
 ## Conventions
 
-- **Every file starts from a clean database**, so `my_extension.test` can assert that the function does
-  not exist before the extension is loaded, and the other files start with `require my_extension`.
+- **Every file starts from a clean database**, so `duckfn_palette.test` can assert that the function does
+  not exist before the extension is loaded, and the other files start with `require duckfn_palette`.
 - **Expected errors are matched as substrings.** Under `statement error`, a distinctive fragment of the
   message is enough — there is no need to reproduce DuckDB's whole error string, and doing so ties the
   test to a message that may well change.

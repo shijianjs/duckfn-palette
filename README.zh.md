@@ -1,9 +1,9 @@
 [English](README.md) | [简体中文](README.zh.md)
 
-# my_extension
+# duckfn_palette
 
 [![DuckDB 1.4+](https://img.shields.io/badge/DuckDB-1.4%2B-fff100?logo=duckdb&style=flat)](https://duckdb.org/)
-[![周下载](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcommunity-extensions.duckdb.org%2Fdownloads-last-week.json&query=%24.my_extension&label=%E5%91%A8%E4%B8%8B%E8%BD%BD&color=blue&logo=duckdb&logoColor=a899ff&style=flat)](https://duckdb.org/community_extensions/extensions/my_extension)
+[![周下载](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcommunity-extensions.duckdb.org%2Fdownloads-last-week.json&query=%24.duckfn_palette&label=%E5%91%A8%E4%B8%8B%E8%BD%BD&color=blue&logo=duckdb&logoColor=a899ff&style=flat)](https://duckdb.org/community_extensions/extensions/duckfn_palette)
 [![版本](https://img.shields.io/github/v/release/shijianjs/duckfn-extension-template?style=flat&logo=github&label=%E7%89%88%E6%9C%AC)](https://github.com/shijianjs/duckfn-extension-template/releases)
 [![许可证](https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF%E8%AF%81-MIT-14459b.svg?style=flat&logo=github)](https://github.com/shijianjs/duckfn-extension-template/blob/main/LICENSE)
 
@@ -36,14 +36,14 @@ just rename my_new_extension
 
 ```shell
 make configure   # 只做一次：建 configure/venv（Python 与 sqllogictest 运行器）
-make debug       # -> build/debug/my_extension.duckdb_extension
+make debug       # -> build/debug/duckfn_palette.duckdb_extension
 ```
 
 自己构建的产物没有签名，加载时必须给 DuckDB 加 `-unsigned`：
 
 ```shell
 duckdb -unsigned -c "
-LOAD './build/debug/my_extension.duckdb_extension';
+LOAD './build/debug/duckfn_palette.duckdb_extension';
 SELECT my_greet('world');
 -- Hello, world!
 SELECT my_sum(x) FROM (VALUES (1.5::DOUBLE), (2.5::DOUBLE), (3.0::DOUBLE)) t(x);
@@ -78,7 +78,7 @@ SELECT my_sum(x) FROM (VALUES (1.5::DOUBLE), (2.5::DOUBLE), (3.0::DOUBLE)) t(x);
 
 ```shell
 make configure           # 只做一次：建 configure/venv（Python 与 sqllogictest 运行器）
-make debug               # -> build/debug/my_extension.duckdb_extension
+make debug               # -> build/debug/duckfn_palette.duckdb_extension
 ```
 
 `make release` 是带优化的同一套流程。Windows 上 `make` 需要在 Git Bash 里跑。
@@ -127,19 +127,19 @@ just docs_build      # 真正该跑的那一条：onBrokenLinks 设为 throw，�
 
 ## 安装已发布的扩展
 
-发布物是 GitHub Release 上各平台构建出的 `.duckdb_extension`，命名是 `my_extension-<平台>.duckdb_extension`。
-下载你平台那一份之后**先改名成 `my_extension.duckdb_extension` 再加载** —— `LOAD` 收的是扩展名或本地路径
+发布物是 GitHub Release 上各平台构建出的 `.duckdb_extension`，命名是 `duckfn_palette-<平台>.duckdb_extension`。
+下载你平台那一份之后**先改名成 `duckfn_palette.duckdb_extension` 再加载** —— `LOAD` 收的是扩展名或本地路径
 （它不会去下载 URL，下载那条路是 `INSTALL '<url>'`），而入口点符号由文件名决定，直接用 Release 里的名字会报
-`did not contain function "my_extension-windows_amd64_init_c_api"`：
+`did not contain function "duckfn_palette-windows_amd64_init_c_api"`：
 
 ```shell
-curl -LO https://github.com/<owner>/<repo>/releases/latest/download/my_extension-windows_amd64.duckdb_extension
-mv my_extension-windows_amd64.duckdb_extension my_extension.duckdb_extension
-duckdb -unsigned -c "LOAD './my_extension.duckdb_extension';"
+curl -LO https://github.com/<owner>/<repo>/releases/latest/download/duckfn_palette-windows_amd64.duckdb_extension
+mv duckfn_palette-windows_amd64.duckdb_extension duckfn_palette.duckdb_extension
+duckdb -unsigned -c "LOAD './duckfn_palette.duckdb_extension';"
 ```
 
 注册进 DuckDB 的[社区扩展](https://duckdb.org/community_extensions/list_of_extensions)之后，就变成
-一句 `INSTALL my_extension FROM community`；那需要提交的两份文件已经备在
+一句 `INSTALL duckfn_palette FROM community`；那需要提交的两份文件已经备在
 [`community-extension/`](community-extension/AGENTS.md)。
 
 ## 文档

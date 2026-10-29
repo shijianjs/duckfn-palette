@@ -59,7 +59,7 @@ CI 工作流 —— 以及文档里出现的每一处，并按新包名重写 `C
 just build          # = make configure && make debug
 ```
 
-产物是 `build/debug/my_extension.duckdb_extension`。没有 C++ 这一步，也不需要本地编译 DuckDB：扩展
+产物是 `build/debug/duckfn_palette.duckdb_extension`。没有 C++ 这一步，也不需要本地编译 DuckDB：扩展
 只用到 DuckDB 的头文件，加载时通过它的 API 表分发。
 
 ## 3. 加载并调用
@@ -70,7 +70,7 @@ just repl           # 已经 LOAD 好扩展的 DuckDB REPL
 
 ```sql
 -- 或者手动来；本地构建的产物必须加 -unsigned
-duckdb -unsigned -c "LOAD './build/debug/my_extension.duckdb_extension';"
+duckdb -unsigned -c "LOAD './build/debug/duckfn_palette.duckdb_extension';"
 ```
 
 下面是几个示例函数，就地就能跑 —— 站点从仓库的最新 Release 预加载了这个扩展，这里不用写 `LOAD`
@@ -115,13 +115,13 @@ just test           # make configure + make debug + make test
 
 - **本地构建的产物加载时必须加 `-unsigned`**，不加 DuckDB 会直接拒绝这个文件。
 - **产物文件名必须保持 `<扩展名>.duckdb_extension`。** DuckDB 是按文件名去找入口点符号的，复制成
-  `win.duckdb_extension` 会报 `did not contain function "my_extension_init_c_api"`。
+  `win.duckdb_extension` 会报 `did not contain function "duckfn_palette_init_c_api"`。
 - **`make test` 不会自动重新构建。** 改完 Rust 先跑 `just ci-build`（或 `make debug`），否则测试跑的
   还是上一次的产物。
 
 :::
 
 Windows 上还有一条：如果 `make debug` 报产物被占用，说明有 DuckDB 进程正拿着
-`build/debug/my_extension.duckdb_extension`（多半是没关的 `just repl`）—— 关掉那个进程重新构建即可。
+`build/debug/duckfn_palette.duckdb_extension`（多半是没关的 `just repl`）—— 关掉那个进程重新构建即可。
 `.duckdb_extension` 不是改了名的 DLL：DuckDB 的元数据在文件尾，直接 `Copy-Item` 一个 DLL 过去会报
 `The metadata at the end of the file is invalid`。

@@ -156,7 +156,7 @@ README 里出现的路径示例，并把 `Cargo.lock` 按新包名重写；脚�
 replacement scan。模板里这个前缀是 `my_`。
 
 社区扩展几乎都不把包名/扩展名写进函数名（见
-<https://duckdb.org/community_extensions/list_of_extensions>）：`my_extension_greet` 这样的全名在每个
+<https://duckdb.org/community_extensions/list_of_extensions>）：`duckfn_palette_greet` 这样的全名在每个
 调用点上都是纯噪声，而 `my_` 短到可以忽略，又足以在 `duckdb_functions()` 里按前缀检索。
 **前缀只是命名空间，不再是扩展名的缩写** —— 不要因为扩展名变了就跟着改。
 

@@ -13,7 +13,7 @@ The official DuckDB `extension-ci-tools` makefiles are the one path, and `just b
 ```shell
 make configure           # once: builds configure/venv (Python + the sqllogictest runner)
 make debug               # the official path, also what CI runs
-# -> build/debug/my_extension.duckdb_extension
+# -> build/debug/duckfn_palette.duckdb_extension
 ```
 
 Where the artifact lands and how it is loaded:
@@ -21,7 +21,7 @@ Where the artifact lands and how it is loaded:
 ```mermaid
 flowchart LR
     src["Rust sources"] --> make["make debug<br/>official path, also CI"]
-    make --> out["build/debug/<br/>my_extension.duckdb_extension"]
+    make --> out["build/debug/<br/>duckfn_palette.duckdb_extension"]
     out --> load["LOAD in DuckDB"]
 ```
 
@@ -93,15 +93,15 @@ Pull requests run the build and the tests only; publishing is gated on the ref b
 
 ### Installing a release
 
-The release asset is named `my_extension-<platform>.duckdb_extension`, and it has to be renamed before it can be
+The release asset is named `duckfn_palette-<platform>.duckdb_extension`, and it has to be renamed before it can be
 loaded: `LOAD` takes an extension name or a local path — it fetches no URLs (`INSTALL '<url>'` is the one that
 downloads) — and DuckDB takes the entry-point symbol from the file name, so the release name fails with
-`did not contain function "my_extension-windows_amd64_init_c_api"`.
+`did not contain function "duckfn_palette-windows_amd64_init_c_api"`.
 
 ```shell
-curl -LO https://github.com/<owner>/<repo>/releases/latest/download/my_extension-windows_amd64.duckdb_extension
-mv my_extension-windows_amd64.duckdb_extension my_extension.duckdb_extension
-duckdb -unsigned -c "LOAD './my_extension.duckdb_extension';"
+curl -LO https://github.com/<owner>/<repo>/releases/latest/download/duckfn_palette-windows_amd64.duckdb_extension
+mv duckfn_palette-windows_amd64.duckdb_extension duckfn_palette.duckdb_extension
+duckdb -unsigned -c "LOAD './duckfn_palette.duckdb_extension';"
 ```
 
 A locally built extension needs `duckdb -unsigned`; a released one that a user downloads also has to be

@@ -1,5 +1,5 @@
 [package]
-name = "my_extension"
+name = "duckfn_palette"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.88"
@@ -27,7 +27,7 @@ strip = true
 # (that is needed while compiling natively) to staticlib (needed since the
 # actual linking will be done via emcc).
 # The name must match the extension name (the Justfile's build_wasm passes it to `--example`).
-name = "my_extension"
+name = "duckfn_palette"
 path = "src/wasm_lib.rs"
 crate-type = ["staticlib"]
 
@@ -118,3 +118,31 @@ libduckdb-sys = { version = ">=1.10500, <2", features = ["loadable-extension"] }
 # For example:
 #   duckfn = { version = "0.3.0", features = ["cli", "chrono"] }
 #   chrono = { version = "0.4", default-features = false, features = ["std"] }
+
+# palette：颜色空间、转换、混合、色差、色适应、命名色与随机采样 —— 本扩展的全部领域逻辑。
+# 默认 features（named / std / approx）已覆盖命名色与浮点范围，额外开 `random` 以拿到各颜色
+# 空间的 Standard 分布（随机色构造）。
+#
+# palette: color spaces, conversion, blending, color difference, chromatic adaptation, named
+# colors and random sampling — the whole domain logic of this extension. The default features
+# (named / std / approx) give us the named-color table and float bounds; `random` adds the
+# per-space `Standard` distributions used by the random-color constructors.
+palette = { version = "0.7.7", features = ["random"] }
+
+# csscolorparser：CSS Color Module Level 4 的解析与序列化（hex / rgb() / hsl() / lab() /
+# oklch() / color(...) 等）。palette 只覆盖数值计算，字符串互操作交给它。
+#
+# csscolorparser: CSS Color Module Level 4 parsing and serialization. palette covers the math,
+# not the string formats.
+csscolorparser = "0.9"
+
+# colorous：d3-scale-chromatic 的配色方案（连续、离散、分类），用作预设色板。
+# colorous: the d3-scale-chromatic palettes (sequential, diverging, categorical).
+colorous = "1.0"
+
+# rand：colorous 之外的随机色需要可设种子的 PRNG；与 palette 的 `random` feature 使用同一
+# 大版本（0.8），避免两份 rand 同时进依赖图。
+#
+# rand: seeded PRNG for reproducible random colors; same major version as palette's `random`
+# feature (0.8), so only one rand enters the graph.
+rand = "0.8"

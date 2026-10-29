@@ -330,7 +330,7 @@ impl PltColor {
     /// 任意空间 → XYZ(D65)。
     ///
     /// Any space into XYZ(D65).
-    pub fn into_xyz(&self) -> Result<Xyz<D65, f64>, ExtensionError> {
+    pub fn to_xyz(&self) -> Result<Xyz<D65, f64>, ExtensionError> {
         let xyz = match self.any()? {
             AnyColor::Srgb(c) => Xyz::<D65, f64>::from_color_unclamped(c),
             AnyColor::SrgbLinear(c) => Xyz::<D65, f64>::from_color_unclamped(c),
@@ -571,7 +571,11 @@ impl PltColor {
     ///
     /// Convert without gamut clamping (`FromColorUnclamped` semantics).
     pub fn convert(&self, fn_name: &str, target: &str) -> Result<Self, ExtensionError> {
-        let xyz = self.into_xyz()?;
+        let target = space_arg(fn_name, target)?;
+        if self.require_space(fn_name)? == target {
+            return Ok(self.clone());
+        }
+        let xyz = self.to_xyz()?;
         Self::from_xyz(fn_name, target, xyz, self.alpha)
     }
 
@@ -580,7 +584,7 @@ impl PltColor {
     /// Same as `convert`, then clamp to the target space's bounds.
     pub fn convert_clamped(&self, fn_name: &str, target: &str) -> Result<Self, ExtensionError> {
         let converted = self.convert(fn_name, target)?;
-        Ok(converted.clamped(fn_name)?)
+        converted.clamped(fn_name)
     }
 
     /// 用 palette 的 `Clamp` 把各分量收进标准范围。
@@ -713,7 +717,7 @@ impl PltColor {
             AnyColor::Lms(c) => c.is_within_bounds(),
             AnyColor::LmsVonKries(c) => c.is_within_bounds(),
         };
-        Ok(inside.into())
+        Ok(inside)
     }
 
     /// 保留 alpha，替换空间与三分量。
@@ -827,7 +831,7 @@ impl PltCam16Full {
     /// Rebuild `Cam16` from the struct fields. palette assumes the correlated attributes are
     /// consistent and uses only some of them when converting back; use the partial types for
     /// precise control.
-    pub fn into_cam16(&self) -> Cam16<f64> {
+    pub fn to_cam16(&self) -> Cam16<f64> {
         Cam16 {
             lightness: self.lightness,
             chroma: self.chroma,

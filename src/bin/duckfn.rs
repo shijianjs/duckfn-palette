@@ -6,7 +6,7 @@
 //! 因为 DuckDB 的 C 扩展 API 没有设置函数描述与示例的接口。描述写在 `#[duck_*]` 属性上
 //! （见 functions/scalar_greet.rs、aggregate_sum.rs），这里不重复一份。
 //!
-//! 为什么用 `#[path]` 把 `extension` 再编一遍，而不是 `use my_extension::...`：
+//! 为什么用 `#[path]` 把 `extension` 再编一遍，而不是 `use duckfn_palette::...`：
 //! `#[duck_*]` 的文档元数据靠 `inventory` 的静态构造器收集，只有**真正被链接进最终二进制**的目标
 //! 文件才会生效。直接依赖 rlib 时，链接器可能因为没人引用那些模块而把它们整块丢掉，导出的 CSV
 //! 就会是空的（而且是静默的）。让 bin 自己把同一份源码编一遍，注册项就落在本 crate 里，一定齐全。
@@ -20,7 +20,7 @@
 //! description or examples. That text lives on the `#[duck_*]` attributes (see
 //! functions/scalar_greet.rs and aggregate_sum.rs); it is not repeated here.
 //!
-//! `#[path]` compiles `extension` a second time instead of using `use my_extension::...`
+//! `#[path]` compiles `extension` a second time instead of using `use duckfn_palette::...`
 //! because the documentation metadata behind `#[duck_*]` is collected by `inventory`'s static
 //! constructors, which only fire for object files that are really linked into the final binary: when
 //! merely depending on an rlib, the linker may drop those modules entirely and the exported CSV

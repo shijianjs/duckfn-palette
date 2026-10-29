@@ -52,11 +52,15 @@
 // contract is spelled out above.
 // ============================================================================
 
+pub(crate) mod adaptation;
 pub(crate) mod blend;
+pub(crate) mod cast;
 pub(crate) mod convert;
 pub(crate) mod css;
 pub(crate) mod difference;
+pub(crate) mod encoding;
 pub(crate) mod manipulate;
+pub(crate) mod matrix;
 pub(crate) mod named;
 pub(crate) mod theory;
 

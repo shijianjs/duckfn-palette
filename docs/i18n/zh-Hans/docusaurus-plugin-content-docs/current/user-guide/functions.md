@@ -1,7 +1,7 @@
 ---
 title: 函数
 sidebar_position: 3
-description: my_extension 注册的每一个 SQL 函数，都配了能在浏览器里直接跑的例子。
+description: duckfn_palette 注册的每一个 SQL 函数，都配了能在浏览器里直接跑的例子。
 ---
 
 # 函数

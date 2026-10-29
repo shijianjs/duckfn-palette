@@ -2,12 +2,12 @@
 title: Introduction
 sidebar_position: 1
 slug: /intro
-description: What my_extension adds to DuckDB, and how to start using it.
+description: What duckfn_palette adds to DuckDB, and how to start using it.
 ---
 
 # Introduction
 
-`my_extension` is a [DuckDB loadable extension](https://duckdb.org/docs/stable/extensions/overview): it
+`duckfn_palette` is a [DuckDB loadable extension](https://duckdb.org/docs/stable/extensions/overview): it
 adds SQL functions to DuckDB, and once it is loaded they behave like DuckDB's own. You do not need to know
 how it was written or to compile anything — the CLI, a Python or R session and the browser build all take
 the same `.duckdb_extension` file.
@@ -23,8 +23,8 @@ It adds three functions:
 ## Install it
 
 ```sql
-INSTALL my_extension FROM community;
-LOAD my_extension;
+INSTALL duckfn_palette FROM community;
+LOAD duckfn_palette;
 ```
 
 Then call the functions in any query:
@@ -40,7 +40,7 @@ the file.
 
 :::note[These pages are the template's starting point]
 
-`my_extension` is the sample extension of
+`duckfn_palette` is the sample extension of
 [duckfn-extension-template](https://github.com/shijianjs/duckfn-extension-template). The pages in this
 part of the site describe its three sample functions; a project built from the template replaces them
 with its own API and rewrites these pages to match.
