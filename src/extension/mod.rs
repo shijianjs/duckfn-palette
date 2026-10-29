@@ -29,4 +29,4 @@ use duckfn::duckfn_entrypoint;
 //   - `extension_name` in .github/workflows/MainDistributionPipeline.yml
 // `scripts/rename.sh` rewrites all five (and the occurrences in the docs) in one go; do not edit them
 // by hand.
-duckfn_entrypoint!("my_extension");
+duckfn_entrypoint!("duckfn_palette");
