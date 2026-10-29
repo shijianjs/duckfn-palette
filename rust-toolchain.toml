@@ -1,0 +1,19 @@
+# 固定构建用的 Rust 工具链（下游依赖 duckfn 不继承本文件，它只作用于本仓库自己的构建）。
+#
+# 官方 ci-tools 的 v2.0-cyanoptera 已经把 Rust 钉在 1.97.1，这里写同一个版本，让本地构建与 CI 使用
+# 同一个 rustc。为什么不是更低的 1.88 / 1.89：较新的 stable 才给 wasm32-unknown-emscripten 的预编译
+# std 带上展开运行时，`catch_unwind` 在浏览器里才能把 panic 转成可读错误（旧版 std 是 panic=abort，
+# panic 在浏览器里会崩成 RangeError）。
+#
+# 本文件与 Makefile 的 -O0 链接覆盖是一套：Rust >= 1.89 的 wasm 产物可能带 call-indirect-overlong，
+# 2.0 分支的 wasm-opt 仍不接受 emcc 递过去的参数，所以 wasm 链接继续走 -O0。完整故事见 duckfn 仓库
+# 的 docs/docs/duckdb-versions/wasm-toolchain.md。
+#
+# Pins the Rust used to build this repository (a downstream dependency on duckfn does not inherit it).
+# ci-tools' v2.0-cyanoptera already pins 1.97.1; this file keeps local builds on the same rustc. 1.97.1
+# rather than an older stable because only recent stable ships the wasm32-unknown-emscripten std *with*
+# unwinding, so catch_unwind turns a panic into a readable error in the browser. Keep it together with
+# the Makefile's -O0 wasm link override.
+[toolchain]
+channel = "1.97.1"
+targets = ["wasm32-unknown-emscripten"]
