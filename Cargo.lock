@@ -271,7 +271,7 @@ dependencies = [
 
 [[package]]
 name = "duckfn_palette"
-version = "0.1.0"
+version = "0.1.1-dev.0"
 dependencies = [
  "colorous",
  "csscolorparser",
