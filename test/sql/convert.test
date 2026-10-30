@@ -1,7 +1,8 @@
 # name: test/sql/convert.test
 # description: palette 的构造、读写、alpha 与转换（src/extension/functions/convert.rs）。
 #   期望值来源：本仓库实跑输出；往返检查（每个空间 → srgb）覆盖 5 个 sRGB 端点/中间色，
-#   容差 1e-5 是 palette 内置转换矩阵的精度，不是本仓库的近似。
+#   容差 1e-5 是 palette 内置转换矩阵的精度，不是本仓库的近似。单点转换同样按 1e-12 容差比较，
+#   不做文本精确断言：同一个 double 在 debug 与 release+LTO 下的末位 ULP 会不同。
 #   luma* 是一维空间（不可逆），srgb_gamma 的 gamma 2.2 编码会把 -0 附近的舍入残差送进
 #   powf 得到 NaN（palette 的上游行为），两者不进往返检查。
 # group: [duckfn_palette]
@@ -78,15 +79,20 @@ SELECT plt_alpha(plt_opaque(plt_color('srgb', 1, 0, 0, 0.25)));
 ----
 1.0
 
-# 转换（不裁剪）：sRGB 红 → Lab / XYZ，Lab 蓝 → sRGB，XYZ → xyY
-query TTTTT
-SELECT plt_components(plt_convert(plt_srgb(1,0,0),'lab')),
-       plt_components(plt_convert(plt_srgb(0.2,0.4,0.6),'oklch')),
-       plt_components(plt_convert(plt_srgb(1,0,0),'xyz')),
-       plt_components(plt_convert(plt_lab(50,20,-30),'srgb')),
-       plt_components(plt_convert(plt_xyz(0.5,0.4,0.3),'yxy'));
+# 转换（不裁剪）：sRGB 红 → Lab / XYZ，Lab 蓝 → sRGB，XYZ → xyY。
+# 逐分量按 1e-12 容差比较，不做文本精确断言：同一个 double 在 debug 与 release+LTO 下的末位
+# ULP 可以不同（那是编译优化的舍入，不是数值差异），文本相等会在 release 下误报。
+query I
+SELECT count(*) FROM (VALUES
+  (plt_components(plt_convert(plt_srgb(1,0,0),'lab')),         [53.240794141307205, 80.09245959641115, 67.20319651585298]),
+  (plt_components(plt_convert(plt_srgb(0.2,0.4,0.6),'oklch')), [0.49930415069594763, 0.09864151193090323, 250.4280612914526]),
+  (plt_components(plt_convert(plt_srgb(1,0,0),'xyz')),         [0.4124564, 0.2126729, 0.0193339]),
+  (plt_components(plt_convert(plt_lab(50,20,-30),'srgb')),     [0.4963598786650189, 0.42925958771760553, 0.6668145211940549]),
+  (plt_components(plt_convert(plt_xyz(0.5,0.4,0.3),'yxy')),     [0.4166666666666667, 0.33333333333333337, 0.4])
+) t(got, want)
+WHERE list_max(list_transform(list_zip(got, want), lambda p: abs(p[1] - p[2]))) > 1e-12;
 ----
-[53.240794141307205, 80.09245959641115, 67.20319651585298]	[0.49930415069594763, 0.09864151193090323, 250.4280612914526]	[0.4124564, 0.2126729, 0.0193339]	[0.4963598786650189, 0.42925958771760553, 0.6668145211940549]	[0.4166666666666667, 0.33333333333333337, 0.4]
+0
 
 # alpha 不参与转换
 query R

@@ -15,12 +15,21 @@ SELECT plt_components(plt_mix(plt_srgb_linear(0,0.5,1), plt_srgb_linear(1,0.5,0)
 ----
 [0.0, 0.5, 1.0]	[0.5, 0.5, 0.5]	[1.0, 0.5, 0.0]
 
-# 第二个操作数先转到第一个操作数的空间，alpha 一并插值
-query TT
-SELECT plt_components(plt_mix(plt_srgb(1,0,0), plt_lab(50,20,-30), 0.5)),
-       plt_space(plt_mix(plt_srgb(1,0,0), plt_lab(50,20,-30), 0.5));
+# 第二个操作数先转到第一个操作数的空间，alpha 一并插值。
+# 分量按 1e-12 容差比较（理由见 convert.test 的单点转换说明）：release+LTO 下末位 ULP 会变。
+query I
+SELECT count(*) FROM (VALUES
+  (plt_components(plt_mix(plt_srgb(1,0,0), plt_lab(50,20,-30), 0.5)),
+   [0.7481799393325095, 0.21462979385880276, 0.33340726059702747])
+) t(got, want)
+WHERE list_max(list_transform(list_zip(got, want), lambda p: abs(p[1] - p[2]))) > 1e-12;
 ----
-[0.7481799393325095, 0.21462979385880276, 0.33340726059702747]	srgb
+0
+
+query T
+SELECT plt_space(plt_mix(plt_srgb(1,0,0), plt_lab(50,20,-30), 0.5));
+----
+srgb
 
 query R
 SELECT plt_alpha(plt_mix(plt_with_alpha(plt_srgb(1,0,0), 0.0), plt_with_alpha(plt_srgb(0,1,0), 1.0), 0.25));
