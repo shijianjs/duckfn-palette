@@ -114,7 +114,7 @@ SELECT plt_contrast_check(plt_srgb(1, 1, 1), plt_srgb(0, 0, 0), 'min_text') AS w
 
 一个常用做法是给一套色板逐色标注，再按它必须满足的准则过滤：
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"color"}
 SELECT plt_to_hex(c) AS color,
        plt_contrast(plt_srgb(1, 1, 1), c) AS on_white,
        plt_contrast_check(plt_srgb(1, 1, 1), c, 'min_text') AS readable_on_white
@@ -138,7 +138,7 @@ SELECT plt_contrast_check(plt_srgb(1, 1, 1), plt_srgb(0, 0, 0), 'aaa');
 两色中与 `base` 对比度更高的那个 —— 即 tinycolor 的 `mostReadable` 行为。候选列表为空会报错，未知
 准则与 `plt_contrast_check` 一样让语句失败。
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["best","fallback"]}
 SELECT plt_to_hex(plt_most_readable(plt_named('navy'),
                                     [plt_named('teal'), plt_named('gold'), plt_named('tomato')])) AS best,
        plt_to_hex(plt_most_readable(plt_named('navy'),
@@ -147,7 +147,7 @@ SELECT plt_to_hex(plt_most_readable(plt_named('navy'),
 
 这就是「给这个背景色找一个读得清的文字色」的逐行写法：
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["background","label"]}
 SELECT plt_to_hex(bg) AS background,
        plt_to_hex(plt_most_readable(bg, [plt_named('white'), plt_named('black')])) AS label
 FROM (VALUES (plt_named('seagreen')), (plt_named('gold')), (plt_named('rebeccapurple'))) t(bg);

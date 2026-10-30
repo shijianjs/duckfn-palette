@@ -117,7 +117,7 @@ SELECT plt_contrast_check(plt_srgb(1, 1, 1), plt_srgb(0, 0, 0), 'min_text') AS w
 
 A useful pattern is to annotate a palette and filter by the criteria it must meet:
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"color"}
 SELECT plt_to_hex(c) AS color,
        plt_contrast(plt_srgb(1, 1, 1), c) AS on_white,
        plt_contrast_check(plt_srgb(1, 1, 1), c, 'min_text') AS readable_on_white
@@ -143,7 +143,7 @@ the function returns whichever of black and white contrasts better with `base` â
 `mostReadable` behaviour. An empty candidate list is an error, and an unknown criterion fails the
 statement like `plt_contrast_check`.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["best","fallback"]}
 SELECT plt_to_hex(plt_most_readable(plt_named('navy'),
                                     [plt_named('teal'), plt_named('gold'), plt_named('tomato')])) AS best,
        plt_to_hex(plt_most_readable(plt_named('navy'),
@@ -152,7 +152,7 @@ SELECT plt_to_hex(plt_most_readable(plt_named('navy'),
 
 This is the "give me a label color that is readable on this background" query, applied per row:
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["background","label"]}
 SELECT plt_to_hex(bg) AS background,
        plt_to_hex(plt_most_readable(bg, [plt_named('white'), plt_named('black')])) AS label
 FROM (VALUES (plt_named('seagreen')), (plt_named('gold')), (plt_named('rebeccapurple'))) t(bg);

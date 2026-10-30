@@ -16,7 +16,7 @@ description: 在 44 个空间中的任意两个之间移动颜色，夹紧或不
 转换到目标空间，**不做色域夹紧**。超出目标范围的值原样返回，这对检查中间结果、以及那些本应可逆的
 转换很有用。
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"srgb"}
 SELECT plt_to_hex(plt_srgb(1, 0.5, 0)) AS srgb,
        plt_components(plt_convert(plt_srgb(1, 0.5, 0), 'oklch')) AS as_oklch,
        plt_components(plt_convert(plt_srgb(1, 0.5, 0), 'xyz')) AS as_xyz;
@@ -83,7 +83,7 @@ FROM (VALUES
 但 `plt_convert` 与 `plt_convert_clamped` 在它上面算出的数字相同，而且经过任何可逆空间往返一次，
 都能把原色还原到浮点精度：
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"round_trip"}
 SELECT plt_to_hex(plt_convert(plt_convert(plt_srgb(0.2, 0.4, 0.6), 'hsluv'), 'srgb')) AS round_trip;
 ```
 

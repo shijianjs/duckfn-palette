@@ -24,7 +24,7 @@ description: 十一种可分离混合模式、六种 Porter-Duff 算子，以及
 SELECT plt_blend(plt_hsl(0, 1, 0.5), plt_hsl(120, 1, 0.5), 'multiply');
 ```
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"multiplied"}
 SELECT plt_to_hex(plt_blend(plt_convert(plt_hsl(0, 1, 0.5), 'srgb'),
                             plt_convert(plt_hsl(120, 1, 0.5), 'srgb'),
                             'multiply')) AS multiplied;
@@ -54,7 +54,7 @@ SELECT plt_to_hex(plt_blend(plt_convert(plt_hsl(0, 1, 0.5), 'srgb'),
 SELECT plt_blend_modes() AS modes;
 ```
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["multiply","screen","overlay"]}
 SELECT plt_to_hex(plt_blend(plt_srgb(0.5, 0.2, 0.1), plt_srgb(0.4, 0.6, 0.8), 'multiply')) AS multiply,
        plt_to_hex(plt_blend(plt_srgb(0.5, 0.2, 0.1), plt_srgb(0.4, 0.6, 0.8), 'screen')) AS screen,
        plt_to_hex(plt_blend(plt_srgb(0.5, 0.2, 0.1), plt_srgb(0.4, 0.6, 0.8), 'overlay')) AS overlay;
@@ -94,7 +94,7 @@ SELECT plt_blend(plt_srgb(1, 0, 0), plt_srgb(0, 0, 1), 'glow');
 SELECT plt_compose_modes() AS operators;
 ```
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["over","xor_"]}
 SELECT plt_to_hex(plt_compose(plt_with_alpha(plt_srgb(1, 0, 0), 0.5),
                               plt_with_alpha(plt_srgb(0, 0, 1), 0.5), 'over')) AS over,
        plt_to_hex(plt_compose(plt_with_alpha(plt_srgb(1, 0, 0), 0.5),
@@ -120,7 +120,7 @@ OpenGL 风格的形式：由你决定源与目标各有多少进入结果。十�
 SELECT plt_blend_parameters() AS factors;
 ```
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"blended"}
 SELECT plt_to_hex(plt_blend_equations(plt_with_alpha(plt_srgb(1, 0, 0), 0.5),
                                       plt_with_alpha(plt_srgb(0, 0, 1), 0.5),
                                       'source_alpha', 'one_minus_source_alpha')) AS blended;
@@ -129,7 +129,7 @@ SELECT plt_to_hex(plt_blend_equations(plt_with_alpha(plt_srgb(1, 0, 0), 0.5),
 `'source_alpha'` / `'one_minus_source_alpha'` 复现了普通的 `over` 合成，用它来检验一对因子的行为是否
 符合预期是个好办法：
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["compose_over","equations"]}
 SELECT plt_to_hex(plt_compose(src, dst, 'over')) AS compose_over,
        plt_to_hex(plt_blend_equations(src, dst, 'source_alpha', 'one_minus_source_alpha')) AS equations
 FROM (SELECT plt_with_alpha(plt_srgb(1, 0, 0), 0.5) AS src,

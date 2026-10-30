@@ -72,12 +72,12 @@ Some of the functions, running right here — the site preloads the extension fr
 release, so no local `LOAD` is needed here (a hand-built extension still needs `-unsigned`; see the
 traps below). Click **Run** on any block.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["mixed"]}
 SELECT plt_to_hex(plt_convert(plt_srgb(1, 0.5, 0), 'oklch')) AS as_oklch,
        plt_to_hex(plt_mix(plt_named('red'), plt_named('blue'), 0.5)) AS mixed;
 ```
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"converted"}
 -- A NULL argument is short-circuited to NULL before the function body ever runs.
 SELECT plt_to_hex(plt_convert(plt_srgb(1, 0, 0), 'lab')) AS converted,
        plt_convert(NULL, 'lab') IS NULL AS null_in_null_out;

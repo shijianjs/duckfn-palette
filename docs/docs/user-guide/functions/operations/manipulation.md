@@ -20,7 +20,7 @@ SELECT plt_saturate(plt_srgb(1, 0, 0), 0.2);
 
 The fix is one `plt_convert` away:
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"saturated"}
 SELECT plt_to_hex(plt_saturate(plt_convert(plt_srgb(1, 0, 0), 'hsl'), 0.2)) AS saturated;
 ```
 
@@ -34,7 +34,7 @@ Linear interpolation in **`a`'s space**: `factor` 0 gives `a`, 1 gives `b`, 0.5 
 `factor` is clamped to 0..1. `b` is converted into `a`'s space first, and alpha is interpolated
 along with the components. Mixing is defined in all 44 spaces, including the hue spaces:
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["srgb_mid","oklab_mid"]}
 SELECT plt_to_hex(plt_mix(plt_srgb(1, 0, 0), plt_srgb(0, 0, 1), 0.5)) AS srgb_mid,
        plt_to_hex(plt_mix(plt_convert(plt_srgb(1, 0, 0), 'oklab'),
                           plt_convert(plt_srgb(0, 0, 1), 'oklab'),
@@ -62,7 +62,7 @@ Supported spaces for all four: all 15 RGB variants, `hsl`, `hsv`, `hwb`, `hsluv`
 
 **Signature**: `plt_lighten(color plt_color, factor DOUBLE) -> plt_color`
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["lighter","lighter_hsl"]}
 SELECT plt_to_hex(plt_lighten(plt_srgb(1, 0, 0), 0.2)) AS lighter,
        plt_to_hex(plt_lighten(plt_hsl(0, 1, 0.4), 0.2)) AS lighter_hsl,
        plt_components(plt_lighten(plt_oklch(0.5, 0.1, 30), 0.2)) AS lighter_oklch;
@@ -72,7 +72,7 @@ SELECT plt_to_hex(plt_lighten(plt_srgb(1, 0, 0), 0.2)) AS lighter,
 
 **Signature**: `plt_lighten_fixed(color plt_color, amount DOUBLE) -> plt_color`
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"raised_hsl"}
 SELECT plt_components(plt_lighten_fixed(plt_lab(50, 20, -30), 0.1)) AS raised_lab,
        plt_to_hex(plt_lighten_fixed(plt_hsl(0, 1, 0.4), 0.2)) AS raised_hsl;
 ```
@@ -81,7 +81,7 @@ SELECT plt_components(plt_lighten_fixed(plt_lab(50, 20, -30), 0.1)) AS raised_la
 
 **Signature**: `plt_darken(color plt_color, factor DOUBLE) -> plt_color`
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["darker","darker_hsv"]}
 SELECT plt_to_hex(plt_darken(plt_srgb(1, 0, 0), 0.2)) AS darker,
        plt_to_hex(plt_darken(plt_hsv(0, 1, 0.6), 0.3)) AS darker_hsv;
 ```
@@ -103,7 +103,7 @@ clamps at 1. This is tinycolor's `brighten` on the extension's 0..1 scale; `plt_
 space's own lightness instead. Every space is accepted, and the result keeps the input's space and
 alpha.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["brighter","brighter_lab","clipped"]}
 SELECT plt_to_hex(plt_brighten(plt_srgb(0.2, 0.2, 0.2), 0.1)) AS brighter,
        plt_to_hex(plt_brighten(plt_lab(50, 20, 30), 0.1)) AS brighter_lab,
        plt_to_hex(plt_brighten(plt_srgb(0.9, 0.9, 0.9), 0.5)) AS clipped;
@@ -121,7 +121,7 @@ space and keep the input's space and alpha.
 Drops the HSL saturation to zero, so the grey keeps the color's HSL lightness. This is the same
 result as `plt_desaturate` on an HSL color, without having to convert.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["red_grey","blue_grey"]}
 SELECT plt_to_hex(plt_greyscale(plt_srgb(1, 0, 0))) AS red_grey,
        plt_to_hex(plt_greyscale(plt_srgb(0.2, 0.6, 0.9))) AS blue_grey;
 ```
@@ -132,7 +132,7 @@ SELECT plt_to_hex(plt_greyscale(plt_srgb(1, 0, 0))) AS red_grey,
 
 Mixes towards white in sRGB: 0 keeps the color, 1 makes it white. `amount` is clamped to 0..1.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["quarter","half","white"]}
 SELECT plt_to_hex(plt_tint(plt_srgb(1, 0, 0), 0.25)) AS quarter,
        plt_to_hex(plt_tint(plt_srgb(1, 0, 0), 0.5)) AS half,
        plt_to_hex(plt_tint(plt_srgb(1, 0, 0), 1)) AS white;
@@ -144,7 +144,7 @@ SELECT plt_to_hex(plt_tint(plt_srgb(1, 0, 0), 0.25)) AS quarter,
 
 Mixes towards black in sRGB: 0 keeps the color, 1 makes it black.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["quarter","half","black"]}
 SELECT plt_to_hex(plt_shade(plt_srgb(1, 0, 0), 0.25)) AS quarter,
        plt_to_hex(plt_shade(plt_srgb(1, 0, 0), 0.5)) AS half,
        plt_to_hex(plt_shade(plt_srgb(1, 0, 0), 1)) AS black;
@@ -164,7 +164,7 @@ Supported spaces: `hsl`, `hsv`, `hsluv`, `lch`, `lchuv`, `okhsl`, `okhsv` and `c
 
 **Signature**: `plt_saturate(color plt_color, factor DOUBLE) -> plt_color`
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"more_saturated"}
 SELECT plt_to_hex(plt_saturate(plt_hsl(0, 0.5, 0.5), 0.5)) AS more_saturated,
        plt_components(plt_saturate(plt_lch(50, 20, 40), 0.5)) AS more_chroma;
 ```
@@ -182,7 +182,7 @@ SELECT plt_components(plt_saturate_fixed(plt_hsl(0, 0.4, 0.5), 0.2)) AS fixed_hs
 
 **Signature**: `plt_desaturate(color plt_color, factor DOUBLE) -> plt_color`
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["muted","gray"]}
 SELECT plt_to_hex(plt_desaturate(plt_hsl(0, 0.8, 0.5), 0.5)) AS muted,
        plt_to_hex(plt_desaturate(plt_convert(plt_srgb(1, 0, 0), 'hsl'), 1)) AS gray;
 ```
@@ -203,7 +203,7 @@ SELECT plt_components(plt_desaturate_fixed(plt_hsl(0, 0.8, 0.5), 0.3)) AS less_s
 
 Rotates the hue by any real number of degrees; the result wraps into 0..360.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["shifted","backwards"]}
 SELECT plt_to_hex(plt_shift_hue(plt_hsl(120, 1, 0.5), 120)) AS shifted,
        plt_to_hex(plt_shift_hue(plt_convert(plt_srgb(1, 0, 0), 'oklch'), -60)) AS backwards;
 ```
@@ -214,7 +214,7 @@ SELECT plt_to_hex(plt_shift_hue(plt_hsl(120, 1, 0.5), 120)) AS shifted,
 
 Sets the hue instead of adding to it.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"blue"}
 SELECT plt_to_hex(plt_with_hue(plt_hsl(120, 1, 0.5), 240)) AS blue,
        plt_components(plt_with_hue(plt_oklch(0.6, 0.1, 30), 200)) AS set_oklch;
 ```

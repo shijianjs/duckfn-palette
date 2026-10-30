@@ -56,7 +56,7 @@ SELECT plt_color('oklch', 0.7, 0.1, 120, 0.5) AS translucent;
 Builds a color from a list of exactly three components; alpha defaults to 1. This is the inverse of
 `plt_components`, so a color survives a round trip through a list.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"rebuilt"}
 SELECT plt_to_hex(plt_from_components('srgb', [0.2, 0.4, 0.6])) AS rebuilt;
 ```
 
@@ -66,7 +66,7 @@ SELECT plt_to_hex(plt_from_components('srgb', [0.2, 0.4, 0.6])) AS rebuilt;
 
 Takes a list of exactly four values: the three components plus alpha.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"translucent"}
 SELECT plt_to_hex(plt_from_components_alpha('srgb', [0.2, 0.4, 0.6, 0.5])) AS translucent;
 ```
 
@@ -173,7 +173,7 @@ clipped); `plt_clamp` or `plt_convert_clamped` is how you bring them into range.
 | `plt_rec2020(r, g, b)` | red, green, blue 0..1 | Rec. 2020 primaries and transfer function |
 | `plt_rec2020_linear(r, g, b)` | red, green, blue 0..1 | linear-light Rec. 2020 |
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["srgb","display_p3"]}
 SELECT plt_to_hex(plt_srgb(1, 0.5, 0)) AS srgb,
        plt_to_hex(plt_display_p3(1, 0.5, 0)) AS display_p3,
        plt_rgb_to_xyz_matrix('rec2020') AS rec2020_matrix;
@@ -193,7 +193,7 @@ These take the hue first. Hue is in degrees and may be negative or above 360.
 | `plt_okhsv(h, s, v)` | hue, saturation, value | hue degrees; s and v 0..1 |
 | `plt_okhwb(h, w, b)` | hue, whiteness, blackness | hue degrees; w and b 0..1 |
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["hsl","okhsl","hsluv"]}
 SELECT plt_to_hex(plt_hsl(120, 0.5, 0.5)) AS hsl,
        plt_to_hex(plt_okhsl(120, 0.5, 0.5)) AS okhsl,
        plt_to_hex(plt_hsluv(120, 50, 50)) AS hsluv;
@@ -211,7 +211,7 @@ SELECT plt_to_hex(plt_hsl(120, 0.5, 0.5)) AS hsl,
 | `plt_xyz_d50(x, y, z)` | X, Y, Z | D50 white point (conversions adapt with Bradford) |
 | `plt_yxy(x, y, luminance)` | chromaticity x, y, luminance | x and y are chromaticity, luminance ≥ 0 |
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["lab","lch","xyz"]}
 SELECT plt_to_hex(plt_lab(50, 20, -30)) AS lab,
        plt_to_hex(plt_lch(50, 40, 120)) AS lch,
        plt_to_hex(plt_xyz(0.5, 0.4, 0.3)) AS xyz;
@@ -224,7 +224,7 @@ SELECT plt_to_hex(plt_lab(50, 20, -30)) AS lab,
 | `plt_oklab(l, a, b)` | lightness, a, b | l 0..1; a and b nominally -1..1 |
 | `plt_oklch(l, c, h)` | lightness, chroma, hue | l 0..1; c ≥ 0; hue degrees |
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["oklab","oklch"]}
 SELECT plt_to_hex(plt_oklab(0.5, 0.1, 0.1)) AS oklab,
        plt_to_hex(plt_oklch(0.5, 0.1, 120)) AS oklch;
 ```
@@ -246,7 +246,7 @@ average surround and automatic discounting. For your own conditions use
 | `plt_cam16_ucs_jab(j, a, b)` | CAM16-UCS J′, a′, b′ |
 | `plt_cam16_ucs_jmh(j, m, h)` | CAM16-UCS J′, M′, hue |
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["jch","ucs_jmh"]}
 SELECT plt_to_hex(plt_cam16_jch(50, 40, 120)) AS jch,
        plt_to_hex(plt_cam16_ucs_jmh(50, 40, 120)) AS ucs_jmh;
 ```
@@ -258,7 +258,7 @@ SELECT plt_to_hex(plt_cam16_jch(50, 40, 120)) AS jch,
 | `plt_lms(l, m, s)` | long, medium, short (Bradford matrix, D65) |
 | `plt_lms_von_kries(l, m, s)` | long, medium, short (von Kries / Hunt-Pointer-Estevez matrix, D65) |
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["lms","von_kries"]}
 SELECT plt_to_hex(plt_lms(0.5, 0.4, 0.3)) AS lms,
        plt_to_hex(plt_lms_von_kries(0.5, 0.4, 0.3)) AS von_kries;
 ```
@@ -269,7 +269,7 @@ SELECT plt_to_hex(plt_lms(0.5, 0.4, 0.3)) AS lms,
 components are 0. These spaces are lossy: converting a color into one and back gives a gray of the
 same luminance, not the original color.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"gray"}
 SELECT plt_luma(0.5) AS luma,
        plt_components(plt_convert(plt_srgb(0.2, 0.4, 0.6), 'luma')) AS from_color,
        plt_to_hex(plt_convert(plt_srgb(0.2, 0.4, 0.6), 'luma')) AS gray;

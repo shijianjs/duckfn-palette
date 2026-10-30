@@ -18,7 +18,7 @@ SELECT plt_saturate(plt_srgb(1, 0, 0), 0.2);
 
 修好它只差一次 `plt_convert`：
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"saturated"}
 SELECT plt_to_hex(plt_saturate(plt_convert(plt_srgb(1, 0, 0), 'hsl'), 0.2)) AS saturated;
 ```
 
@@ -32,7 +32,7 @@ SELECT plt_to_hex(plt_saturate(plt_convert(plt_srgb(1, 0, 0), 'hsl'), 0.2)) AS s
 `factor` 会被夹进 0..1。`b` 先转换到 `a` 的 space，alpha 与各分量一起插值。混合在全部 44 个 space
 里都有定义，包括带色相的 space：
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["srgb_mid","oklab_mid"]}
 SELECT plt_to_hex(plt_mix(plt_srgb(1, 0, 0), plt_srgb(0, 0, 1), 0.5)) AS srgb_mid,
        plt_to_hex(plt_mix(plt_convert(plt_srgb(1, 0, 0), 'oklab'),
                           plt_convert(plt_srgb(0, 0, 1), 'oklab'),
@@ -59,7 +59,7 @@ SELECT plt_mix(plt_with_alpha(plt_srgb(1, 0, 0), 0),
 
 **签名**：`plt_lighten(color plt_color, factor DOUBLE) -> plt_color`
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["lighter","lighter_hsl"]}
 SELECT plt_to_hex(plt_lighten(plt_srgb(1, 0, 0), 0.2)) AS lighter,
        plt_to_hex(plt_lighten(plt_hsl(0, 1, 0.4), 0.2)) AS lighter_hsl,
        plt_components(plt_lighten(plt_oklch(0.5, 0.1, 30), 0.2)) AS lighter_oklch;
@@ -69,7 +69,7 @@ SELECT plt_to_hex(plt_lighten(plt_srgb(1, 0, 0), 0.2)) AS lighter,
 
 **签名**：`plt_lighten_fixed(color plt_color, amount DOUBLE) -> plt_color`
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"raised_hsl"}
 SELECT plt_components(plt_lighten_fixed(plt_lab(50, 20, -30), 0.1)) AS raised_lab,
        plt_to_hex(plt_lighten_fixed(plt_hsl(0, 1, 0.4), 0.2)) AS raised_hsl;
 ```
@@ -78,7 +78,7 @@ SELECT plt_components(plt_lighten_fixed(plt_lab(50, 20, -30), 0.1)) AS raised_la
 
 **签名**：`plt_darken(color plt_color, factor DOUBLE) -> plt_color`
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["darker","darker_hsv"]}
 SELECT plt_to_hex(plt_darken(plt_srgb(1, 0, 0), 0.2)) AS darker,
        plt_to_hex(plt_darken(plt_hsv(0, 1, 0.6), 0.3)) AS darker_hsv;
 ```
@@ -99,7 +99,7 @@ SELECT plt_components(plt_darken_fixed(plt_lab(50, 20, -30), 0.1)) AS lowered_la
 tinycolor 的 `brighten` 在本扩展 0..1 尺度上的写法；`plt_lighten` 缩放的是该 space 自己的亮度。所有
 space 都接受，结果保留输入的 space 与 alpha。
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["brighter","brighter_lab","clipped"]}
 SELECT plt_to_hex(plt_brighten(plt_srgb(0.2, 0.2, 0.2), 0.1)) AS brighter,
        plt_to_hex(plt_brighten(plt_lab(50, 20, 30), 0.1)) AS brighter_lab,
        plt_to_hex(plt_brighten(plt_srgb(0.9, 0.9, 0.9), 0.5)) AS clipped;
@@ -116,7 +116,7 @@ SELECT plt_to_hex(plt_brighten(plt_srgb(0.2, 0.2, 0.2), 0.1)) AS brighter,
 把 HSL 的饱和度降到 0，所以保留的是颜色在 HSL 里的亮度。效果与对 HSL 颜色调用 `plt_desaturate`
 相同，只是不用自己先转换。
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["red_grey","blue_grey"]}
 SELECT plt_to_hex(plt_greyscale(plt_srgb(1, 0, 0))) AS red_grey,
        plt_to_hex(plt_greyscale(plt_srgb(0.2, 0.6, 0.9))) AS blue_grey;
 ```
@@ -127,7 +127,7 @@ SELECT plt_to_hex(plt_greyscale(plt_srgb(1, 0, 0))) AS red_grey,
 
 在 sRGB 里朝白色混合：0 保持原色，1 得到白色。`amount` 会被夹进 0..1。
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["quarter","half","white"]}
 SELECT plt_to_hex(plt_tint(plt_srgb(1, 0, 0), 0.25)) AS quarter,
        plt_to_hex(plt_tint(plt_srgb(1, 0, 0), 0.5)) AS half,
        plt_to_hex(plt_tint(plt_srgb(1, 0, 0), 1)) AS white;
@@ -139,7 +139,7 @@ SELECT plt_to_hex(plt_tint(plt_srgb(1, 0, 0), 0.25)) AS quarter,
 
 在 sRGB 里朝黑色混合：0 保持原色，1 得到黑色。
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["quarter","half","black"]}
 SELECT plt_to_hex(plt_shade(plt_srgb(1, 0, 0), 0.25)) AS quarter,
        plt_to_hex(plt_shade(plt_srgb(1, 0, 0), 0.5)) AS half,
        plt_to_hex(plt_shade(plt_srgb(1, 0, 0), 1)) AS black;
@@ -157,7 +157,7 @@ SELECT plt_to_hex(plt_shade(plt_srgb(1, 0, 0), 0.25)) AS quarter,
 
 **签名**：`plt_saturate(color plt_color, factor DOUBLE) -> plt_color`
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"more_saturated"}
 SELECT plt_to_hex(plt_saturate(plt_hsl(0, 0.5, 0.5), 0.5)) AS more_saturated,
        plt_components(plt_saturate(plt_lch(50, 20, 40), 0.5)) AS more_chroma;
 ```
@@ -175,7 +175,7 @@ SELECT plt_components(plt_saturate_fixed(plt_hsl(0, 0.4, 0.5), 0.2)) AS fixed_hs
 
 **签名**：`plt_desaturate(color plt_color, factor DOUBLE) -> plt_color`
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["muted","gray"]}
 SELECT plt_to_hex(plt_desaturate(plt_hsl(0, 0.8, 0.5), 0.5)) AS muted,
        plt_to_hex(plt_desaturate(plt_convert(plt_srgb(1, 0, 0), 'hsl'), 1)) AS gray;
 ```
@@ -196,7 +196,7 @@ SELECT plt_components(plt_desaturate_fixed(plt_hsl(0, 0.8, 0.5), 0.3)) AS less_s
 
 把色相旋转任意实数度；结果会回绕到 0..360。
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["shifted","backwards"]}
 SELECT plt_to_hex(plt_shift_hue(plt_hsl(120, 1, 0.5), 120)) AS shifted,
        plt_to_hex(plt_shift_hue(plt_convert(plt_srgb(1, 0, 0), 'oklch'), -60)) AS backwards;
 ```
@@ -207,7 +207,7 @@ SELECT plt_to_hex(plt_shift_hue(plt_hsl(120, 1, 0.5), 120)) AS shifted,
 
 设置色相，而不是在原有色相上累加。
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"blue"}
 SELECT plt_to_hex(plt_with_hue(plt_hsl(120, 1, 0.5), 240)) AS blue,
        plt_components(plt_with_hue(plt_oklch(0.6, 0.1, 30), 200)) AS set_oklch;
 ```

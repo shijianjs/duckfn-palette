@@ -19,15 +19,15 @@ SELECT plt_complementary(plt_lab(50, 20, -30));
 
 先转换就是全部的修法：
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"complement"}
 SELECT plt_to_hex(plt_complementary(plt_convert(plt_srgb(1, 0, 0), 'oklch'))) AS complement;
 ```
 
 这些函数返回方案里**其余**的颜色，顺序与 palette 一致，不包括输入颜色本身。它们共用同一种列表形状，
 所以查询里可以一视同仁地处理：
 
-```sql {"type":"duckfn","show":"table"}
-SELECT to_json(list_transform(plt_triadic(plt_oklch(0.6, 0.15, 30)), lambda x: plt_to_hex(x))) AS triadic;
+```sql {"type":"duckfn","show":"table","colors":"triadic"}
+SELECT list_transform(plt_triadic(plt_oklch(0.6, 0.15, 30)), lambda x: plt_to_hex(x)) AS triadic;
 ```
 
 ## `plt_complementary(color)`
@@ -36,7 +36,7 @@ SELECT to_json(list_transform(plt_triadic(plt_oklch(0.6, 0.15, 30)), lambda x: p
 
 色相环上正对面的颜色：色相 + 180°。这个函数返回单个颜色而非列表，因为补色只有一个颜色。
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"complement"}
 SELECT plt_to_hex(plt_complementary(plt_hsl(120, 1, 0.5))) AS complement,
        plt_components(plt_complementary(plt_hsl(120, 1, 0.5))) AS complement_hsl;
 ```
@@ -58,8 +58,8 @@ SELECT plt_components(plt_split_complementary(plt_hsl(120, 1, 0.5))[1]) AS first
 
 色相 − 30° 与 + 30° 处的两个颜色。
 
-```sql {"type":"duckfn","show":"table"}
-SELECT to_json(list_transform(plt_analogous(plt_hsl(120, 1, 0.5)), lambda x: plt_to_hex(x))) AS analogous;
+```sql {"type":"duckfn","show":"table","colors":"analogous"}
+SELECT list_transform(plt_analogous(plt_hsl(120, 1, 0.5)), lambda x: plt_to_hex(x)) AS analogous;
 ```
 
 ## `plt_analogous_secondary(color)`
@@ -79,8 +79,8 @@ SELECT plt_components(plt_analogous_secondary(plt_hsl(120, 1, 0.5))[1]) AS minus
 
 色相 + 120° 与 + 240° 处的两个颜色。
 
-```sql {"type":"duckfn","show":"table"}
-SELECT to_json(list_transform(plt_triadic(plt_hsl(120, 1, 0.5)), lambda x: plt_to_hex(x))) AS triadic;
+```sql {"type":"duckfn","show":"table","colors":"triadic"}
+SELECT list_transform(plt_triadic(plt_hsl(120, 1, 0.5)), lambda x: plt_to_hex(x)) AS triadic;
 ```
 
 ## `plt_tetradic(color)`
@@ -89,8 +89,8 @@ SELECT to_json(list_transform(plt_triadic(plt_hsl(120, 1, 0.5)), lambda x: plt_t
 
 色相 + 90°、+ 180° 与 + 270° 处的三个颜色 —— 也就是正方形方案。
 
-```sql {"type":"duckfn","show":"table"}
-SELECT to_json(list_transform(plt_tetradic(plt_hsl(30, 1, 0.5)), lambda x: plt_to_hex(x))) AS tetradic;
+```sql {"type":"duckfn","show":"table","colors":"tetradic"}
+SELECT list_transform(plt_tetradic(plt_hsl(30, 1, 0.5)), lambda x: plt_to_hex(x)) AS tetradic;
 ```
 
 ## `plt_monochromatic(color, count)`
@@ -102,9 +102,9 @@ SELECT to_json(list_transform(plt_tetradic(plt_hsl(30, 1, 0.5)), lambda x: plt_t
 与上面的色相方案不同（那些不含输入色）。`count` 为 0 得到空列表，负数报错。结果留在输入的 space 里，
 alpha 不变。
 
-```sql {"type":"duckfn","show":"table"}
-SELECT to_json(list_transform(plt_monochromatic(plt_srgb(1, 0, 0), 4),
-                              lambda x: plt_to_hex(x))) AS reds,
+```sql {"type":"duckfn","show":"table","colors":"reds"}
+SELECT list_transform(plt_monochromatic(plt_srgb(1, 0, 0), 4),
+                      lambda x: plt_to_hex(x)) AS reds,
        plt_components(plt_monochromatic(plt_hsl(120, 1, 0.5), 3)[2]) AS second_hsl;
 ```
 
@@ -116,15 +116,15 @@ SELECT to_json(list_transform(plt_monochromatic(plt_srgb(1, 0, 0), 4),
 `split_complement`、`triad` 与 `square`。方案名来自某一列或某个参数时，就用它。六种方案都是旋转色相，
 所以 `monochromatic` 不在其中 —— 它变的是 HSV 的 value，有自己的函数（见上）。
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"colors"}
 SELECT scheme,
-       to_json(list_transform(plt_harmony(plt_oklch(0.6, 0.15, 30), scheme),
-                              lambda x: plt_to_hex(x))) AS colors
+       list_transform(plt_harmony(plt_oklch(0.6, 0.15, 30), scheme),
+                      lambda x: plt_to_hex(x)) AS colors
 FROM (VALUES ('complementary'), ('split_complementary'), ('analogous'),
              ('analogous_secondary'), ('triadic'), ('tetradic')) t(scheme);
 ```
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"first_of_square"}
 SELECT plt_to_hex(plt_harmony(plt_oklch(0.6, 0.15, 30), 'Square')[1]) AS first_of_square;
 ```
 

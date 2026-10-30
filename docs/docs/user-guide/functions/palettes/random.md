@@ -19,14 +19,14 @@ so results are reproducible across queries and machines, and safe inside `EXPLAI
 
 One color in the given space.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"as_hex"}
 SELECT plt_random_color('oklch', 42) AS color,
        plt_to_hex(plt_random_color('oklch', 42)) AS as_hex;
 ```
 
 The seed is the whole state: change it to get a different color, keep it to get the same one.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"color"}
 SELECT seed, plt_to_hex(plt_random_color('srgb', seed)) AS color
 FROM range(1, 6) t(seed);
 ```
@@ -39,8 +39,8 @@ A list of `count` colors drawn from one seeded sequence. Consecutive draws diffe
 `plt_random_color` with the same seed, but the sequence itself is fixed for a given
 `(space, count, seed)`.
 
-```sql {"type":"duckfn","show":"table"}
-SELECT to_json(list_transform(plt_random_colors('srgb', 5, 42), lambda x: plt_to_hex(x))) AS colors,
+```sql {"type":"duckfn","show":"table","colors":"colors"}
+SELECT list_transform(plt_random_colors('srgb', 5, 42), lambda x: plt_to_hex(x)) AS colors,
        length(plt_random_colors('srgb', 5, 42)) AS count;
 ```
 
@@ -56,7 +56,7 @@ SELECT plt_random_colors('srgb', -1, 42);
 
 This is handy for building test data or a random categorical palette:
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"color"}
 SELECT i, plt_to_hex(colors[i]) AS color
 FROM (SELECT plt_random_colors('srgb', 6, 2026) AS colors) t,
      range(1, 7) r(i);

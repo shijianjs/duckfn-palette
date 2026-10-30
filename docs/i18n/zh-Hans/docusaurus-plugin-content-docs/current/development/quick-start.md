@@ -68,12 +68,12 @@ duckdb -unsigned -c "LOAD './build/debug/duckfn_palette.duckdb_extension';"
 下面是几个函数，就地就能跑 —— 站点从仓库的最新 Release 预加载了这个扩展，这里不用写 `LOAD`
 （本地自己构建的产物仍然要加 `-unsigned`，见下面的几个坑）。点任意块上的 **执行** 即可。
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["mixed"]}
 SELECT plt_to_hex(plt_convert(plt_srgb(1, 0.5, 0), 'oklch')) AS as_oklch,
        plt_to_hex(plt_mix(plt_named('red'), plt_named('blue'), 0.5)) AS mixed;
 ```
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"converted"}
 -- NULL 参数会在函数体执行之前被短路成 NULL。
 SELECT plt_to_hex(plt_convert(plt_srgb(1, 0, 0), 'lab')) AS converted,
        plt_convert(NULL, 'lab') IS NULL AS null_in_null_out;

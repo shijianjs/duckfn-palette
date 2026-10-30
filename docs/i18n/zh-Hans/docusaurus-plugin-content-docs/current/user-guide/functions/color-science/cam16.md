@@ -111,7 +111,7 @@ FROM (SELECT plt_xyz(0.4, 0.3, 0.2) AS c);
 反向操作，使用同样的条件。palette 假定这些属性彼此一致，转回时只用到其中一部分；结果是一个 `xyz`
 颜色，alpha 取自那个完整 struct。
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"round_trip"}
 SELECT plt_to_hex(plt_convert(plt_cam16_to_xyz(plt_cam16_from_xyz(plt_xyz(0.4, 0.3, 0.2),
                                                                  plt_cam16_default_params()),
                                                plt_cam16_default_params()), 'srgb')) AS round_trip;
@@ -184,7 +184,7 @@ SELECT plt_cam16_partial_from_xyz(plt_xyz(0.4, 0.3, 0.2), 'oklch', plt_cam16_def
 前两条用 palette 的默认值，是省事的那条路。后两条才是需要把 `plt_cam16_params` 值传来传去的 ——
 通常只构造一次，然后整张表复用：
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"same_color"}
 SELECT plt_to_hex(plt_convert(plt_cam16_partial_to_xyz(
            plt_cam16_partial_from_xyz(plt_convert(c, 'xyz'), 'cam16_jch', p), p), 'srgb')) AS same_color
 FROM (SELECT plt_srgb(0.2, 0.4, 0.6) AS c,

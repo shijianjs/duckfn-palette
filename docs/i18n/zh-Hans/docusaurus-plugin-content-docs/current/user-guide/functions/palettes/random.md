@@ -19,14 +19,14 @@ description: 在某个 color space 里采样可复现的随机色，一次一个
 
 在给定 space 里的一个颜色。
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"as_hex"}
 SELECT plt_random_color('oklch', 42) AS color,
        plt_to_hex(plt_random_color('oklch', 42)) AS as_hex;
 ```
 
 seed 就是全部状态：换一个得到不同的颜色，保持不变就得到同一个。
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"color"}
 SELECT seed, plt_to_hex(plt_random_color('srgb', seed)) AS color
 FROM range(1, 6) t(seed);
 ```
@@ -38,8 +38,8 @@ FROM range(1, 6) t(seed);
 从同一条带 seed 的序列里取出的 `count` 个颜色。逐次取出的值与相同 seed 的 `plt_random_color` 不同，
 但对给定的 `(space, count, seed)`，整条序列是固定的。
 
-```sql {"type":"duckfn","show":"table"}
-SELECT to_json(list_transform(plt_random_colors('srgb', 5, 42), lambda x: plt_to_hex(x))) AS colors,
+```sql {"type":"duckfn","show":"table","colors":"colors"}
+SELECT list_transform(plt_random_colors('srgb', 5, 42), lambda x: plt_to_hex(x)) AS colors,
        length(plt_random_colors('srgb', 5, 42)) AS count;
 ```
 
@@ -55,7 +55,7 @@ SELECT plt_random_colors('srgb', -1, 42);
 
 生成测试数据或随机分类色板时很好用：
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"color"}
 SELECT i, plt_to_hex(colors[i]) AS color
 FROM (SELECT plt_random_colors('srgb', 6, 2026) AS colors) t,
      range(1, 7) r(i);

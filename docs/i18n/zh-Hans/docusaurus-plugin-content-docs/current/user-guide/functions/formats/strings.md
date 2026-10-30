@@ -23,7 +23,7 @@ CSS Color Level 4 语法，包括 `lab()`、`oklch()` 与 `color(display-p3 …)
 （`#f80` 就是 `#ff8800`），4 位或 8 位的值带 alpha。不是 hex 颜色的文本返回 **NULL** 而不是报错
 —— 所以它能和 `WHERE`、`COALESCE` 一起用：
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["short","with_alpha","without_hash"]}
 SELECT plt_to_hex(plt_from_hex('#f80')) AS short,
        plt_to_hex(plt_from_hex('#ff800080')) AS with_alpha,
        plt_to_hex(plt_from_hex('ff8000')) AS without_hash,
@@ -37,7 +37,7 @@ SELECT plt_to_hex(plt_from_hex('#f80')) AS short,
 先转成 sRGB，再把每个通道量化到 8 位并写成 `#rrggbb`；alpha 不恰好是 1 时改写成 `#rrggbbaa`。
 超出色域的分量会被夹紧，所以结果永远是一个合法的 hex 字符串：
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["orange","translucent","from_oklch"]}
 SELECT plt_to_hex(plt_srgb(1, 0.5, 0)) AS orange,
        plt_to_hex(plt_color('srgb', 1, 0.5, 0, 0.5)) AS translucent,
        plt_to_hex(plt_oklch(0.7, 0.1, 120)) AS from_oklch;
@@ -51,7 +51,7 @@ SELECT plt_to_hex(plt_srgb(1, 0.5, 0)) AS orange,
 `plt_to_hex` 的定宽版本：`plt_to_hex6` 永远写六位并丢掉 alpha，`plt_to_hex8` 永远写八位并带上它。
 下游要求固定宽度时用它们，而不是看颜色恰好是不是不透明再决定：
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["six","eight"]}
 SELECT plt_to_hex6(plt_color('srgb', 1, 0, 0, 0.5)) AS six,
        plt_to_hex8(plt_srgb(1, 0, 0)) AS eight;
 ```
@@ -68,7 +68,7 @@ SELECT plt_to_hex6(plt_color('srgb', 1, 0, 0, 0.5)) AS six,
 
 无法解析的文本返回 **NULL**：
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["hsl","rgb","oklch"]}
 SELECT plt_to_hex(plt_css_parse('hsl(120 100% 50% / 0.5)')) AS hsl,
        plt_to_hex(plt_css_parse('rgb(255, 128, 0)')) AS rgb,
        plt_to_hex(plt_css_parse('oklch(0.7 0.15 250)')) AS oklch,
@@ -107,7 +107,7 @@ SELECT plt_css_serialize(plt_srgb(1, 0.5, 0), 'hex') AS hex,
 
 走一趟 CSS 文本的完整往返仍留在 sRGB，并且保留 alpha：
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"hex"}
 SELECT plt_css_parse(plt_css_serialize(c, 'oklch')) AS reparsed,
        plt_to_hex(plt_css_parse(plt_css_serialize(c, 'oklch'))) AS hex
 FROM (SELECT plt_color('srgb', 0.2, 0.4, 0.6, 0.5) AS c);
@@ -126,7 +126,7 @@ SELECT plt_css_serialize(plt_srgb(1, 0, 0), 'hsv');
 sRGB 字节与该颜色完全一致的 CSS 关键字；没有关键字匹配时是 NULL。这是精确匹配查找，不是找最接近的
 名字 —— 大多数颜色根本没有名字：
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["red","purple"]}
 SELECT plt_css_name(plt_srgb(1, 0, 0)) AS red,
        plt_css_name(plt_named('rebeccapurple')) AS purple,
        plt_css_name(plt_srgb(0.2, 0.4, 0.6)) IS NULL AS unnamed;
@@ -176,7 +176,7 @@ SELECT plt_to_hsv_string(plt_srgb(1, 0, 0)) AS opaque,
 palette 的 148 个 SVG/CSS3 关键字颜色之一，作为不透明的 sRGB 颜色返回。匹配不区分大小写。未知的
 名字返回 **NULL**：
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["purple","gold"]}
 SELECT plt_to_hex(plt_named('rebeccapurple')) AS purple,
        plt_to_hex(plt_named('Gold')) AS gold,
        plt_named('notacolor') IS NULL AS unknown_is_null;
@@ -189,7 +189,7 @@ SELECT plt_to_hex(plt_named('rebeccapurple')) AS purple,
 用 CIEDE2000 找出 148 个关键字颜色里**最接近**的那个 —— 与精确匹配的 `plt_css_name` 正好相反。它总会
 返回一个名字，所以适合用来生成人可读的标签，或把一套色板吸附到命名色上。距离相同时按字母序取。
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["red","almost_red","from_oklch"]}
 SELECT plt_nearest_named(plt_srgb(1, 0, 0)) AS red,
        plt_nearest_named(plt_srgb(0.99, 0.01, 0.02)) AS almost_red,
        plt_nearest_named(plt_oklch(0.7, 0.1, 150)) AS from_oklch,
@@ -207,7 +207,7 @@ SELECT list_count(plt_named_names()) AS count,
        plt_named_names() AS names;
 ```
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"hex"}
 SELECT name, plt_to_hex(plt_named(name)) AS hex
 FROM unnest(plt_named_names()) t(name)
 WHERE name IN ('red', 'green', 'blue', 'rebeccapurple');

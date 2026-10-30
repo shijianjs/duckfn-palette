@@ -52,12 +52,12 @@ SELECT plt_pack(plt_oklch(0.7, 0.1, 120)) AS from_oklch,
 The inverse. The order must match the one used to pack. Values outside `0..4294967295` are an
 error; an unknown order is too.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"round_trip"}
 SELECT plt_to_hex(plt_unpack(plt_pack(plt_srgb(1, 0.5, 0)))) AS round_trip,
        plt_unpack(plt_pack(plt_srgb(1, 0.5, 0))) AS unpacked;
 ```
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["rgba_round_trip","with_alpha"]}
 SELECT plt_to_hex(plt_unpack(plt_pack(plt_srgb(1, 0.5, 0), 'rgba'), 'rgba')) AS rgba_round_trip,
        plt_to_hex(plt_unpack(plt_pack(plt_color('srgb', 1, 0.5, 0, 0.5), 'bgra'), 'bgra')) AS with_alpha;
 ```

@@ -30,20 +30,20 @@ colorous itself has them.
 One color from a gradient at position `t` in `[0, 1]`. Out-of-range positions are clamped, so
 `-1` gives the start and `2` the end rather than an error.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["start","middle","end"]}
 SELECT plt_to_hex(plt_colorous_gradient('viridis', 0)) AS start,
        plt_to_hex(plt_colorous_gradient('viridis', 0.5)) AS middle,
        plt_to_hex(plt_colorous_gradient('viridis', 1)) AS end;
 ```
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"color"}
 SELECT t, plt_to_hex(plt_colorous_gradient('spectral', t)) AS color
 FROM (VALUES (0.0), (0.25), (0.5), (0.75), (1.0)) v(t);
 ```
 
 `t` is continuous, so it works as a colormap for any numeric column:
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"color"}
 SELECT value, plt_to_hex(plt_colorous_gradient('plasma', value / 100.0)) AS color
 FROM (VALUES (10), (45), (80)) v(value);
 ```
@@ -55,15 +55,15 @@ FROM (VALUES (10), (45), (80)) v(value);
 `n` colors sampled evenly across the gradient, from start to end. `n` must be at least 1; zero or
 a negative count is an error.
 
-```sql {"type":"duckfn","show":"table"}
-SELECT to_json(list_transform(plt_colorous_palette('viridis', 5), lambda x: plt_to_hex(x))) AS five,
+```sql {"type":"duckfn","show":"table","colors":"five"}
+SELECT list_transform(plt_colorous_palette('viridis', 5), lambda x: plt_to_hex(x)) AS five,
        length(plt_colorous_palette('viridis', 5)) AS count;
 ```
 
 This is the usual way to build a categorical scale out of a continuous one — pick as many colors as
 you have categories:
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"color"}
 SELECT i, plt_to_hex(plt_colorous_palette('turbo', 4)[i]) AS color
 FROM range(1, 5) t(i);
 ```
@@ -95,8 +95,8 @@ A whole categorical palette. The length is fixed by the palette: 10 for `categor
 `tableau10`, 12 for `paired` and `set3`, 9 for `pastel1` and `set1`, and 8 for `accent`, `dark2`,
 `pastel2` and `set2`:
 
-```sql {"type":"duckfn","show":"table"}
-SELECT to_json(list_transform(plt_colorous_categorical('tableau10'), lambda x: plt_to_hex(x))) AS tableau10;
+```sql {"type":"duckfn","show":"table","colors":"tableau10"}
+SELECT list_transform(plt_colorous_categorical('tableau10'), lambda x: plt_to_hex(x)) AS tableau10;
 ```
 
 ```sql {"type":"duckfn","show":"table"}

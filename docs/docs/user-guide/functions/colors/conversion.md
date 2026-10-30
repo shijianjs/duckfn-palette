@@ -18,7 +18,7 @@ Converts to the target space **without gamut clamping**. Values outside the targ
 returned as they are, which is useful for inspecting intermediate results and for conversions that
 are supposed to be reversible.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"srgb"}
 SELECT plt_to_hex(plt_srgb(1, 0.5, 0)) AS srgb,
        plt_components(plt_convert(plt_srgb(1, 0.5, 0), 'oklch')) AS as_oklch,
        plt_components(plt_convert(plt_srgb(1, 0.5, 0), 'xyz')) AS as_xyz;
@@ -88,7 +88,7 @@ default viewing conditions. You do not choose the route, but `plt_convert` and
 `plt_convert_clamped` produce the same numbers on it, and one round trip through any invertible
 space returns the original color to floating-point precision:
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"round_trip"}
 SELECT plt_to_hex(plt_convert(plt_convert(plt_srgb(0.2, 0.4, 0.6), 'hsluv'), 'srgb')) AS round_trip;
 ```
 

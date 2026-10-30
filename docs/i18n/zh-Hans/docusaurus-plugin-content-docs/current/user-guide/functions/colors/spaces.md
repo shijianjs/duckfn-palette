@@ -55,7 +55,7 @@ SELECT plt_color('oklch', 0.7, 0.1, 120, 0.5) AS translucent;
 用一个恰好含三个分量的列表构造颜色；alpha 默认为 1。它是 `plt_components` 的逆操作，所以颜色经过
 一个列表往返之后仍然完好。
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"rebuilt"}
 SELECT plt_to_hex(plt_from_components('srgb', [0.2, 0.4, 0.6])) AS rebuilt;
 ```
 
@@ -65,7 +65,7 @@ SELECT plt_to_hex(plt_from_components('srgb', [0.2, 0.4, 0.6])) AS rebuilt;
 
 接收一个恰好含四个值的列表：三个分量加 alpha。
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"translucent"}
 SELECT plt_to_hex(plt_from_components_alpha('srgb', [0.2, 0.4, 0.6, 0.5])) AS translucent;
 ```
 
@@ -171,7 +171,7 @@ SELECT list_count(plt_color_spaces()) AS count, plt_color_spaces() AS spaces;
 | `plt_rec2020(r, g, b)` | 红、绿、蓝 0..1 | Rec. 2020 三原色与传递函数 |
 | `plt_rec2020_linear(r, g, b)` | 红、绿、蓝 0..1 | 线性光 Rec. 2020 |
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["srgb","display_p3"]}
 SELECT plt_to_hex(plt_srgb(1, 0.5, 0)) AS srgb,
        plt_to_hex(plt_display_p3(1, 0.5, 0)) AS display_p3,
        plt_rgb_to_xyz_matrix('rec2020') AS rec2020_matrix;
@@ -191,7 +191,7 @@ SELECT plt_to_hex(plt_srgb(1, 0.5, 0)) AS srgb,
 | `plt_okhsv(h, s, v)` | 色相、饱和度、明度 | 色相为度；s 与 v 0..1 |
 | `plt_okhwb(h, w, b)` | 色相、白度、黑度 | 色相为度；w 与 b 0..1 |
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["hsl","okhsl","hsluv"]}
 SELECT plt_to_hex(plt_hsl(120, 0.5, 0.5)) AS hsl,
        plt_to_hex(plt_okhsl(120, 0.5, 0.5)) AS okhsl,
        plt_to_hex(plt_hsluv(120, 50, 50)) AS hsluv;
@@ -209,7 +209,7 @@ SELECT plt_to_hex(plt_hsl(120, 0.5, 0.5)) AS hsl,
 | `plt_xyz_d50(x, y, z)` | X、Y、Z | D50 白点（转换时用 Bradford 做色适应） |
 | `plt_yxy(x, y, luminance)` | 色度 x、y，亮度 | x 与 y 是色度，亮度 ≥ 0 |
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["lab","lch","xyz"]}
 SELECT plt_to_hex(plt_lab(50, 20, -30)) AS lab,
        plt_to_hex(plt_lch(50, 40, 120)) AS lch,
        plt_to_hex(plt_xyz(0.5, 0.4, 0.3)) AS xyz;
@@ -222,7 +222,7 @@ SELECT plt_to_hex(plt_lab(50, 20, -30)) AS lab,
 | `plt_oklab(l, a, b)` | 亮度、a、b | l 0..1；a 与 b 名义上 -1..1 |
 | `plt_oklch(l, c, h)` | 亮度、彩度、色相 | l 0..1；c ≥ 0；色相为度 |
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["oklab","oklch"]}
 SELECT plt_to_hex(plt_oklab(0.5, 0.1, 0.1)) AS oklab,
        plt_to_hex(plt_oklch(0.5, 0.1, 120)) AS oklch;
 ```
@@ -243,7 +243,7 @@ SELECT plt_to_hex(plt_oklab(0.5, 0.1, 0.1)) AS oklab,
 | `plt_cam16_ucs_jab(j, a, b)` | CAM16-UCS J′、a′、b′ |
 | `plt_cam16_ucs_jmh(j, m, h)` | CAM16-UCS J′、M′、色相 |
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["jch","ucs_jmh"]}
 SELECT plt_to_hex(plt_cam16_jch(50, 40, 120)) AS jch,
        plt_to_hex(plt_cam16_ucs_jmh(50, 40, 120)) AS ucs_jmh;
 ```
@@ -255,7 +255,7 @@ SELECT plt_to_hex(plt_cam16_jch(50, 40, 120)) AS jch,
 | `plt_lms(l, m, s)` | 长、中、短（Bradford 矩阵，D65） |
 | `plt_lms_von_kries(l, m, s)` | 长、中、短（von Kries / Hunt-Pointer-Estevez 矩阵，D65） |
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["lms","von_kries"]}
 SELECT plt_to_hex(plt_lms(0.5, 0.4, 0.3)) AS lms,
        plt_to_hex(plt_lms_von_kries(0.5, 0.4, 0.3)) AS von_kries;
 ```
@@ -265,7 +265,7 @@ SELECT plt_to_hex(plt_lms(0.5, 0.4, 0.3)) AS lms,
 `plt_luma`、`plt_luma_linear` 与 `plt_luma_gamma` 接收单个 0..1 的值。剩下两个分量都是 0。这些空间是
 有损的：把一个颜色转进去再转回来，得到的是同样亮度的灰色，而不是原来的颜色。
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"gray"}
 SELECT plt_luma(0.5) AS luma,
        plt_components(plt_convert(plt_srgb(0.2, 0.4, 0.6), 'luma')) AS from_color,
        plt_to_hex(plt_convert(plt_srgb(0.2, 0.4, 0.6), 'luma')) AS gray;

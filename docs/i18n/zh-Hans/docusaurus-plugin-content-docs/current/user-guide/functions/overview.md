@@ -34,7 +34,7 @@ SELECT plt_color_spaces() AS spaces;
 - **名字会规范化。** space、mode、metric、白点与格式名大小写不敏感，连字符与空格视作下划线：
   `'OKLCH'`、`'ok-lch'` 与 `' ok lch '` 都能用。
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"normalized"}
 SELECT plt_to_hex(plt_convert(plt_srgb(1, 0.5, 0), 'OK-LCH')) AS normalized;
 ```
 
@@ -76,7 +76,7 @@ SELECT plt_saturate(plt_srgb(1, 0, 0), 0.2);
 **混合或比较时，在感知均匀的空间里做。** `oklab` / `oklch` 的混合与比较比 `srgb` 均匀得多；先转进去，
 做完再转回来：
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"purple"}
 SELECT plt_to_hex(plt_mix(plt_convert(plt_srgb(1, 0, 0), 'oklab'),
                           plt_convert(plt_srgb(0, 0, 1), 'oklab'),
                           0.5)) AS purple;

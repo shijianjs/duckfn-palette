@@ -38,7 +38,7 @@ SELECT plt_color_spaces() AS spaces;
 - **Names are normalized.** Space, mode, metric, white-point and format names are case-insensitive,
   and hyphens and spaces count as underscores: `'OKLCH'`, `'ok-lch'` and `' ok lch '` all work.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"normalized"}
 SELECT plt_to_hex(plt_convert(plt_srgb(1, 0.5, 0), 'OK-LCH')) AS normalized;
 ```
 
@@ -81,7 +81,7 @@ SELECT plt_saturate(plt_srgb(1, 0, 0), 0.2);
 **Work in a perceptually uniform space when mixing or comparing.** `oklab` / `oklch` mix and
 compare far more evenly than `srgb`; convert in, do the work, convert back:
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"purple"}
 SELECT plt_to_hex(plt_mix(plt_convert(plt_srgb(1, 0, 0), 'oklab'),
                           plt_convert(plt_srgb(0, 0, 1), 'oklab'),
                           0.5)) AS purple;

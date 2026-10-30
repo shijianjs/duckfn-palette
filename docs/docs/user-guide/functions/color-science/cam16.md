@@ -116,7 +116,7 @@ The inverse, using the same conditions. Palette assumes the attributes are mutua
 uses only some of them when it converts back; the result is an `xyz` color with the alpha of the
 full struct.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"round_trip"}
 SELECT plt_to_hex(plt_convert(plt_cam16_to_xyz(plt_cam16_from_xyz(plt_xyz(0.4, 0.3, 0.2),
                                                                  plt_cam16_default_params()),
                                                plt_cam16_default_params()), 'srgb')) AS round_trip;
@@ -190,7 +190,7 @@ The eight CAM16 space names: `cam16_jch`, `cam16_jmh`, `cam16_jsh`, `cam16_qch`,
 The first two use palette's defaults and are the cheap path. The last two are the ones where you
 pass a `plt_cam16_params` value around — typically built once and reused for a whole table:
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"same_color"}
 SELECT plt_to_hex(plt_convert(plt_cam16_partial_to_xyz(
            plt_cam16_partial_from_xyz(plt_convert(c, 'xyz'), 'cam16_jch', p), p), 'srgb')) AS same_color
 FROM (SELECT plt_srgb(0.2, 0.4, 0.6) AS c,

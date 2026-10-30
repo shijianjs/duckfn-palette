@@ -21,15 +21,15 @@ SELECT plt_complementary(plt_lab(50, 20, -30));
 
 Converting first is the whole fix:
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"complement"}
 SELECT plt_to_hex(plt_complementary(plt_convert(plt_srgb(1, 0, 0), 'oklch'))) AS complement;
 ```
 
 The functions return the scheme's **other** colors, in palette's order and not including the input
 color. All of them share the same list shape, so a query can treat them uniformly:
 
-```sql {"type":"duckfn","show":"table"}
-SELECT to_json(list_transform(plt_triadic(plt_oklch(0.6, 0.15, 30)), lambda x: plt_to_hex(x))) AS triadic;
+```sql {"type":"duckfn","show":"table","colors":"triadic"}
+SELECT list_transform(plt_triadic(plt_oklch(0.6, 0.15, 30)), lambda x: plt_to_hex(x)) AS triadic;
 ```
 
 ## `plt_complementary(color)`
@@ -39,7 +39,7 @@ SELECT to_json(list_transform(plt_triadic(plt_oklch(0.6, 0.15, 30)), lambda x: p
 The color opposite on the hue circle: hue + 180°. This one returns a single color rather than a
 list, because a complement is one color.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"complement"}
 SELECT plt_to_hex(plt_complementary(plt_hsl(120, 1, 0.5))) AS complement,
        plt_components(plt_complementary(plt_hsl(120, 1, 0.5))) AS complement_hsl;
 ```
@@ -61,8 +61,8 @@ SELECT plt_components(plt_split_complementary(plt_hsl(120, 1, 0.5))[1]) AS first
 
 The two colors at hue − 30° and + 30°.
 
-```sql {"type":"duckfn","show":"table"}
-SELECT to_json(list_transform(plt_analogous(plt_hsl(120, 1, 0.5)), lambda x: plt_to_hex(x))) AS analogous;
+```sql {"type":"duckfn","show":"table","colors":"analogous"}
+SELECT list_transform(plt_analogous(plt_hsl(120, 1, 0.5)), lambda x: plt_to_hex(x)) AS analogous;
 ```
 
 ## `plt_analogous_secondary(color)`
@@ -83,8 +83,8 @@ SELECT plt_components(plt_analogous_secondary(plt_hsl(120, 1, 0.5))[1]) AS minus
 
 The two colors at hue + 120° and + 240°.
 
-```sql {"type":"duckfn","show":"table"}
-SELECT to_json(list_transform(plt_triadic(plt_hsl(120, 1, 0.5)), lambda x: plt_to_hex(x))) AS triadic;
+```sql {"type":"duckfn","show":"table","colors":"triadic"}
+SELECT list_transform(plt_triadic(plt_hsl(120, 1, 0.5)), lambda x: plt_to_hex(x)) AS triadic;
 ```
 
 ## `plt_tetradic(color)`
@@ -93,8 +93,8 @@ SELECT to_json(list_transform(plt_triadic(plt_hsl(120, 1, 0.5)), lambda x: plt_t
 
 The three colors at hue + 90°, + 180° and + 270° — the square scheme.
 
-```sql {"type":"duckfn","show":"table"}
-SELECT to_json(list_transform(plt_tetradic(plt_hsl(30, 1, 0.5)), lambda x: plt_to_hex(x))) AS tetradic;
+```sql {"type":"duckfn","show":"table","colors":"tetradic"}
+SELECT list_transform(plt_tetradic(plt_hsl(30, 1, 0.5)), lambda x: plt_to_hex(x)) AS tetradic;
 ```
 
 ## `plt_monochromatic(color, count)`
@@ -107,9 +107,9 @@ and the first is the input color itself — unlike the hue schemes above, which 
 `count` 0 gives an empty list and a negative count is an error. Results stay in the input space
 with the same alpha.
 
-```sql {"type":"duckfn","show":"table"}
-SELECT to_json(list_transform(plt_monochromatic(plt_srgb(1, 0, 0), 4),
-                              lambda x: plt_to_hex(x))) AS reds,
+```sql {"type":"duckfn","show":"table","colors":"reds"}
+SELECT list_transform(plt_monochromatic(plt_srgb(1, 0, 0), 4),
+                      lambda x: plt_to_hex(x)) AS reds,
        plt_components(plt_monochromatic(plt_hsl(120, 1, 0.5), 3)[2]) AS second_hsl;
 ```
 
@@ -122,15 +122,15 @@ the aliases `complement`, `split_complement`, `triad` and `square`. This is what
 the scheme comes from a column or a parameter. The six schemes all rotate the hue, so
 `monochromatic` is not one of them — it varies HSV value instead and has its own function, above.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"colors"}
 SELECT scheme,
-       to_json(list_transform(plt_harmony(plt_oklch(0.6, 0.15, 30), scheme),
-                              lambda x: plt_to_hex(x))) AS colors
+       list_transform(plt_harmony(plt_oklch(0.6, 0.15, 30), scheme),
+                      lambda x: plt_to_hex(x)) AS colors
 FROM (VALUES ('complementary'), ('split_complementary'), ('analogous'),
              ('analogous_secondary'), ('triadic'), ('tetradic')) t(scheme);
 ```
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"first_of_square"}
 SELECT plt_to_hex(plt_harmony(plt_oklch(0.6, 0.15, 30), 'Square')[1]) AS first_of_square;
 ```
 

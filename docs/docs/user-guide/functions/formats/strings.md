@@ -25,7 +25,7 @@ each digit by duplication (`#f80` is `#ff8800`), and a 4- or 8-digit value carri
 is not a hex color returns **NULL**, not an error — so it composes with `WHERE` and
 `COALESCE`:
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["short","with_alpha","without_hash"]}
 SELECT plt_to_hex(plt_from_hex('#f80')) AS short,
        plt_to_hex(plt_from_hex('#ff800080')) AS with_alpha,
        plt_to_hex(plt_from_hex('ff8000')) AS without_hash,
@@ -40,7 +40,7 @@ Converts to sRGB, quantizes to 8 bits per channel and writes `#rrggbb`; when alp
 it writes `#rrggbbaa` instead. Out-of-gamut components are clamped, so this is always a valid hex
 string:
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["orange","translucent","from_oklch"]}
 SELECT plt_to_hex(plt_srgb(1, 0.5, 0)) AS orange,
        plt_to_hex(plt_color('srgb', 1, 0.5, 0, 0.5)) AS translucent,
        plt_to_hex(plt_oklch(0.7, 0.1, 120)) AS from_oklch;
@@ -55,7 +55,7 @@ Fixed-width variants of `plt_to_hex`: `plt_to_hex6` always writes six digits and
 `plt_to_hex8` always writes eight and includes it. Use these when the consumer requires one width,
 instead of switching on whether the color happens to be opaque:
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["six","eight"]}
 SELECT plt_to_hex6(plt_color('srgb', 1, 0, 0, 0.5)) AS six,
        plt_to_hex8(plt_srgb(1, 0, 0)) AS eight;
 ```
@@ -73,7 +73,7 @@ a number or a percentage.
 
 Unparsable text returns **NULL**:
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["hsl","rgb","oklch"]}
 SELECT plt_to_hex(plt_css_parse('hsl(120 100% 50% / 0.5)')) AS hsl,
        plt_to_hex(plt_css_parse('rgb(255, 128, 0)')) AS rgb,
        plt_to_hex(plt_css_parse('oklch(0.7 0.15 250)')) AS oklch,
@@ -113,7 +113,7 @@ SELECT plt_css_serialize(plt_srgb(1, 0.5, 0), 'hex') AS hex,
 
 A full round trip through CSS text stays in sRGB and keeps alpha:
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"hex"}
 SELECT plt_css_parse(plt_css_serialize(c, 'oklch')) AS reparsed,
        plt_to_hex(plt_css_parse(plt_css_serialize(c, 'oklch'))) AS hex
 FROM (SELECT plt_color('srgb', 0.2, 0.4, 0.6, 0.5) AS c);
@@ -132,7 +132,7 @@ SELECT plt_css_serialize(plt_srgb(1, 0, 0), 'hsv');
 The CSS keyword whose sRGB bytes exactly match the color, or NULL when no keyword matches. It is
 an exact-match lookup, not a nearest-name search — most colors have no name:
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["red","purple"]}
 SELECT plt_css_name(plt_srgb(1, 0, 0)) AS red,
        plt_css_name(plt_named('rebeccapurple')) AS purple,
        plt_css_name(plt_srgb(0.2, 0.4, 0.6)) IS NULL AS unnamed;
@@ -182,7 +182,7 @@ SELECT plt_to_hsv_string(plt_srgb(1, 0, 0)) AS opaque,
 One of palette's 148 SVG/CSS3 keyword colors, as an opaque sRGB color. Matching is case-insensitive.
 An unknown name returns **NULL**:
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["purple","gold"]}
 SELECT plt_to_hex(plt_named('rebeccapurple')) AS purple,
        plt_to_hex(plt_named('Gold')) AS gold,
        plt_named('notacolor') IS NULL AS unknown_is_null;
@@ -196,7 +196,7 @@ The **closest** of the 148 keyword colors, measured with CIEDE2000 — the oppos
 `plt_css_name`. It always returns a name, so it is the one to use for human-readable labels or for
 "snap this palette to named colors". Ties break alphabetically.
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["red","almost_red","from_oklch"]}
 SELECT plt_nearest_named(plt_srgb(1, 0, 0)) AS red,
        plt_nearest_named(plt_srgb(0.99, 0.01, 0.02)) AS almost_red,
        plt_nearest_named(plt_oklch(0.7, 0.1, 150)) AS from_oklch,
@@ -215,7 +215,7 @@ SELECT list_count(plt_named_names()) AS count,
        plt_named_names() AS names;
 ```
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"hex"}
 SELECT name, plt_to_hex(plt_named(name)) AS hex
 FROM unnest(plt_named_names()) t(name)
 WHERE name IN ('red', 'green', 'blue', 'rebeccapurple');

@@ -29,20 +29,20 @@ colorous 是 d3-scale-chromatic 的移植：知名的感知均匀渐变（viridi
 从渐变中取 `[0, 1]` 位置 `t` 处的一个颜色。超出范围的位置会被夹紧，所以 `-1` 得到起点、`2` 得到
 终点，而不是报错。
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":["start","middle","end"]}
 SELECT plt_to_hex(plt_colorous_gradient('viridis', 0)) AS start,
        plt_to_hex(plt_colorous_gradient('viridis', 0.5)) AS middle,
        plt_to_hex(plt_colorous_gradient('viridis', 1)) AS end;
 ```
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"color"}
 SELECT t, plt_to_hex(plt_colorous_gradient('spectral', t)) AS color
 FROM (VALUES (0.0), (0.25), (0.5), (0.75), (1.0)) v(t);
 ```
 
 `t` 是连续的，所以它可以当任意数值列的色阶：
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"color"}
 SELECT value, plt_to_hex(plt_colorous_gradient('plasma', value / 100.0)) AS color
 FROM (VALUES (10), (45), (80)) v(value);
 ```
@@ -53,14 +53,14 @@ FROM (VALUES (10), (45), (80)) v(value);
 
 沿渐变从起点到终点均匀取样的 `n` 个颜色。`n` 至少为 1；0 或负数会报错。
 
-```sql {"type":"duckfn","show":"table"}
-SELECT to_json(list_transform(plt_colorous_palette('viridis', 5), lambda x: plt_to_hex(x))) AS five,
+```sql {"type":"duckfn","show":"table","colors":"five"}
+SELECT list_transform(plt_colorous_palette('viridis', 5), lambda x: plt_to_hex(x)) AS five,
        length(plt_colorous_palette('viridis', 5)) AS count;
 ```
 
 这是用连续渐变搭分类色阶的常见做法 —— 有多少个类别就取多少个颜色：
 
-```sql {"type":"duckfn","show":"table"}
+```sql {"type":"duckfn","show":"table","colors":"color"}
 SELECT i, plt_to_hex(plt_colorous_palette('turbo', 4)[i]) AS color
 FROM range(1, 5) t(i);
 ```
@@ -91,8 +91,8 @@ SELECT list_count(plt_colorous_palettes()) AS count,
 整份分类色板。长度由色板本身决定：`category10` 与 `tableau10` 是 10 个，`paired` 与 `set3`
 是 12 个，`pastel1` 与 `set1` 是 9 个，`accent`、`dark2`、`pastel2` 与 `set2` 是 8 个：
 
-```sql {"type":"duckfn","show":"table"}
-SELECT to_json(list_transform(plt_colorous_categorical('tableau10'), lambda x: plt_to_hex(x))) AS tableau10;
+```sql {"type":"duckfn","show":"table","colors":"tableau10"}
+SELECT list_transform(plt_colorous_categorical('tableau10'), lambda x: plt_to_hex(x)) AS tableau10;
 ```
 
 ```sql {"type":"duckfn","show":"table"}
