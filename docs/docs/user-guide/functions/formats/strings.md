@@ -1,7 +1,7 @@
 ---
 title: Strings, hex and named colors
 sidebar_position: 1
-description: Parse and format hex, handle full CSS Color Level 4 syntax, look up the 148 CSS/SVG names, and turn a color back into its keyword.
+description: Parse and format hex, handle full CSS Color Level 4 syntax, look up the 148 CSS/SVG names, and turn a color back into its keyword — exactly matching or nearest.
 ---
 
 # Strings, hex and named colors
@@ -44,6 +44,20 @@ string:
 SELECT plt_to_hex(plt_srgb(1, 0.5, 0)) AS orange,
        plt_to_hex(plt_color('srgb', 1, 0.5, 0, 0.5)) AS translucent,
        plt_to_hex(plt_oklch(0.7, 0.1, 120)) AS from_oklch;
+```
+
+### `plt_to_hex6(color)` and `plt_to_hex8(color)`
+
+**Signature**: `plt_to_hex6(color plt_color) -> VARCHAR`
+**Signature**: `plt_to_hex8(color plt_color) -> VARCHAR`
+
+Fixed-width variants of `plt_to_hex`: `plt_to_hex6` always writes six digits and drops alpha, and
+`plt_to_hex8` always writes eight and includes it. Use these when the consumer requires one width,
+instead of switching on whether the color happens to be opaque:
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_to_hex6(plt_color('srgb', 1, 0, 0, 0.5)) AS six,
+       plt_to_hex8(plt_srgb(1, 0, 0)) AS eight;
 ```
 
 ## CSS syntax
@@ -130,6 +144,35 @@ SELECT plt_css_name(plt_srgb(1, 0, 0)) AS red,
 
 The eight format names accepted by `plt_css_serialize`.
 
+## More output formats
+
+`plt_to_percentage_rgb` and `plt_to_hsv_string` are tinycolor's two extra writers. Both convert to
+sRGB, round channel percentages and hues to whole numbers and alpha to two decimals, and switch to
+the alpha form when alpha is not exactly 1 — so the text is stable enough for display and logging.
+
+### `plt_to_percentage_rgb(color)`
+
+**Signature**: `plt_to_percentage_rgb(color plt_color) -> VARCHAR`
+
+`rgb(100%, 50%, 0%)`, or `rgba(…, 0.5)` when translucent.
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_to_percentage_rgb(plt_srgb(1, 0.5, 0)) AS opaque,
+       plt_to_percentage_rgb(plt_with_alpha(plt_srgb(1, 0.5, 0), 0.5)) AS translucent;
+```
+
+### `plt_to_hsv_string(color)`
+
+**Signature**: `plt_to_hsv_string(color plt_color) -> VARCHAR`
+
+`hsv(0, 100%, 100%)`, or `hsva(…)` when translucent. CSS itself has no HSV notation; this is the
+tinycolor spelling, useful when the text is consumed by a design tool rather than a browser.
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_to_hsv_string(plt_srgb(1, 0, 0)) AS opaque,
+       plt_to_hsv_string(plt_with_alpha(plt_srgb(0, 0.5, 1), 0.25)) AS translucent;
+```
+
 ## Named colors
 
 ### `plt_named(name)`
@@ -143,6 +186,21 @@ An unknown name returns **NULL**:
 SELECT plt_to_hex(plt_named('rebeccapurple')) AS purple,
        plt_to_hex(plt_named('Gold')) AS gold,
        plt_named('notacolor') IS NULL AS unknown_is_null;
+```
+
+### `plt_nearest_named(color)`
+
+**Signature**: `plt_nearest_named(color plt_color) -> VARCHAR`
+
+The **closest** of the 148 keyword colors, measured with CIEDE2000 — the opposite of the exact-match
+`plt_css_name`. It always returns a name, so it is the one to use for human-readable labels or for
+"snap this palette to named colors". Ties break alphabetically.
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_nearest_named(plt_srgb(1, 0, 0)) AS red,
+       plt_nearest_named(plt_srgb(0.99, 0.01, 0.02)) AS almost_red,
+       plt_nearest_named(plt_oklch(0.7, 0.1, 150)) AS from_oklch,
+       plt_css_name(plt_srgb(0.99, 0.01, 0.02)) IS NULL AS no_exact_name;
 ```
 
 ### `plt_named_names()`
@@ -170,7 +228,10 @@ WHERE name IN ('red', 'green', 'blue', 'rebeccapurple');
 | A hex string from a database column | `plt_from_hex` |
 | A CSS color from a stylesheet or API | `plt_css_parse` |
 | A short hex string for display | `plt_to_hex` |
+| A hex string that is always 6 or always 8 digits | `plt_to_hex6` / `plt_to_hex8` |
 | A specific CSS function, e.g. `oklch(...)` | `plt_css_serialize` |
+| Percentage `rgb()` or `hsv()` text | `plt_to_percentage_rgb` / `plt_to_hsv_string` |
 | One of the 148 keyword colors | `plt_named` / `plt_named_names` |
-| The keyword name of a color | `plt_css_name` |
+| The keyword name of a color, exactly matching | `plt_css_name` |
+| The closest keyword name | `plt_nearest_named` |
 | Whether text is a valid CSS color | `plt_css_is_valid` |

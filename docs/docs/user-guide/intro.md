@@ -12,7 +12,7 @@ that wraps three Rust color crates as SQL functions: [palette](https://crates.io
 44 color spaces, conversion, blending, color difference and contrast, schemes, white points, CAM16 and
 8-bit packing; [csscolorparser](https://crates.io/crates/csscolorparser) for CSS Color Level 4
 strings; and [colorous](https://crates.io/crates/colorous) for the d3-scale-chromatic gradients and
-categorical palettes. Together they register 145 functions under the `plt_` prefix, and once the
+categorical palettes. Together they register 160 functions under the `plt_` prefix, and once the
 extension is loaded they behave like DuckDB's own. You do not need to know how it was written or to
 compile anything — the CLI, a Python or R session and the browser build all take the same
 `.duckdb_extension` file.

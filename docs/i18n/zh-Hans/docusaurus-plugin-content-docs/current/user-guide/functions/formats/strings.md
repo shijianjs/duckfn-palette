@@ -1,7 +1,7 @@
 ---
 title: 字符串、hex 与命名色
 sidebar_position: 1
-description: 解析与格式化 hex，处理完整的 CSS Color Level 4 语法，查询 148 个 CSS/SVG 名字，并把颜色还原成它的关键字。
+description: 解析与格式化 hex，处理完整的 CSS Color Level 4 语法，查询 148 个 CSS/SVG 名字，并把颜色还原成它的关键字 —— 精确匹配或最接近的一个。
 ---
 
 # 字符串、hex 与命名色
@@ -41,6 +41,19 @@ SELECT plt_to_hex(plt_from_hex('#f80')) AS short,
 SELECT plt_to_hex(plt_srgb(1, 0.5, 0)) AS orange,
        plt_to_hex(plt_color('srgb', 1, 0.5, 0, 0.5)) AS translucent,
        plt_to_hex(plt_oklch(0.7, 0.1, 120)) AS from_oklch;
+```
+
+### `plt_to_hex6(color)` 与 `plt_to_hex8(color)`
+
+**签名**：`plt_to_hex6(color plt_color) -> VARCHAR`
+**签名**：`plt_to_hex8(color plt_color) -> VARCHAR`
+
+`plt_to_hex` 的定宽版本：`plt_to_hex6` 永远写六位并丢掉 alpha，`plt_to_hex8` 永远写八位并带上它。
+下游要求固定宽度时用它们，而不是看颜色恰好是不是不透明再决定：
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_to_hex6(plt_color('srgb', 1, 0, 0, 0.5)) AS six,
+       plt_to_hex8(plt_srgb(1, 0, 0)) AS eight;
 ```
 
 ## CSS 语法
@@ -125,6 +138,35 @@ SELECT plt_css_name(plt_srgb(1, 0, 0)) AS red,
 
 `plt_css_serialize` 接受的八个格式名。
 
+## 更多输出格式
+
+`plt_to_percentage_rgb` 与 `plt_to_hsv_string` 是 tinycolor 的另外两个写出器。它们都先转成 sRGB，
+把通道百分比与色相四舍五入到整数、把 alpha 保留两位小数，并在 alpha 不恰好是 1 时换成带 alpha 的
+写法 —— 所以文本足够稳定，可以直接用于展示与日志。
+
+### `plt_to_percentage_rgb(color)`
+
+**签名**：`plt_to_percentage_rgb(color plt_color) -> VARCHAR`
+
+`rgb(100%, 50%, 0%)`；带透明度时是 `rgba(…, 0.5)`。
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_to_percentage_rgb(plt_srgb(1, 0.5, 0)) AS opaque,
+       plt_to_percentage_rgb(plt_with_alpha(plt_srgb(1, 0.5, 0), 0.5)) AS translucent;
+```
+
+### `plt_to_hsv_string(color)`
+
+**签名**：`plt_to_hsv_string(color plt_color) -> VARCHAR`
+
+`hsv(0, 100%, 100%)`；带透明度时是 `hsva(…)`。CSS 本身没有 HSV 写法，这是 tinycolor 的拼法，文本
+交给设计工具而不是浏览器时用得上。
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_to_hsv_string(plt_srgb(1, 0, 0)) AS opaque,
+       plt_to_hsv_string(plt_with_alpha(plt_srgb(0, 0.5, 1), 0.25)) AS translucent;
+```
+
 ## 命名色
 
 ### `plt_named(name)`
@@ -138,6 +180,20 @@ palette 的 148 个 SVG/CSS3 关键字颜色之一，作为不透明的 sRGB 颜
 SELECT plt_to_hex(plt_named('rebeccapurple')) AS purple,
        plt_to_hex(plt_named('Gold')) AS gold,
        plt_named('notacolor') IS NULL AS unknown_is_null;
+```
+
+### `plt_nearest_named(color)`
+
+**签名**：`plt_nearest_named(color plt_color) -> VARCHAR`
+
+用 CIEDE2000 找出 148 个关键字颜色里**最接近**的那个 —— 与精确匹配的 `plt_css_name` 正好相反。它总会
+返回一个名字，所以适合用来生成人可读的标签，或把一套色板吸附到命名色上。距离相同时按字母序取。
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_nearest_named(plt_srgb(1, 0, 0)) AS red,
+       plt_nearest_named(plt_srgb(0.99, 0.01, 0.02)) AS almost_red,
+       plt_nearest_named(plt_oklch(0.7, 0.1, 150)) AS from_oklch,
+       plt_css_name(plt_srgb(0.99, 0.01, 0.02)) IS NULL AS no_exact_name;
 ```
 
 ### `plt_named_names()`
@@ -164,7 +220,10 @@ WHERE name IN ('red', 'green', 'blue', 'rebeccapurple');
 | 来自数据库列的 hex 字符串 | `plt_from_hex` |
 | 来自样式表或 API 的 CSS 颜色 | `plt_css_parse` |
 | 用于展示的短 hex 字符串 | `plt_to_hex` |
+| 固定六位或固定八位的 hex 字符串 | `plt_to_hex6` / `plt_to_hex8` |
 | 某个特定的 CSS 函数，例如 `oklch(...)` | `plt_css_serialize` |
+| 百分比 `rgb()` 或 `hsv()` 文本 | `plt_to_percentage_rgb` / `plt_to_hsv_string` |
 | 148 个关键字颜色之一 | `plt_named` / `plt_named_names` |
-| 某个颜色的关键字名字 | `plt_css_name` |
+| 某个颜色的关键字名字，要求精确匹配 | `plt_css_name` |
+| 最接近的关键字名字 | `plt_nearest_named` |
 | 文本是不是合法的 CSS 颜色 | `plt_css_is_valid` |

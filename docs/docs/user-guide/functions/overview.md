@@ -1,12 +1,12 @@
 ---
 title: Overview
 sidebar_position: 1
-description: How the 145 plt_ functions are organised, the three rules every function follows, and where to look for each family.
+description: How the 160 plt_ functions are organised, the three rules every function follows, and where to look for each family.
 ---
 
 # Function reference overview
 
-Loading `duckfn_palette` registers **145 names / 152 signatures**, all under the `plt_` prefix. They
+Loading `duckfn_palette` registers **160 names / 169 signatures**, all under the `plt_` prefix. They
 are ordinary DuckDB scalar functions: use them in a projection, a `WHERE` clause, a `GROUP BY`, a
 `LATERAL` join or a list lambda, exactly like a built-in function.
 
@@ -47,12 +47,12 @@ SELECT plt_to_hex(plt_convert(plt_srgb(1, 0.5, 0), 'OK-LCH')) AS normalized;
 | Page | What it covers |
 | --- | --- |
 | [Colors and spaces](./colors/spaces.md) | The color value, its accessors, alpha, and one constructor per space (44) |
-| [Conversion and clamping](./colors/conversion.md) | `plt_convert`, `plt_convert_clamped`, `plt_clamp`, `plt_is_within_bounds` |
-| [Manipulation](./operations/manipulation.md) | Mixing, lightening, darkening, saturation, hue and premultiplied alpha |
+| [Conversion and clamping](./colors/conversion.md) | `plt_convert`, `plt_convert_clamped`, `plt_clamp`, `plt_is_within_bounds`, `plt_equals` |
+| [Manipulation](./operations/manipulation.md) | Mixing, lightening, darkening, brightening, greyscale, tint and shade, saturation, hue and premultiplied alpha |
 | [Blending and compositing](./operations/blending.md) | 11 blend modes, 6 Porter-Duff operators, custom OpenGL factors |
-| [Color difference and contrast](./operations/difference.md) | 7 difference metrics, WCAG 2.1 luminance, ratio and criteria |
-| [Color schemes](./operations/theory.md) | Complementary, split-complementary, analogous, triadic, tetradic |
-| [Strings, hex and named colors](./formats/strings.md) | Hex, full CSS Color Level 4, the 148 SVG/CSS3 names |
+| [Color difference and contrast](./operations/difference.md) | 7 difference metrics, WCAG 2.1 luminance, ratio and criteria, most-readable picking, YIQ brightness |
+| [Color schemes](./operations/theory.md) | Complementary, split-complementary, analogous, triadic, tetradic, monochromatic |
+| [Strings, hex and named colors](./formats/strings.md) | Hex (including fixed-width), full CSS Color Level 4, extra output formats, the 148 SVG/CSS3 names, nearest name |
 | [8-bit packing](./formats/packing.md) | Pack and unpack ARGB/RGBA/ABGR/BGRA integers |
 | [White points, adaptation and encoding](./color-science/encoding.md) | White points, adaptation matrices, transfer functions, primaries, matrices |
 | [CAM16 with custom viewing conditions](./color-science/cam16.md) | Full CAM16 attributes and the eight CAM16 spaces under your own conditions |

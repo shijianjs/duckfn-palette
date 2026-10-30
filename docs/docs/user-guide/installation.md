@@ -76,5 +76,5 @@ FROM duckdb_functions()
 WHERE function_name LIKE 'plt%';
 ```
 
-145 function names (152 signatures — several names are overloaded); if the list is empty, the extension
+160 function names (169 signatures — several names are overloaded); if the list is empty, the extension
 is not loaded in the session you are querying.

@@ -25,9 +25,31 @@ use crate::extension::types::color::PltColor;
 /// 支持的序列化格式。
 ///
 /// The supported serialization formats.
-const CSS_FORMATS: &[&str] = &[
-    "hex", "rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch",
-];
+const CSS_FORMATS: &[&str] = &["hex", "rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch"];
+
+/// 把颜色转成 sRGB 的 8 位分量与 alpha 字节（写 hex 用）。
+///
+/// Convert a color into 8-bit sRGB components and an alpha byte for hex output.
+fn hex_parts(color: &PltColor, fn_name: &str) -> Result<(Srgb<u8>, u8), ExtensionError> {
+    let srgb = color.convert(fn_name, "srgb")?;
+    let bytes: Srgb<u8> = Srgb::<f64>::new(srgb.c1, srgb.c2, srgb.c3).into_format();
+    let alpha: u8 = (color.alpha.clamp(0.0, 1.0) * 255.0).round() as u8;
+    Ok((bytes, alpha))
+}
+
+/// alpha 按两位小数显示（`0.5`、`0`、`1` 这样的短形式）。
+///
+/// Round alpha to two decimals for CSS text, without trailing zeros.
+fn display_alpha(alpha: f64) -> f64 {
+    (alpha.clamp(0.0, 1.0) * 100.0).round() / 100.0
+}
+
+/// 是否按「不透明」处理（与 `plt_to_hex` 的判定一致）。
+///
+/// Whether alpha counts as opaque, matching `plt_to_hex`.
+fn is_opaque(alpha: f64) -> bool {
+    (alpha - 1.0).abs() < f64::EPSILON
+}
 
 /// 把 SQL 颜色转成 csscolorparser 的 `Color`（先转到 sRGB）。
 ///
@@ -149,15 +171,69 @@ fn plt_from_hex(text: String) -> DuckOptionResult<PltColor> {
     example = "SELECT plt_to_hex(plt_srgb(1, 0.5, 0))"
 )]
 fn plt_to_hex(color: PltColor) -> DuckOptionResult<String> {
-    let srgb: Srgb<f64> = {
-        let c = color.convert("plt_to_hex", "srgb")?;
-        Srgb::new(c.c1, c.c2, c.c3)
-    };
-    let bytes: Srgb<u8> = srgb.into_format();
-    if (color.alpha - 1.0).abs() < f64::EPSILON {
+    let (bytes, alpha) = hex_parts(&color, "plt_to_hex")?;
+    if is_opaque(color.alpha) {
         Ok(Some(format!("#{bytes:02x}")))
     } else {
-        let alpha: u8 = (color.alpha.clamp(0.0, 1.0) * 255.0).round() as u8;
         Ok(Some(format!("#{bytes:02x}{alpha:02x}")))
+    }
+}
+
+/// 输出固定 6 位十六进制（忽略 alpha）。
+#[duck_scalar_function(
+    description = "Format a color as #rrggbb, always six digits; alpha is ignored",
+    example = "SELECT plt_to_hex6(plt_color('srgb', 1, 0.5, 0, 0.5))"
+)]
+fn plt_to_hex6(color: PltColor) -> DuckOptionResult<String> {
+    let (bytes, _) = hex_parts(&color, "plt_to_hex6")?;
+    Ok(Some(format!("#{bytes:02x}")))
+}
+
+/// 输出固定 8 位十六进制（总是带 alpha）。
+#[duck_scalar_function(
+    description = "Format a color as #rrggbbaa, always eight digits (alpha = ff when opaque)",
+    example = "SELECT plt_to_hex8(plt_srgb(1, 0.5, 0))"
+)]
+fn plt_to_hex8(color: PltColor) -> DuckOptionResult<String> {
+    let (bytes, alpha) = hex_parts(&color, "plt_to_hex8")?;
+    Ok(Some(format!("#{bytes:02x}{alpha:02x}")))
+}
+
+/// 输出百分比形式的 rgb()/rgba() 字符串。
+#[duck_scalar_function(
+    description = "Format a color as CSS rgb() with percentages, or rgba() when alpha is not 1; channels and alpha are rounded like tinycolor",
+    example = "SELECT plt_to_percentage_rgb(plt_srgb(1, 0.5, 0))"
+)]
+fn plt_to_percentage_rgb(color: PltColor) -> DuckOptionResult<String> {
+    let srgb = color.convert("plt_to_percentage_rgb", "srgb")?;
+    let percent = |value: f64| (value.clamp(0.0, 1.0) * 100.0).round() as i64;
+    let (r, g, b) = (percent(srgb.c1), percent(srgb.c2), percent(srgb.c3));
+    if is_opaque(color.alpha) {
+        Ok(Some(format!("rgb({r}%, {g}%, {b}%)")))
+    } else {
+        Ok(Some(format!(
+            "rgba({r}%, {g}%, {b}%, {})",
+            display_alpha(color.alpha)
+        )))
+    }
+}
+
+/// 输出 hsv()/hsva() 字符串（CSS 没有 HSV，但 tinycolor 用这套写法）。
+#[duck_scalar_function(
+    description = "Format a color as hsv(h, s%, v%), or hsva() when alpha is not 1; hue and percentages are rounded like tinycolor",
+    example = "SELECT plt_to_hsv_string(plt_srgb(1, 0, 0))"
+)]
+fn plt_to_hsv_string(color: PltColor) -> DuckOptionResult<String> {
+    let hsv = color.convert("plt_to_hsv_string", "hsv")?;
+    let hue = hsv.c1.round() as i64;
+    let saturation = (hsv.c2.clamp(0.0, 1.0) * 100.0).round() as i64;
+    let value = (hsv.c3.clamp(0.0, 1.0) * 100.0).round() as i64;
+    if is_opaque(color.alpha) {
+        Ok(Some(format!("hsv({hue}, {saturation}%, {value}%)")))
+    } else {
+        Ok(Some(format!(
+            "hsva({hue}, {saturation}%, {value}%, {})",
+            display_alpha(color.alpha)
+        )))
     }
 }

@@ -35,7 +35,7 @@ use palette::lms::{BradfordLms, VonKriesLms};
 use palette::luma::Luma;
 use palette::rgb::{
     AdobeRgb, DciP3, DisplayP3, GammaSrgb, LinAdobeRgb, LinDciP3, LinDisplayP3, LinProPhotoRgb,
-    LinRec2020, LinSrgb, ProPhotoRgb, Rec2020, Rec709, Srgb,
+    LinRec2020, LinSrgb, ProPhotoRgb, Rec709, Rec2020, Srgb,
 };
 use palette::white_point::{D50, D65};
 use palette::{Lab, Lch, Luv, Oklab, Xyz, Yxy};
@@ -47,8 +47,7 @@ use super::ops::SqlComponents;
 /// 支持 `EuclideanDistance` 的空间。
 ///
 /// Spaces with `EuclideanDistance`.
-const EUCLIDEAN_SPACES: &str =
-    "cam16_ucs_jab, lab, lms, lms_von_kries, luma, luma_gamma, luma_linear, luv, oklab, every rgb \
+const EUCLIDEAN_SPACES: &str = "cam16_ucs_jab, lab, lms, lms_von_kries, luma, luma_gamma, luma_linear, luv, oklab, every rgb \
      space, xyz, xyz_d50, yxy";
 
 /// 支持 `DeltaE`（以及 `ImprovedDeltaE`）的空间。
@@ -97,6 +96,26 @@ fn normalize(name: &str) -> String {
     name.trim().to_ascii_lowercase().replace(['-', ' '], "_")
 }
 
+/// 解析 WCAG 对比度判定名；未知名字报错并列出支持项。
+///
+/// Resolve a WCAG contrast criterion name, or fail with the supported list.
+pub fn criterion_arg(fn_name: &str, criterion: &str) -> Result<&'static str, ExtensionError> {
+    let name = normalize(criterion);
+    CONTRAST_CRITERIA
+        .iter()
+        .copied()
+        .find(|c| *c == name)
+        .ok_or_else(|| {
+            bad_arg(
+                fn_name,
+                format!(
+                    "unknown contrast criterion '{criterion}'; supported: {}",
+                    CONTRAST_CRITERIA.join(", ")
+                ),
+            )
+        })
+}
+
 /// 解析度量名，接受几个常见别名。
 ///
 /// Resolve a metric name, accepting a couple of common aliases.
@@ -106,15 +125,19 @@ fn metric_arg(fn_name: &str, metric: &str) -> Result<&'static str, ExtensionErro
         "cie76" | "deltae" | "delta_e_76" => "delta_e",
         "cie2000" | "delta_e_2000" => "ciede2000",
         "ciede2000_improved" | "improved_ciede2000" => "improved_ciede2000",
-        other => METRICS.iter().copied().find(|m| *m == other).ok_or_else(|| {
-            bad_arg(
-                fn_name,
-                format!(
-                    "unknown color difference metric '{metric}'; supported: {}",
-                    METRICS.join(", ")
-                ),
-            )
-        })?,
+        other => METRICS
+            .iter()
+            .copied()
+            .find(|m| *m == other)
+            .ok_or_else(|| {
+                bad_arg(
+                    fn_name,
+                    format!(
+                        "unknown color difference metric '{metric}'; supported: {}",
+                        METRICS.join(", ")
+                    ),
+                )
+            })?,
     };
     Ok(canonical)
 }
@@ -122,17 +145,10 @@ fn metric_arg(fn_name: &str, metric: &str) -> Result<&'static str, ExtensionErro
 /// 该度量在给定空间里没有定义时的统一错误。
 ///
 /// Uniform "this metric is not defined in that space" error.
-fn unsupported_metric(
-    fn_name: &str,
-    metric: &str,
-    space: &str,
-    spaces: &str,
-) -> ExtensionError {
+fn unsupported_metric(fn_name: &str, metric: &str, space: &str, spaces: &str) -> ExtensionError {
     bad_arg(
         fn_name,
-        format!(
-            "{metric} is not defined in color space '{space}'; use one of: {spaces}"
-        ),
+        format!("{metric} is not defined in color space '{space}'; use one of: {spaces}"),
     )
 }
 
@@ -144,33 +160,73 @@ macro_rules! euclidean_op {
         let (a, b) = ($a, $b);
         match $space {
             "srgb" => Ok(Srgb::<f64>::from_triple(a).$method(Srgb::<f64>::from_triple(b))),
-            "srgb_linear" => Ok(LinSrgb::<f64>::from_triple(a).$method(LinSrgb::<f64>::from_triple(b))),
-            "srgb_gamma" => Ok(GammaSrgb::<f64>::from_triple(a).$method(GammaSrgb::<f64>::from_triple(b))),
-            "adobe_rgb" => Ok(AdobeRgb::<f64>::from_triple(a).$method(AdobeRgb::<f64>::from_triple(b))),
-            "adobe_rgb_linear" => Ok(LinAdobeRgb::<f64>::from_triple(a).$method(LinAdobeRgb::<f64>::from_triple(b))),
-            "display_p3" => Ok(DisplayP3::<f64>::from_triple(a).$method(DisplayP3::<f64>::from_triple(b))),
-            "display_p3_linear" => Ok(LinDisplayP3::<f64>::from_triple(a).$method(LinDisplayP3::<f64>::from_triple(b))),
+            "srgb_linear" => {
+                Ok(LinSrgb::<f64>::from_triple(a).$method(LinSrgb::<f64>::from_triple(b)))
+            }
+            "srgb_gamma" => {
+                Ok(GammaSrgb::<f64>::from_triple(a).$method(GammaSrgb::<f64>::from_triple(b)))
+            }
+            "adobe_rgb" => {
+                Ok(AdobeRgb::<f64>::from_triple(a).$method(AdobeRgb::<f64>::from_triple(b)))
+            }
+            "adobe_rgb_linear" => {
+                Ok(LinAdobeRgb::<f64>::from_triple(a).$method(LinAdobeRgb::<f64>::from_triple(b)))
+            }
+            "display_p3" => {
+                Ok(DisplayP3::<f64>::from_triple(a).$method(DisplayP3::<f64>::from_triple(b)))
+            }
+            "display_p3_linear" => Ok(LinDisplayP3::<f64>::from_triple(a).$method(LinDisplayP3::<
+                f64,
+            >::from_triple(
+                b
+            ))),
             "dci_p3" => Ok(DciP3::<f64>::from_triple(a).$method(DciP3::<f64>::from_triple(b))),
-            "dci_p3_linear" => Ok(LinDciP3::<f64>::from_triple(a).$method(LinDciP3::<f64>::from_triple(b))),
-            "prophoto_rgb" => Ok(ProPhotoRgb::<f64>::from_triple(a).$method(ProPhotoRgb::<f64>::from_triple(b))),
-            "prophoto_rgb_linear" => Ok(LinProPhotoRgb::<f64>::from_triple(a).$method(LinProPhotoRgb::<f64>::from_triple(b))),
+            "dci_p3_linear" => {
+                Ok(LinDciP3::<f64>::from_triple(a).$method(LinDciP3::<f64>::from_triple(b)))
+            }
+            "prophoto_rgb" => {
+                Ok(ProPhotoRgb::<f64>::from_triple(a).$method(ProPhotoRgb::<f64>::from_triple(b)))
+            }
+            "prophoto_rgb_linear" => Ok(LinProPhotoRgb::<f64>::from_triple(a)
+                .$method(LinProPhotoRgb::<f64>::from_triple(b))),
             "rec709" => Ok(Rec709::<f64>::from_triple(a).$method(Rec709::<f64>::from_triple(b))),
-            "rec709_linear" => Ok(LinSrgb::<f64>::from_triple(a).$method(LinSrgb::<f64>::from_triple(b))),
+            "rec709_linear" => {
+                Ok(LinSrgb::<f64>::from_triple(a).$method(LinSrgb::<f64>::from_triple(b)))
+            }
             "rec2020" => Ok(Rec2020::<f64>::from_triple(a).$method(Rec2020::<f64>::from_triple(b))),
-            "rec2020_linear" => Ok(LinRec2020::<f64>::from_triple(a).$method(LinRec2020::<f64>::from_triple(b))),
+            "rec2020_linear" => {
+                Ok(LinRec2020::<f64>::from_triple(a).$method(LinRec2020::<f64>::from_triple(b)))
+            }
             "lab" => Ok(Lab::<D65, f64>::from_triple(a).$method(Lab::<D65, f64>::from_triple(b))),
             "luv" => Ok(Luv::<D65, f64>::from_triple(a).$method(Luv::<D65, f64>::from_triple(b))),
             "xyz" => Ok(Xyz::<D65, f64>::from_triple(a).$method(Xyz::<D65, f64>::from_triple(b))),
-            "xyz_d50" => Ok(Xyz::<D50, f64>::from_triple(a).$method(Xyz::<D50, f64>::from_triple(b))),
+            "xyz_d50" => {
+                Ok(Xyz::<D50, f64>::from_triple(a).$method(Xyz::<D50, f64>::from_triple(b)))
+            }
             "yxy" => Ok(Yxy::<D65, f64>::from_triple(a).$method(Yxy::<D65, f64>::from_triple(b))),
-            "luma" => Ok(Luma::<encoding::Srgb, f64>::from_triple(a).$method(Luma::<encoding::Srgb, f64>::from_triple(b))),
-            "luma_linear" => Ok(Luma::<encoding::Linear<D65>, f64>::from_triple(a).$method(Luma::<encoding::Linear<D65>, f64>::from_triple(b))),
-            "luma_gamma" => Ok(Luma::<encoding::Gamma<D65>, f64>::from_triple(a).$method(Luma::<encoding::Gamma<D65>, f64>::from_triple(b))),
+            "luma" => {
+                Ok(Luma::<encoding::Srgb, f64>::from_triple(a)
+                    .$method(Luma::<encoding::Srgb, f64>::from_triple(b)))
+            }
+            "luma_linear" => Ok(Luma::<encoding::Linear<D65>, f64>::from_triple(a)
+                .$method(Luma::<encoding::Linear<D65>, f64>::from_triple(b))),
+            "luma_gamma" => Ok(Luma::<encoding::Gamma<D65>, f64>::from_triple(a)
+                .$method(Luma::<encoding::Gamma<D65>, f64>::from_triple(b))),
             "oklab" => Ok(Oklab::<f64>::from_triple(a).$method(Oklab::<f64>::from_triple(b))),
-            "cam16_ucs_jab" => Ok(palette::cam16::Cam16UcsJab::<f64>::from_triple(a).$method(palette::cam16::Cam16UcsJab::<f64>::from_triple(b))),
-            "lms" => Ok(BradfordLms::<D65, f64>::from_triple(a).$method(BradfordLms::<D65, f64>::from_triple(b))),
-            "lms_von_kries" => Ok(VonKriesLms::<D65, f64>::from_triple(a).$method(VonKriesLms::<D65, f64>::from_triple(b))),
-            other => Err(unsupported_metric($fn_name, $metric, other, EUCLIDEAN_SPACES)),
+            "cam16_ucs_jab" => Ok(palette::cam16::Cam16UcsJab::<f64>::from_triple(a)
+                .$method(palette::cam16::Cam16UcsJab::<f64>::from_triple(b))),
+            "lms" => Ok(BradfordLms::<D65, f64>::from_triple(a)
+                .$method(BradfordLms::<D65, f64>::from_triple(b))),
+            "lms_von_kries" => {
+                Ok(VonKriesLms::<D65, f64>::from_triple(a)
+                    .$method(VonKriesLms::<D65, f64>::from_triple(b)))
+            }
+            other => Err(unsupported_metric(
+                $fn_name,
+                $metric,
+                other,
+                EUCLIDEAN_SPACES,
+            )),
         }
     }};
 }
@@ -184,8 +240,10 @@ macro_rules! delta_e_op {
         match $space {
             "lab" => Ok(Lab::<D65, f64>::from_triple(a).$method(Lab::<D65, f64>::from_triple(b))),
             "lch" => Ok(Lch::<D65, f64>::from_triple(a).$method(Lch::<D65, f64>::from_triple(b))),
-            "cam16_ucs_jab" => Ok(palette::cam16::Cam16UcsJab::<f64>::from_triple(a).$method(palette::cam16::Cam16UcsJab::<f64>::from_triple(b))),
-            "cam16_ucs_jmh" => Ok(palette::cam16::Cam16UcsJmh::<f64>::from_triple(a).$method(palette::cam16::Cam16UcsJmh::<f64>::from_triple(b))),
+            "cam16_ucs_jab" => Ok(palette::cam16::Cam16UcsJab::<f64>::from_triple(a)
+                .$method(palette::cam16::Cam16UcsJab::<f64>::from_triple(b))),
+            "cam16_ucs_jmh" => Ok(palette::cam16::Cam16UcsJmh::<f64>::from_triple(a)
+                .$method(palette::cam16::Cam16UcsJmh::<f64>::from_triple(b))),
             other => Err(unsupported_metric($fn_name, $metric, other, DELTA_E_SPACES)),
         }
     }};
@@ -198,10 +256,17 @@ macro_rules! hyab_op {
     ($space:expr, $fn_name:expr, $metric:expr, $a:expr, $b:expr) => {{
         let (a, b) = ($a, $b);
         match $space {
-            "lab" => Ok(Lab::<D65, f64>::from_triple(a).hybrid_distance(Lab::<D65, f64>::from_triple(b))),
-            "luv" => Ok(Luv::<D65, f64>::from_triple(a).hybrid_distance(Luv::<D65, f64>::from_triple(b))),
-            "oklab" => Ok(Oklab::<f64>::from_triple(a).hybrid_distance(Oklab::<f64>::from_triple(b))),
-            "cam16_ucs_jab" => Ok(palette::cam16::Cam16UcsJab::<f64>::from_triple(a).hybrid_distance(palette::cam16::Cam16UcsJab::<f64>::from_triple(b))),
+            "lab" => Ok(
+                Lab::<D65, f64>::from_triple(a).hybrid_distance(Lab::<D65, f64>::from_triple(b))
+            ),
+            "luv" => Ok(
+                Luv::<D65, f64>::from_triple(a).hybrid_distance(Luv::<D65, f64>::from_triple(b))
+            ),
+            "oklab" => {
+                Ok(Oklab::<f64>::from_triple(a).hybrid_distance(Oklab::<f64>::from_triple(b)))
+            }
+            "cam16_ucs_jab" => Ok(palette::cam16::Cam16UcsJab::<f64>::from_triple(a)
+                .hybrid_distance(palette::cam16::Cam16UcsJab::<f64>::from_triple(b))),
             other => Err(unsupported_metric($fn_name, $metric, other, HYAB_SPACES)),
         }
     }};
@@ -216,7 +281,12 @@ macro_rules! ciede2000_op {
         match $space {
             "lab" => Ok(Lab::<D65, f64>::from_triple(a).$method(Lab::<D65, f64>::from_triple(b))),
             "lch" => Ok(Lch::<D65, f64>::from_triple(a).$method(Lch::<D65, f64>::from_triple(b))),
-            other => Err(unsupported_metric($fn_name, $metric, other, CIEDE2000_SPACES)),
+            other => Err(unsupported_metric(
+                $fn_name,
+                $metric,
+                other,
+                CIEDE2000_SPACES,
+            )),
         }
     }};
 }
@@ -289,20 +359,7 @@ impl PltColor {
         criterion: &str,
         fn_name: &str,
     ) -> Result<bool, ExtensionError> {
-        let name = normalize(criterion);
-        let criterion = CONTRAST_CRITERIA
-            .iter()
-            .copied()
-            .find(|c| *c == name)
-            .ok_or_else(|| {
-                bad_arg(
-                    fn_name,
-                    format!(
-                        "unknown contrast criterion '{criterion}'; supported: {}",
-                        CONTRAST_CRITERIA.join(", ")
-                    ),
-                )
-            })?;
+        let criterion = criterion_arg(fn_name, criterion)?;
         let a = self.to_wcag_srgb(fn_name)?;
         let b = other.to_wcag_srgb(fn_name)?;
         let meets = match criterion {
@@ -314,5 +371,44 @@ impl PltColor {
             _ => unreachable!("criterion was resolved from CONTRAST_CRITERIA"),
         };
         Ok(meets)
+    }
+
+    /// 从候选色里挑出与 `base` 对比度最高的一个。
+    ///
+    /// Pick the candidate with the highest WCAG contrast ratio against `base`. When
+    /// `include_fallback` is set and the winner does not meet `criterion`, fall back to whichever of
+    /// black and white contrasts more with `base` (the tinycolor `mostReadable` behaviour).
+    pub fn most_readable(
+        base: &Self,
+        candidates: &[Self],
+        criterion: &str,
+        include_fallback: bool,
+        fn_name: &str,
+    ) -> Result<Self, ExtensionError> {
+        if candidates.is_empty() {
+            return Err(bad_arg(fn_name, "candidates must not be empty"));
+        }
+        let criterion = criterion_arg(fn_name, criterion)?;
+        let mut best = &candidates[0];
+        let mut best_score = base.contrast_ratio(best, fn_name)?;
+        for candidate in &candidates[1..] {
+            let score = base.contrast_ratio(candidate, fn_name)?;
+            if score > best_score {
+                best = candidate;
+                best_score = score;
+            }
+        }
+        if include_fallback && !base.contrast_meets(best, criterion, fn_name)? {
+            let white = Self::new("srgb", 1.0, 1.0, 1.0, 1.0);
+            let black = Self::new("srgb", 0.0, 0.0, 0.0, 1.0);
+            let white_score = base.contrast_ratio(&white, fn_name)?;
+            let black_score = base.contrast_ratio(&black, fn_name)?;
+            return Ok(if white_score >= black_score {
+                white
+            } else {
+                black
+            });
+        }
+        Ok(best.clone())
     }
 }

@@ -119,12 +119,12 @@ test/sql/<上游模块>/<子模块>.test   模块大了再分子目录
 query I
 SELECT count(*) FROM duckdb_functions() WHERE starts_with(function_name, 'plt_');
 ----
-152
+169
 ```
 
 - 加/删函数就同步这三个数（总数、聚合数、标量数）。**先跑一遍数出来再填，不要凭空改。**
 - 注意 `duckdb_functions()` 按**签名**计数：一个函数有多个 overload 会占多行，所以数字可能大于
-  函数名个数。改动 overload 时尤其要重新数。本仓是 152 个签名 / 145 个名字，全是标量。
+  函数名个数。改动 overload 时尤其要重新数。本仓是 169 个签名 / 160 个名字，全是标量。
 
 ## 不要为了让测试变绿而改期望值
 

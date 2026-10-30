@@ -11,7 +11,7 @@
 提供 44 个颜色空间、转换、混合、色差与对比度、配色方案、白点、CAM16 与 8 位打包；
 [csscolorparser](https://crates.io/crates/csscolorparser) 负责 CSS Color Level 4 字符串的正反序列化；
 [colorous](https://crates.io/crates/colorous) 提供 d3-scale-chromatic 的渐变与分类色板。三者一起
-注册了 145 个 `plt_` 前缀的标量函数。
+注册了 160 个 `plt_` 前缀的标量函数。
 
 颜色在 SQL 里就是一个 STRUCT：
 
@@ -47,19 +47,19 @@ SELECT plt_contrast(plt_named('white'), plt_named('black'));                    
 
 ## 函数总览
 
-一共 145 个名字（152 个签名，重载合并为同一个名字）。完整签名与可运行示例见
+一共 160 个名字（169 个签名，重载合并为同一个名字）。完整签名与可运行示例见
 [函数参考](docs/i18n/zh-Hans/docusaurus-plugin-content-docs/current/user-guide/functions/overview.md)。
 
 | 类别 | 代表函数 |
 | --- | --- |
 | 颜色结构 | `plt_color`、`plt_space`、`plt_components`、`plt_component`、`plt_alpha`、`plt_with_alpha`、`plt_opaque`、`plt_from_components`、`plt_color_spaces` |
 | 构造器（每空间一个） | `plt_srgb`、`plt_oklch`、`plt_lab`、`plt_xyz`、`plt_hsl`、`plt_luma` … 共 44 个空间 |
-| 转换 | `plt_convert`、`plt_convert_clamped`、`plt_clamp`、`plt_is_within_bounds`、`plt_luma`、`plt_luma_linear`、`plt_luma_gamma` |
-| 操作 | `plt_mix`、`plt_lighten`、`plt_darken`、`plt_saturate`、`plt_desaturate`（各带 `_fixed`）、`plt_shift_hue`、`plt_with_hue`、`plt_hue`、`plt_premultiply`、`plt_unpremultiply` |
+| 转换 | `plt_convert`、`plt_convert_clamped`、`plt_clamp`、`plt_is_within_bounds`、`plt_equals`、`plt_luma`、`plt_luma_linear`、`plt_luma_gamma` |
+| 操作 | `plt_mix`、`plt_lighten`、`plt_darken`、`plt_brighten`、`plt_greyscale`、`plt_tint`、`plt_shade`、`plt_saturate`、`plt_desaturate`（各带 `_fixed`）、`plt_shift_hue`、`plt_with_hue`、`plt_hue`、`plt_premultiply`、`plt_unpremultiply` |
 | 混合与合成 | `plt_blend`、`plt_compose`、`plt_blend_equations`、`plt_blend_modes`、`plt_compose_modes`、`plt_blend_parameters` |
-| 色差与对比度 | `plt_difference`、`plt_difference_metrics`、`plt_relative_luminance`、`plt_contrast`、`plt_contrast_check`、`plt_contrast_criteria` |
-| 色彩理论 | `plt_complementary`、`plt_split_complementary`、`plt_analogous`、`plt_analogous_secondary`、`plt_triadic`、`plt_tetradic`、`plt_harmony`、`plt_color_schemes` |
-| 命名色 / CSS | `plt_named`、`plt_named_names`、`plt_css_parse`、`plt_css_is_valid`、`plt_css_name`、`plt_css_serialize`、`plt_css_formats`、`plt_from_hex`、`plt_to_hex` |
+| 色差与对比度 | `plt_difference`、`plt_difference_metrics`、`plt_relative_luminance`、`plt_contrast`、`plt_contrast_check`、`plt_contrast_criteria`、`plt_most_readable`、`plt_brightness`、`plt_is_light`、`plt_is_dark` |
+| 色彩理论 | `plt_complementary`、`plt_split_complementary`、`plt_analogous`、`plt_analogous_secondary`、`plt_triadic`、`plt_tetradic`、`plt_monochromatic`、`plt_harmony`、`plt_color_schemes` |
+| 命名色 / CSS | `plt_named`、`plt_named_names`、`plt_nearest_named`、`plt_css_parse`、`plt_css_is_valid`、`plt_css_name`、`plt_css_serialize`、`plt_css_formats`、`plt_from_hex`、`plt_to_hex`、`plt_to_hex6`、`plt_to_hex8`、`plt_to_percentage_rgb`、`plt_to_hsv_string` |
 | 白点、色适应、编码 | `plt_white_points`、`plt_white_point_xyz`、`plt_white_point_xy`、`plt_adaptation_methods`、`plt_adaptation_matrix`、`plt_lms_matrix`、`plt_lms_to_xyz_matrix`、`plt_diagonal_adaptation_matrix`、`plt_chromatic_adapt`、`plt_encoding_spaces`、`plt_transfer_function`、`plt_transfer_functions`、`plt_decode`、`plt_encode`、`plt_white_point_of`、`plt_rgb_primaries`、`plt_rgb_to_xyz_matrix`、`plt_xyz_to_rgb_matrix` |
 | 矩阵 | `plt_matrix_identity`、`plt_matrix_scale`、`plt_matrix_multiply`、`plt_matrix_inverse`、`plt_matrix_apply`、`plt_apply_matrix` |
 | 8 位打包 | `plt_pack`、`plt_unpack`、`plt_pack_orders` |

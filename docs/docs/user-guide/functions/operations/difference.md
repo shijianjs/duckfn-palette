@@ -1,7 +1,7 @@
 ---
 title: Color difference and contrast
 sidebar_position: 3
-description: Seven color difference metrics in the spaces where they are defined, plus WCAG 2.1 relative luminance, contrast ratios and pass/fail checks.
+description: Seven color difference metrics in the spaces where they are defined, plus WCAG 2.1 relative luminance, contrast ratios, pass/fail checks, most-readable picking and YIQ brightness.
 ---
 
 # Color difference and contrast
@@ -128,6 +128,73 @@ FROM (VALUES (plt_named('rebeccapurple')),
 
 ```sql {"type":"duckfn","expect":"error"}
 SELECT plt_contrast_check(plt_srgb(1, 1, 1), plt_srgb(0, 0, 0), 'aaa');
+```
+
+## `plt_most_readable(base, candidates)` and overloads
+
+**Signature**: `plt_most_readable(base plt_color, candidates plt_color[]) -> plt_color`
+**Signature**: `plt_most_readable(base plt_color, candidates plt_color[], criterion VARCHAR) -> plt_color`
+**Signature**: `plt_most_readable(base plt_color, candidates plt_color[], criterion VARCHAR, use_black_and_white BOOLEAN) -> plt_color`
+
+Picks the candidate with the highest WCAG contrast against `base`, comparing the same ratio
+`plt_contrast` returns. The default criterion is `min_text`; it is only consulted when
+`use_black_and_white` is true. In that case, if the best candidate still misses the criterion,
+the function returns whichever of black and white contrasts better with `base` — tinycolor's
+`mostReadable` behaviour. An empty candidate list is an error, and an unknown criterion fails the
+statement like `plt_contrast_check`.
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_to_hex(plt_most_readable(plt_named('navy'),
+                                    [plt_named('teal'), plt_named('gold'), plt_named('tomato')])) AS best,
+       plt_to_hex(plt_most_readable(plt_named('navy'),
+                                    [plt_named('teal')], 'min_text', true)) AS fallback;
+```
+
+This is the "give me a label color that is readable on this background" query, applied per row:
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_to_hex(bg) AS background,
+       plt_to_hex(plt_most_readable(bg, [plt_named('white'), plt_named('black')])) AS label
+FROM (VALUES (plt_named('seagreen')), (plt_named('gold')), (plt_named('rebeccapurple'))) t(bg);
+```
+
+```sql {"type":"duckfn","expect":"error"}
+SELECT plt_most_readable(plt_srgb(1, 1, 1), []);
+```
+
+## Brightness and light/dark
+
+`plt_relative_luminance` follows WCAG, which is what contrast ratios use. The three functions below
+use the older **YIQ** brightness instead — the value tinycolor exposes as `getBrightness`. It is
+cruder and channel-weighted (0.299 R + 0.587 G + 0.114 B), but it is what many design tools use to
+decide whether text should be light or dark.
+
+### `plt_brightness(color)`
+
+**Signature**: `plt_brightness(color plt_color) -> DOUBLE`
+
+The YIQ brightness, 0 (black) to 1 (white). The color is converted to sRGB and clamped first.
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_brightness(plt_srgb(0, 0, 0)) AS black,
+       plt_brightness(plt_srgb(0.5, 0.5, 0.5)) AS middle_gray,
+       plt_brightness(plt_srgb(1, 1, 1)) AS white,
+       plt_brightness(plt_named('gold')) AS gold;
+```
+
+### `plt_is_light(color)` and `plt_is_dark(color)`
+
+**Signature**: `plt_is_light(color plt_color) -> BOOLEAN`
+**Signature**: `plt_is_dark(color plt_color) -> BOOLEAN`
+
+A threshold on the same YIQ value at 128/255 (≈ 0.502), tinycolor's default. The two are exact
+complements — a color is either light or dark, never both and never neither.
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_is_light(plt_named('gold')) AS gold_light,
+       plt_is_dark(plt_named('gold')) AS gold_dark,
+       plt_is_light(plt_named('navy')) AS navy_light,
+       plt_is_dark(plt_named('navy')) AS navy_dark;
 ```
 
 ## Listing the supported names

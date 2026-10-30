@@ -90,6 +90,23 @@ SELECT plt_to_hex(plt_convert(plt_convert(plt_srgb(0.2, 0.4, 0.6), 'hsluv'), 'sr
 一维的 `luma*` 空间按设计不可逆，而 `srgb_gamma` 是 palette 已废弃的伽马 2.2 编码 —— 除非你确实需要
 它，否则用 `plt_srgb`。
 
+## `plt_equals(a, b)`
+
+**签名**：`plt_equals(a plt_color, b plt_color) -> BOOLEAN`
+
+两个颜色渲染出来是否相同：都先转成 sRGB、每个通道量化到 8 位，alpha 保留两位小数。这就是 tinycolor
+的 `equals`，比较来自不同 space 的颜色时通常正是你想要的结果 —— `plt_srgb(1, 0, 0)` 与
+`plt_hsl(0, 1, 0.5)` 相等。感知均匀空间里可能差一丝的颜色，在这里也算相等：
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_equals(plt_srgb(1, 0, 0), plt_hsl(0, 1, 0.5)) AS across_spaces,
+       plt_equals(plt_with_alpha(plt_srgb(1, 0, 0), 0.5), plt_with_alpha(plt_srgb(1, 0, 0), 0.6)) AS alpha_differs,
+       plt_equals(plt_srgb(0.5, 0.5, 0.5), plt_srgb(0.501, 0.5, 0.5)) AS within_a_byte;
+```
+
+直接用 `=` 比较两个 STRUCT 并不会这样：它会连 `space` 标签和完整的浮点分量一起比较，所以两个渲染
+一致、只在最后一位上不同的 `srgb` 值在那里是 `!=`。
+
 ## 错误
 
 未知的空间名会让语句失败；错误信息里带函数名：

@@ -11,7 +11,7 @@ description: duckfn_palette 给 DuckDB 加了什么，以及怎么开始用。
 Rust 颜色库包装成 SQL 函数：[palette](https://crates.io/crates/palette) 提供 44 个颜色空间、转换、混合、
 色差与对比度、配色方案、白点、CAM16 与 8 位打包；[csscolorparser](https://crates.io/crates/csscolorparser)
 负责 CSS Color Level 4 字符串；[colorous](https://crates.io/crates/colorous) 提供 d3-scale-chromatic 的
-渐变与分类色板。三者一起注册了 `plt_` 前缀下的 145 个函数，加载之后它们和 DuckDB 自带的函数没有区别。
+渐变与分类色板。三者一起注册了 `plt_` 前缀下的 160 个函数，加载之后它们和 DuckDB 自带的函数没有区别。
 你不需要知道它是怎么写出来的，也不用编译任何东西 —— CLI、Python / R 会话与浏览器里的构建接受的都同一份
 `.duckdb_extension` 文件。
 

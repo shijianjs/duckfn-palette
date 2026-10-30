@@ -28,9 +28,9 @@ use palette::cam16::{
 use palette::encoding;
 use palette::lms::{BradfordLms, Lms, VonKriesLms};
 use palette::luma::Luma;
-use palette::rgb::{Rgb, 
+use palette::rgb::{
     AdobeRgb, DciP3, DisplayP3, GammaSrgb, LinAdobeRgb, LinDciP3, LinDisplayP3, LinProPhotoRgb,
-    LinRec2020, LinSrgb, ProPhotoRgb, Rec2020, Rec709, Srgb,
+    LinRec2020, LinSrgb, ProPhotoRgb, Rec709, Rec2020, Rgb, Srgb,
 };
 use palette::white_point::{D50, D65};
 use palette::{
@@ -295,41 +295,111 @@ macro_rules! hue_value_spaces {
     ($space:expr, $fn_name:expr, $a:expr) => {{
         let a = $a;
         match $space {
-            "srgb" => Ok(Srgb::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "srgb_linear" => Ok(LinSrgb::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "srgb_gamma" => Ok(GammaSrgb::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "adobe_rgb" => Ok(AdobeRgb::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "adobe_rgb_linear" => Ok(LinAdobeRgb::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "display_p3" => Ok(DisplayP3::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "display_p3_linear" => Ok(LinDisplayP3::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "dci_p3" => Ok(DciP3::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "dci_p3_linear" => Ok(LinDciP3::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "prophoto_rgb" => Ok(ProPhotoRgb::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "prophoto_rgb_linear" => Ok(LinProPhotoRgb::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "rec709" => Ok(Rec709::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "rec709_linear" => Ok(LinSrgb::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "rec2020" => Ok(Rec2020::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "rec2020_linear" => Ok(LinRec2020::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "hsl" => Ok(Hsl::<encoding::Srgb, f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "hsv" => Ok(Hsv::<encoding::Srgb, f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "hwb" => Ok(Hwb::<encoding::Srgb, f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "hsluv" => Ok(Hsluv::<D65, f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "lab" => Ok(Lab::<D65, f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "lch" => Ok(Lch::<D65, f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "luv" => Ok(Luv::<D65, f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "lchuv" => Ok(Lchuv::<D65, f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "oklab" => Ok(Oklab::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "oklch" => Ok(Oklch::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "okhsl" => Ok(Okhsl::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "okhsv" => Ok(Okhsv::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "okhwb" => Ok(Okhwb::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "cam16_jch" => Ok(Cam16Jch::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "cam16_jmh" => Ok(Cam16Jmh::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "cam16_jsh" => Ok(Cam16Jsh::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "cam16_qch" => Ok(Cam16Qch::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "cam16_qmh" => Ok(Cam16Qmh::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "cam16_qsh" => Ok(Cam16Qsh::<f64>::from_triple(a).get_hue().into_positive_degrees()),
-            "cam16_ucs_jmh" => Ok(Cam16UcsJmh::<f64>::from_triple(a).get_hue().into_positive_degrees()),
+            "srgb" => Ok(Srgb::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "srgb_linear" => Ok(LinSrgb::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "srgb_gamma" => Ok(GammaSrgb::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "adobe_rgb" => Ok(AdobeRgb::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "adobe_rgb_linear" => Ok(LinAdobeRgb::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "display_p3" => Ok(DisplayP3::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "display_p3_linear" => Ok(LinDisplayP3::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "dci_p3" => Ok(DciP3::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "dci_p3_linear" => Ok(LinDciP3::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "prophoto_rgb" => Ok(ProPhotoRgb::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "prophoto_rgb_linear" => Ok(LinProPhotoRgb::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "rec709" => Ok(Rec709::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "rec709_linear" => Ok(LinSrgb::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "rec2020" => Ok(Rec2020::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "rec2020_linear" => Ok(LinRec2020::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "hsl" => Ok(Hsl::<encoding::Srgb, f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "hsv" => Ok(Hsv::<encoding::Srgb, f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "hwb" => Ok(Hwb::<encoding::Srgb, f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "hsluv" => Ok(Hsluv::<D65, f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "lab" => Ok(Lab::<D65, f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "lch" => Ok(Lch::<D65, f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "luv" => Ok(Luv::<D65, f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "lchuv" => Ok(Lchuv::<D65, f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "oklab" => Ok(Oklab::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "oklch" => Ok(Oklch::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "okhsl" => Ok(Okhsl::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "okhsv" => Ok(Okhsv::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "okhwb" => Ok(Okhwb::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "cam16_jch" => Ok(Cam16Jch::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "cam16_jmh" => Ok(Cam16Jmh::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "cam16_jsh" => Ok(Cam16Jsh::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "cam16_qch" => Ok(Cam16Qch::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "cam16_qmh" => Ok(Cam16Qmh::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "cam16_qsh" => Ok(Cam16Qsh::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
+            "cam16_ucs_jmh" => Ok(Cam16UcsJmh::<f64>::from_triple(a)
+                .get_hue()
+                .into_positive_degrees()),
             other => Err(unsupported($fn_name, other)),
         }
     }};
@@ -345,32 +415,136 @@ macro_rules! premultiply_spaces {
         let forward = $forward;
         match $space {
             "srgb" => Ok(premultiply_one(Srgb::<f64>::from_triple(a), alpha, forward)),
-            "srgb_linear" => Ok(premultiply_one(LinSrgb::<f64>::from_triple(a), alpha, forward)),
-            "srgb_gamma" => Ok(premultiply_one(GammaSrgb::<f64>::from_triple(a), alpha, forward)),
-            "adobe_rgb" => Ok(premultiply_one(AdobeRgb::<f64>::from_triple(a), alpha, forward)),
-            "adobe_rgb_linear" => Ok(premultiply_one(LinAdobeRgb::<f64>::from_triple(a), alpha, forward)),
-            "display_p3" => Ok(premultiply_one(DisplayP3::<f64>::from_triple(a), alpha, forward)),
-            "display_p3_linear" => Ok(premultiply_one(LinDisplayP3::<f64>::from_triple(a), alpha, forward)),
-            "dci_p3" => Ok(premultiply_one(DciP3::<f64>::from_triple(a), alpha, forward)),
-            "dci_p3_linear" => Ok(premultiply_one(LinDciP3::<f64>::from_triple(a), alpha, forward)),
-            "prophoto_rgb" => Ok(premultiply_one(ProPhotoRgb::<f64>::from_triple(a), alpha, forward)),
-            "prophoto_rgb_linear" => Ok(premultiply_one(LinProPhotoRgb::<f64>::from_triple(a), alpha, forward)),
-            "rec709" => Ok(premultiply_one(Rec709::<f64>::from_triple(a), alpha, forward)),
-            "rec709_linear" => Ok(premultiply_one(LinSrgb::<f64>::from_triple(a), alpha, forward)),
-            "rec2020" => Ok(premultiply_one(Rec2020::<f64>::from_triple(a), alpha, forward)),
-            "rec2020_linear" => Ok(premultiply_one(LinRec2020::<f64>::from_triple(a), alpha, forward)),
-            "lab" => Ok(premultiply_one(Lab::<D65, f64>::from_triple(a), alpha, forward)),
-            "luv" => Ok(premultiply_one(Luv::<D65, f64>::from_triple(a), alpha, forward)),
-            "xyz" => Ok(premultiply_one(Xyz::<D65, f64>::from_triple(a), alpha, forward)),
-            "xyz_d50" => Ok(premultiply_one(Xyz::<D50, f64>::from_triple(a), alpha, forward)),
-            "yxy" => Ok(premultiply_one(Yxy::<D65, f64>::from_triple(a), alpha, forward)),
-            "luma" => Ok(premultiply_one(Luma::<encoding::Srgb, f64>::from_triple(a), alpha, forward)),
-            "luma_linear" => Ok(premultiply_one(Luma::<encoding::Linear<D65>, f64>::from_triple(a), alpha, forward)),
-            "luma_gamma" => Ok(premultiply_one(Luma::<encoding::Gamma<D65>, f64>::from_triple(a), alpha, forward)),
-            "oklab" => Ok(premultiply_one(Oklab::<f64>::from_triple(a), alpha, forward)),
-            "cam16_ucs_jab" => Ok(premultiply_one(Cam16UcsJab::<f64>::from_triple(a), alpha, forward)),
-            "lms" => Ok(premultiply_one(BradfordLms::<D65, f64>::from_triple(a), alpha, forward)),
-            "lms_von_kries" => Ok(premultiply_one(VonKriesLms::<D65, f64>::from_triple(a), alpha, forward)),
+            "srgb_linear" => Ok(premultiply_one(
+                LinSrgb::<f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "srgb_gamma" => Ok(premultiply_one(
+                GammaSrgb::<f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "adobe_rgb" => Ok(premultiply_one(
+                AdobeRgb::<f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "adobe_rgb_linear" => Ok(premultiply_one(
+                LinAdobeRgb::<f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "display_p3" => Ok(premultiply_one(
+                DisplayP3::<f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "display_p3_linear" => Ok(premultiply_one(
+                LinDisplayP3::<f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "dci_p3" => Ok(premultiply_one(
+                DciP3::<f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "dci_p3_linear" => Ok(premultiply_one(
+                LinDciP3::<f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "prophoto_rgb" => Ok(premultiply_one(
+                ProPhotoRgb::<f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "prophoto_rgb_linear" => Ok(premultiply_one(
+                LinProPhotoRgb::<f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "rec709" => Ok(premultiply_one(
+                Rec709::<f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "rec709_linear" => Ok(premultiply_one(
+                LinSrgb::<f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "rec2020" => Ok(premultiply_one(
+                Rec2020::<f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "rec2020_linear" => Ok(premultiply_one(
+                LinRec2020::<f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "lab" => Ok(premultiply_one(
+                Lab::<D65, f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "luv" => Ok(premultiply_one(
+                Luv::<D65, f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "xyz" => Ok(premultiply_one(
+                Xyz::<D65, f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "xyz_d50" => Ok(premultiply_one(
+                Xyz::<D50, f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "yxy" => Ok(premultiply_one(
+                Yxy::<D65, f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "luma" => Ok(premultiply_one(
+                Luma::<encoding::Srgb, f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "luma_linear" => Ok(premultiply_one(
+                Luma::<encoding::Linear<D65>, f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "luma_gamma" => Ok(premultiply_one(
+                Luma::<encoding::Gamma<D65>, f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "oklab" => Ok(premultiply_one(
+                Oklab::<f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "cam16_ucs_jab" => Ok(premultiply_one(
+                Cam16UcsJab::<f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "lms" => Ok(premultiply_one(
+                BradfordLms::<D65, f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
+            "lms_von_kries" => Ok(premultiply_one(
+                VonKriesLms::<D65, f64>::from_triple(a),
+                alpha,
+                forward,
+            )),
             other => Err(unsupported($fn_name, other)),
         }
     }};
@@ -472,12 +646,91 @@ impl PltColor {
         ))
     }
 
-
     /// 保留空间与 alpha，只换分量 —— 各操作的收尾。
     ///
     /// Keep space and alpha, replace only the components.
     fn recomponent(&self, space: &str, t: (f64, f64, f64)) -> Self {
         Self::new(space, t.0, t.1, t.2, self.alpha)
+    }
+
+    /// 在 sRGB 里朝 `target` 混合（tint/shade 的共用实现），alpha 不变，结果回到原空间。
+    ///
+    /// Blend towards `target` in sRGB, keeping alpha, and convert back to the input space.
+    fn blend_towards(
+        &self,
+        target: f64,
+        amount: f64,
+        fn_name: &str,
+    ) -> Result<Self, ExtensionError> {
+        let space = self.require_space(fn_name)?;
+        let srgb = self.convert(fn_name, "srgb")?;
+        let amount = amount.clamp(0.0, 1.0);
+        let blend = |value: f64| (value * (1.0 - amount) + target * amount).clamp(0.0, 1.0);
+        let out = Self::new(
+            "srgb",
+            blend(srgb.c1),
+            blend(srgb.c2),
+            blend(srgb.c3),
+            self.alpha,
+        );
+        out.convert(fn_name, space)
+    }
+
+    /// 在每个 sRGB 通道上加上 `amount`（0..1 的整段量程），alpha 不变。
+    ///
+    /// Add `amount` (a fraction of the full 0..1 channel range) to every sRGB channel. This is
+    /// tinycolor's `brighten`, expressed in the extension's 0..1 scale.
+    pub fn brighten(&self, amount: f64, fn_name: &str) -> Result<Self, ExtensionError> {
+        let space = self.require_space(fn_name)?;
+        let srgb = self.convert(fn_name, "srgb")?;
+        let amount = amount.clamp(0.0, 1.0);
+        let add = |value: f64| (value + amount).clamp(0.0, 1.0);
+        let out = Self::new("srgb", add(srgb.c1), add(srgb.c2), add(srgb.c3), self.alpha);
+        out.convert(fn_name, space)
+    }
+
+    /// 转成 HSL、把饱和度降到 0，再回到原空间（灰色的"亮度"取 HSL 的 L）。
+    ///
+    /// Drop HSL saturation to zero and convert back, so the grey keeps the HSL lightness.
+    pub fn greyscale(&self, fn_name: &str) -> Result<Self, ExtensionError> {
+        let space = self.require_space(fn_name)?;
+        let hsl = self.convert(fn_name, "hsl")?;
+        let grey = hsl.desaturate(1.0, fn_name)?;
+        grey.convert(fn_name, space)
+    }
+
+    /// 朝白色混合 `amount`（0 不变，1 全白），alpha 不变。
+    ///
+    /// Mix towards white by `amount` (0 keeps the color, 1 makes it white); alpha is unchanged.
+    pub fn tint(&self, amount: f64, fn_name: &str) -> Result<Self, ExtensionError> {
+        self.blend_towards(1.0, amount, fn_name)
+    }
+
+    /// 朝黑色混合 `amount`（0 不变，1 全黑），alpha 不变。
+    ///
+    /// Mix towards black by `amount` (0 keeps the color, 1 makes it black); alpha is unchanged.
+    pub fn shade(&self, amount: f64, fn_name: &str) -> Result<Self, ExtensionError> {
+        self.blend_towards(0.0, amount, fn_name)
+    }
+
+    /// 单色方案：固定色相与饱和度，让 HSV 的 value 从当前值起按 `1/count` 循环。
+    ///
+    /// A monochromatic scheme: keep hue and saturation, cycle HSV value by `1/count` from the
+    /// current value. This is tinycolor's `monochromatic`; results stay in the input space.
+    pub fn monochromatic(&self, count: usize, fn_name: &str) -> Result<Vec<Self>, ExtensionError> {
+        let space = self.require_space(fn_name)?;
+        if count == 0 {
+            return Ok(Vec::new());
+        }
+        let hsv = self.convert(fn_name, "hsv")?;
+        let step = 1.0 / count as f64;
+        let mut colors = Vec::with_capacity(count);
+        for index in 0..count {
+            let value = (hsv.c3 + index as f64 * step).rem_euclid(1.0);
+            let color = Self::new("hsv", hsv.c1, hsv.c2, value, self.alpha);
+            colors.push(color.convert(fn_name, space)?);
+        }
+        Ok(colors)
     }
 
     /// `Lighten::lighten`：按比例朝最大亮度靠拢。

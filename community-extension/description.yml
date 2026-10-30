@@ -35,7 +35,7 @@ docs:
     adaptation, transfer functions, 3x3 matrices, CAM16 with custom viewing conditions and 8-bit
     packing; [csscolorparser](https://crates.io/crates/csscolorparser) for CSS Color Level 4 strings;
     and [colorous](https://crates.io/crates/colorous) for the d3-scale-chromatic gradients and
-    categorical palettes. Together they register 145 functions under the `plt_` prefix.
+    categorical palettes. Together they register 160 functions under the `plt_` prefix.
 
     A color is a single STRUCT, so it can be stored in a column and compared like any other value:
 

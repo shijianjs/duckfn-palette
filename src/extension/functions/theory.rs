@@ -11,6 +11,7 @@
 
 use duckfn::{DuckOptionResult, duck_scalar_function};
 
+use crate::extension::functions::err;
 use crate::extension::types::color::PltColor;
 use crate::extension::types::theory::SCHEMES;
 
@@ -30,9 +31,10 @@ fn plt_complementary(color: PltColor) -> DuckOptionResult<PltColor> {
     example = "SELECT plt_split_complementary(plt_hsl(120, 1, 0.5))"
 )]
 fn plt_split_complementary(color: PltColor) -> DuckOptionResult<Vec<PltColor>> {
-    Ok(Some(
-        color.harmony("split_complementary", "plt_split_complementary")?,
-    ))
+    Ok(Some(color.harmony(
+        "split_complementary",
+        "plt_split_complementary",
+    )?))
 }
 
 /// 两个邻近色（色相 -30°、+30°）。
@@ -50,9 +52,10 @@ fn plt_analogous(color: PltColor) -> DuckOptionResult<Vec<PltColor>> {
     example = "SELECT plt_analogous_secondary(plt_hsl(120, 1, 0.5))"
 )]
 fn plt_analogous_secondary(color: PltColor) -> DuckOptionResult<Vec<PltColor>> {
-    Ok(Some(
-        color.harmony("analogous_secondary", "plt_analogous_secondary")?,
-    ))
+    Ok(Some(color.harmony(
+        "analogous_secondary",
+        "plt_analogous_secondary",
+    )?))
 }
 
 /// 两个三角色（色相 +120°、+240°）。
@@ -80,6 +83,20 @@ fn plt_tetradic(color: PltColor) -> DuckOptionResult<Vec<PltColor>> {
 )]
 fn plt_harmony(color: PltColor, scheme: String) -> DuckOptionResult<Vec<PltColor>> {
     Ok(Some(color.harmony(&scheme, "plt_harmony")?))
+}
+
+/// 单色方案：固定色相与饱和度，HSV value 按 1/count 循环。
+#[duck_scalar_function(
+    description = "A monochromatic scheme: count colors with the same hue and saturation, cycling HSV value by 1/count from the input's value; count must be non-negative",
+    example = "SELECT plt_monochromatic(plt_hsv(120, 1, 0.5), 4)"
+)]
+fn plt_monochromatic(color: PltColor, count: i64) -> DuckOptionResult<Vec<PltColor>> {
+    let count = usize::try_from(count).map_err(|_| {
+        err(format!(
+            "plt_monochromatic: count must be non-negative, got {count}"
+        ))
+    })?;
+    Ok(Some(color.monochromatic(count, "plt_monochromatic")?))
 }
 
 /// 所有方案名。

@@ -94,6 +94,62 @@ SELECT plt_to_hex(plt_darken(plt_srgb(1, 0, 0), 0.2)) AS darker,
 SELECT plt_components(plt_darken_fixed(plt_lab(50, 20, -30), 0.1)) AS lowered_lab;
 ```
 
+### `plt_brighten(color, amount)`
+
+**Signature**: `plt_brighten(color plt_color, amount DOUBLE) -> plt_color`
+
+Adds `amount` to every sRGB channel — a fraction of the full 0..1 range, not of the lightness — and
+clamps at 1. This is tinycolor's `brighten` on the extension's 0..1 scale; `plt_lighten` scales the
+space's own lightness instead. Every space is accepted, and the result keeps the input's space and
+alpha.
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_to_hex(plt_brighten(plt_srgb(0.2, 0.2, 0.2), 0.1)) AS brighter,
+       plt_to_hex(plt_brighten(plt_lab(50, 20, 30), 0.1)) AS brighter_lab,
+       plt_to_hex(plt_brighten(plt_srgb(0.9, 0.9, 0.9), 0.5)) AS clipped;
+```
+
+## Grey, tint and shade
+
+Three one-liners for the usual "make it grey / lighter / darker" requests. All of them accept every
+space and keep the input's space and alpha.
+
+### `plt_greyscale(color)`
+
+**Signature**: `plt_greyscale(color plt_color) -> plt_color`
+
+Drops the HSL saturation to zero, so the grey keeps the color's HSL lightness. This is the same
+result as `plt_desaturate` on an HSL color, without having to convert.
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_to_hex(plt_greyscale(plt_srgb(1, 0, 0))) AS red_grey,
+       plt_to_hex(plt_greyscale(plt_srgb(0.2, 0.6, 0.9))) AS blue_grey;
+```
+
+### `plt_tint(color, amount)`
+
+**Signature**: `plt_tint(color plt_color, amount DOUBLE) -> plt_color`
+
+Mixes towards white in sRGB: 0 keeps the color, 1 makes it white. `amount` is clamped to 0..1.
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_to_hex(plt_tint(plt_srgb(1, 0, 0), 0.25)) AS quarter,
+       plt_to_hex(plt_tint(plt_srgb(1, 0, 0), 0.5)) AS half,
+       plt_to_hex(plt_tint(plt_srgb(1, 0, 0), 1)) AS white;
+```
+
+### `plt_shade(color, amount)`
+
+**Signature**: `plt_shade(color plt_color, amount DOUBLE) -> plt_color`
+
+Mixes towards black in sRGB: 0 keeps the color, 1 makes it black.
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_to_hex(plt_shade(plt_srgb(1, 0, 0), 0.25)) AS quarter,
+       plt_to_hex(plt_shade(plt_srgb(1, 0, 0), 0.5)) AS half,
+       plt_to_hex(plt_shade(plt_srgb(1, 0, 0), 1)) AS black;
+```
+
 ## Saturation
 
 The proportional form scales saturation or chroma towards the space's maximum

@@ -3,7 +3,7 @@
   "position": 3,
   "link": {
     "type": "generated-index",
-    "description": "全部 145 个 plt_ 函数，按用途分组。每个函数都有签名、SQL 行为说明和一个可以就地运行的例子。",
+    "description": "全部 160 个 plt_ 函数，按用途分组。每个函数都有签名、SQL 行为说明和一个可以就地运行的例子。",
     "slug": "/category/functions"
   }
 }

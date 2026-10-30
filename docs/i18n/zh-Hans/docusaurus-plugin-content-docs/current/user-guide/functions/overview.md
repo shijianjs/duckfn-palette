@@ -1,12 +1,12 @@
 ---
 title: 概览
 sidebar_position: 1
-description: 145 个 plt_ 函数如何划分，每个函数都遵守的三条规则，以及各类函数该去哪里查。
+description: 160 个 plt_ 函数如何划分，每个函数都遵守的三条规则，以及各类函数该去哪里查。
 ---
 
 # 函数参考概览
 
-加载 `duckfn_palette` 会注册 **145 个名字 / 152 个签名**，全部位于 `plt_` 前缀下。它们就是普通的
+加载 `duckfn_palette` 会注册 **160 个名字 / 169 个签名**，全部位于 `plt_` 前缀下。它们就是普通的
 DuckDB 标量函数：放在投影、`WHERE` 子句、`GROUP BY`、`LATERAL` 连接或列表 lambda 里，都和一个
 内置函数没有区别。
 
@@ -43,12 +43,12 @@ SELECT plt_to_hex(plt_convert(plt_srgb(1, 0.5, 0), 'OK-LCH')) AS normalized;
 | 页面 | 内容 |
 | --- | --- |
 | [颜色与空间](./colors/spaces.md) | 颜色值、它的读取函数、alpha，以及每个空间一个的构造器（44 个） |
-| [转换与夹紧](./colors/conversion.md) | `plt_convert`、`plt_convert_clamped`、`plt_clamp`、`plt_is_within_bounds` |
-| [操作](./operations/manipulation.md) | 混合、变亮、变暗、饱和度、色相与预乘 alpha |
+| [转换与夹紧](./colors/conversion.md) | `plt_convert`、`plt_convert_clamped`、`plt_clamp`、`plt_is_within_bounds`、`plt_equals` |
+| [操作](./operations/manipulation.md) | 混合、变亮、变暗、提亮、灰度、tint 与 shade、饱和度、色相与预乘 alpha |
 | [混合与合成](./operations/blending.md) | 11 种混合模式、6 个 Porter-Duff 算子、自定义 OpenGL 因子 |
-| [色差与对比度](./operations/difference.md) | 7 种色差度量、WCAG 2.1 亮度、对比度与判定条件 |
-| [配色方案](./operations/theory.md) | 互补、分裂互补、类似、三角、四方 |
-| [字符串、hex 与命名色](./formats/strings.md) | hex、完整的 CSS Color Level 4、148 个 SVG/CSS3 名字 |
+| [色差与对比度](./operations/difference.md) | 7 种色差度量、WCAG 2.1 亮度、对比度与判定条件、可读性选色、YIQ 亮度 |
+| [配色方案](./operations/theory.md) | 互补、分裂互补、类似、三角、四方、单色 |
+| [字符串、hex 与命名色](./formats/strings.md) | hex（含定宽）、完整的 CSS Color Level 4、更多输出格式、148 个 SVG/CSS3 名字、最接近的名字 |
 | [8 位打包](./formats/packing.md) | 打包与解包 ARGB/RGBA/ABGR/BGRA 整数 |
 | [白点、色适应与编码](./color-science/encoding.md) | 白点、色适应矩阵、传递函数、三原色、矩阵 |
 | [自定义观察条件的 CAM16](./color-science/cam16.md) | 完整的 CAM16 属性，以及在自有观察条件下的 8 个 CAM16 空间 |

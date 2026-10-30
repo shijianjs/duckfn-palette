@@ -93,7 +93,9 @@ fn plt_desaturate(color: PltColor, factor: f64) -> DuckOptionResult<PltColor> {
     example = "SELECT plt_desaturate_fixed(plt_hsl(0, 0.4, 0.5), 0.2)"
 )]
 fn plt_desaturate_fixed(color: PltColor, amount: f64) -> DuckOptionResult<PltColor> {
-    Ok(Some(color.desaturate_fixed(amount, "plt_desaturate_fixed")?))
+    Ok(Some(
+        color.desaturate_fixed(amount, "plt_desaturate_fixed")?,
+    ))
 }
 
 /// 色相位移（度）。
@@ -139,4 +141,40 @@ fn plt_premultiply(color: PltColor) -> DuckOptionResult<PltColor> {
 )]
 fn plt_unpremultiply(color: PltColor) -> DuckOptionResult<PltColor> {
     Ok(Some(color.unpremultiply("plt_unpremultiply")?))
+}
+
+/// 在每个 sRGB 通道上加上 amount（0..1），保持空间与 alpha。
+#[duck_scalar_function(
+    description = "Brighten by adding an amount (0..1 of the channel range) to every sRGB channel, clamped, and converting back to the input space",
+    example = "SELECT plt_brighten(plt_srgb(0.2, 0.3, 0.4), 0.1)"
+)]
+fn plt_brighten(color: PltColor, amount: f64) -> DuckOptionResult<PltColor> {
+    Ok(Some(color.brighten(amount, "plt_brighten")?))
+}
+
+/// 把饱和度降为 0（经 HSL），保持空间与 alpha。
+#[duck_scalar_function(
+    description = "Greyscale a color by dropping its HSL saturation to zero, returning to the input space",
+    example = "SELECT plt_greyscale(plt_srgb(1, 0, 0))"
+)]
+fn plt_greyscale(color: PltColor) -> DuckOptionResult<PltColor> {
+    Ok(Some(color.greyscale("plt_greyscale")?))
+}
+
+/// 朝白色混合 amount（0..1），保持空间与 alpha。
+#[duck_scalar_function(
+    description = "Tint a color by mixing it towards white in sRGB by amount (0 unchanged, 1 white); alpha is unchanged",
+    example = "SELECT plt_tint(plt_srgb(1, 0, 0), 0.5)"
+)]
+fn plt_tint(color: PltColor, amount: f64) -> DuckOptionResult<PltColor> {
+    Ok(Some(color.tint(amount, "plt_tint")?))
+}
+
+/// 朝黑色混合 amount（0..1），保持空间与 alpha。
+#[duck_scalar_function(
+    description = "Shade a color by mixing it towards black in sRGB by amount (0 unchanged, 1 black); alpha is unchanged",
+    example = "SELECT plt_shade(plt_srgb(1, 0, 0), 0.5)"
+)]
+fn plt_shade(color: PltColor, amount: f64) -> DuckOptionResult<PltColor> {
+    Ok(Some(color.shade(amount, "plt_shade")?))
 }

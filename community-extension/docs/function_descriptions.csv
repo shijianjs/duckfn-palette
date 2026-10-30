@@ -11,6 +11,8 @@ plt_blend,"Blend a source color onto a destination color with a separable mode (
 plt_blend_equations,"Blend a source color onto a destination color with OpenGL-style source/destination factors (zero, one, source_color, one_minus_source_color, destination_color, one_minus_destination_color, source_alpha, one_minus_source_alpha, destination_alpha, one_minus_destination_alpha)",,"SELECT plt_blend_equations(plt_with_alpha(plt_srgb(1, 0, 0), 0.5), plt_with_alpha(plt_srgb(0, 0, 1), 0.5), 'source_alpha', 'one_minus_source_alpha')"
 plt_blend_modes,"All supported blend mode names, as accepted by plt_blend",,SELECT plt_blend_modes()
 plt_blend_parameters,"All supported blend factor names, as accepted by plt_blend_equations",,SELECT plt_blend_parameters()
+plt_brighten,"Brighten by adding an amount (0..1 of the channel range) to every sRGB channel, clamped, and converting back to the input space",,"SELECT plt_brighten(plt_srgb(0.2, 0.3, 0.4), 0.1)"
+plt_brightness,"YIQ brightness (0 black .. 1 white) from the sRGB channels, clamped to 0..1; alpha is ignored",,"SELECT plt_brightness(plt_srgb(0.2, 0.6, 0.9))"
 plt_cam16_default_params,"palette's default CAM16 viewing conditions (D65, La = 40, Yb = 0.2, average surround, auto discounting)",,SELECT plt_cam16_default_params()
 plt_cam16_from_xyz,"Convert an xyz color into the full CAM16 attributes (lightness, chroma, hue, brightness, colorfulness, saturation) under custom viewing conditions",,"SELECT plt_cam16_from_xyz(plt_xyz(0.4, 0.3, 0.2), plt_cam16_default_params())"
 plt_cam16_jch,"CAM16 (J, C, h) under palette's default viewing conditions: lightness, chroma, hue in degrees",,"SELECT plt_cam16_jch(50, 40, 120)"
@@ -67,15 +69,19 @@ plt_display_p3,"Display P3 color (D65, sRGB transfer function): red, green, blue
 plt_display_p3_linear,"Linear-light Display P3 color: red, green, blue in 0..1",,"SELECT plt_display_p3_linear(1, 0, 0)"
 plt_encode,Encode one linear component value with the space's transfer function,,"SELECT plt_encode('srgb', 0.21404114)"
 plt_encoding_spaces,"Spaces that have a transfer function (RGB spaces plus luma), as accepted by plt_decode and plt_encode",,SELECT plt_encoding_spaces()
+plt_equals,"Whether two colors render as the same 8-bit sRGB value and alpha (rounded to two decimals), regardless of their spaces",,"SELECT plt_equals(plt_srgb(1, 0, 0), plt_hsl(0, 1, 0.5))"
 plt_from_components,Build a color from a space name and a LIST(DOUBLE) of exactly three components,,"SELECT plt_from_components('lab', [50, 20, -30])"
 plt_from_components_alpha,Build a color from a space name and a LIST(DOUBLE) of exactly four values (three components plus alpha),,"SELECT plt_from_components_alpha('lab', [50, 20, -30, 0.5])"
 plt_from_hex,"Parse a hexadecimal color (#rgb, #rgba, #rrggbb, #rrggbbaa, with or without '#') using palette's hex parser; NULL when invalid",,SELECT plt_from_hex('#ff800080')
+plt_greyscale,"Greyscale a color by dropping its HSL saturation to zero, returning to the input space",,"SELECT plt_greyscale(plt_srgb(1, 0, 0))"
 plt_harmony,"The other colors of a color theory scheme by name (complementary, split_complementary, analogous, analogous_secondary, triadic, tetradic)",,"SELECT plt_harmony(plt_oklch(0.7, 0.1, 120), 'triadic')"
 plt_hsl,"HSL color: hue in degrees, saturation 0..1, lightness 0..1 (sRGB primaries)",,"SELECT plt_hsl(120, 0.5, 0.5)"
 plt_hsluv,"HSLuv color (D65): hue in degrees, saturation 0..100, lightness 0..100",,"SELECT plt_hsluv(120, 50, 50)"
 plt_hsv,"HSV color: hue in degrees, saturation 0..1, value 0..1 (sRGB primaries)",,"SELECT plt_hsv(120, 0.5, 0.5)"
 plt_hue,The hue of a color in degrees (0..360); gray colors report 0,,"SELECT plt_hue(plt_srgb(1, 0, 0))"
 plt_hwb,"HWB color: hue in degrees, whiteness 0..1, blackness 0..1 (sRGB primaries)",,"SELECT plt_hwb(120, 0.2, 0.2)"
+plt_is_dark,Whether a color is dark by tinycolor's YIQ rule (brightness < 128/255); alpha is ignored,,"SELECT plt_is_dark(plt_srgb(0, 0, 0))"
+plt_is_light,Whether a color is light by tinycolor's YIQ rule (brightness >= 128/255); alpha is ignored,,"SELECT plt_is_light(plt_srgb(1, 1, 1))"
 plt_is_within_bounds,Whether all components of a color are already within its space's standard range,,"SELECT plt_is_within_bounds(plt_lab(50, 200, 200))"
 plt_lab,"CIELAB color (D65): L* 0..100, a*, b* roughly -128..127",,"SELECT plt_lab(50, 20, -30)"
 plt_lch,"CIE LCH color (D65): L* 0..100, chroma >= 0, hue in degrees",,"SELECT plt_lch(50, 40, 120)"
@@ -96,8 +102,11 @@ plt_matrix_inverse,Invert a 3x3 matrix (row-major LIST(DOUBLE) of 9),,"SELECT pl
 plt_matrix_multiply,"Multiply two 3x3 matrices, applying the first and then the second (row-major LIST(DOUBLE) of 9)",,"SELECT plt_matrix_multiply(plt_matrix_identity(), plt_matrix_scale(2, 2, 2))"
 plt_matrix_scale,"A diagonal 3x3 matrix with the given diagonal entries, row-major",,"SELECT plt_matrix_scale(0.5, 0.5, 0.5)"
 plt_mix,"Mix two colors by a factor (0 = first, 1 = second) in the first color's space; alpha is mixed too",,"SELECT plt_mix(plt_oklch(0.6, 0.1, 30), plt_oklch(0.8, 0.1, 200), 0.5)"
+plt_monochromatic,"A monochromatic scheme: count colors with the same hue and saturation, cycling HSV value by 1/count from the input's value; count must be non-negative",,"SELECT plt_monochromatic(plt_hsv(120, 1, 0.5), 4)"
+plt_most_readable,"The candidate with the highest WCAG contrast ratio against the base color; when none meets the criterion and include_fallback is true, the more contrasting of black and white instead",,"SELECT plt_most_readable(plt_srgb(1, 1, 1), [plt_srgb(0.9, 0.9, 0.9)], 'min_text', true); SELECT plt_most_readable(plt_srgb(1, 1, 1), [plt_srgb(0.9, 0.9, 0.9)], 'min_text'); SELECT plt_most_readable(plt_srgb(1, 1, 1), [plt_srgb(0, 0, 0), plt_srgb(0.9, 0.9, 0.9)])"
 plt_named,"An SVG/CSS3 named color such as 'rebeccapurple' as an sRGB color, or NULL for an unknown name",,SELECT plt_named('rebeccapurple')
 plt_named_names,"All SVG/CSS3 named color names, sorted alphabetically",,SELECT plt_named_names()
+plt_nearest_named,"The closest SVG/CSS3 named color by CIEDE2000 distance, regardless of exact match; alpha is ignored",,"SELECT plt_nearest_named(plt_srgb(0.95, 0.05, 0.05))"
 plt_okhsl,"Okhsl color: hue in degrees, saturation 0..1, lightness 0..1",,"SELECT plt_okhsl(120, 0.5, 0.5)"
 plt_okhsv,"Okhsv color: hue in degrees, saturation 0..1, value 0..1",,"SELECT plt_okhsv(120, 0.5, 0.5)"
 plt_okhwb,"Okhwb color: hue in degrees, whiteness 0..1, blackness 0..1",,"SELECT plt_okhwb(120, 0.2, 0.2)"
@@ -121,6 +130,7 @@ plt_rgb_primaries,"The red, green and blue primaries of an RGB space, as three y
 plt_rgb_to_xyz_matrix,"The 3x3 RGB-to-XYZ matrix of an RGB space, row-major as LIST(DOUBLE) of 9",,SELECT plt_rgb_to_xyz_matrix('srgb')
 plt_saturate,Increase saturation or chroma by scaling towards the maximum (factor 0..1),,"SELECT plt_saturate(plt_hsl(0, 0.5, 0.5), 0.5)"
 plt_saturate_fixed,Increase saturation or chroma by an absolute amount (amount 0..1),,"SELECT plt_saturate_fixed(plt_hsl(0, 0.4, 0.5), 0.2)"
+plt_shade,"Shade a color by mixing it towards black in sRGB by amount (0 unchanged, 1 black); alpha is unchanged",,"SELECT plt_shade(plt_srgb(1, 0, 0), 0.5)"
 plt_shift_hue,Rotate the hue of a color by degrees (any real number; wraps at 360),,"SELECT plt_shift_hue(plt_hsl(120, 1, 0.5), 120)"
 plt_space,The color space name of a color value (as returned by plt_color_spaces),,"SELECT plt_space(plt_srgb(1, 0, 0))"
 plt_split_complementary,The two split complementary colors (hue + 150 and + 210 degrees) of a color,,"SELECT plt_split_complementary(plt_hsl(120, 1, 0.5))"
@@ -128,7 +138,12 @@ plt_srgb,"Gamma-encoded sRGB color: red, green, blue in 0..1",,"SELECT plt_srgb(
 plt_srgb_gamma,"Gamma 2.2 encoded sRGB color (palette's deprecated GammaSrgb): red, green, blue in 0..1",,"SELECT plt_srgb_gamma(1, 0, 0)"
 plt_srgb_linear,"Linear-light sRGB color: red, green, blue in 0..1",,"SELECT plt_srgb_linear(1, 0, 0)"
 plt_tetradic,"The three tetradic (square) colors (hue + 90, + 180 and + 270 degrees) of a color",,"SELECT plt_tetradic(plt_hsl(120, 1, 0.5))"
+plt_tint,"Tint a color by mixing it towards white in sRGB by amount (0 unchanged, 1 white); alpha is unchanged",,"SELECT plt_tint(plt_srgb(1, 0, 0), 0.5)"
 plt_to_hex,"Format a color as hexadecimal (#rrggbb, or #rrggbbaa when alpha is not 1) by converting to sRGB and quantizing to 8 bits",,"SELECT plt_to_hex(plt_srgb(1, 0.5, 0))"
+plt_to_hex6,"Format a color as #rrggbb, always six digits; alpha is ignored",,"SELECT plt_to_hex6(plt_color('srgb', 1, 0.5, 0, 0.5))"
+plt_to_hex8,"Format a color as #rrggbbaa, always eight digits (alpha = ff when opaque)",,"SELECT plt_to_hex8(plt_srgb(1, 0.5, 0))"
+plt_to_hsv_string,"Format a color as hsv(h, s%, v%), or hsva() when alpha is not 1; hue and percentages are rounded like tinycolor",,"SELECT plt_to_hsv_string(plt_srgb(1, 0, 0))"
+plt_to_percentage_rgb,"Format a color as CSS rgb() with percentages, or rgba() when alpha is not 1; channels and alpha are rounded like tinycolor",,"SELECT plt_to_percentage_rgb(plt_srgb(1, 0.5, 0))"
 plt_transfer_function,"The transfer function a space uses (linear, gamma_2_2, srgb, adobe_rgb, prophoto_rgb, p3_gamma or rec_oetf)",,SELECT plt_transfer_function('srgb')
 plt_transfer_functions,Every transfer function name used by the supported spaces,,SELECT plt_transfer_functions()
 plt_triadic,The two triadic colors (hue + 120 and + 240 degrees) of a color,,"SELECT plt_triadic(plt_hsl(120, 1, 0.5))"

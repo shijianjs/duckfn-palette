@@ -1,7 +1,7 @@
 ---
 title: Conversion and clamping
 sidebar_position: 2
-description: Move a color between any two of the 44 spaces, with or without clamping, and check whether it is inside its space's range.
+description: Move a color between any two of the 44 spaces, with or without clamping, check whether it is inside its space's range, and compare two colors as rendered.
 ---
 
 # Conversion and clamping
@@ -94,6 +94,26 @@ SELECT plt_to_hex(plt_convert(plt_convert(plt_srgb(0.2, 0.4, 0.6), 'hsluv'), 'sr
 
 The one-dimensional `luma*` spaces are not invertible by design, and `srgb_gamma` is palette's
 deprecated gamma 2.2 encoding — use `plt_srgb` unless you specifically need it.
+
+## `plt_equals(a, b)`
+
+**Signature**: `plt_equals(a plt_color, b plt_color) -> BOOLEAN`
+
+Whether two colors are the same once rendered: both are converted to sRGB, quantized to 8 bits per
+channel, and alpha is rounded to two decimals. This is tinycolor's `equals`, and it is usually what
+you mean when comparing colors from different spaces — `plt_srgb(1, 0, 0)` and `plt_hsl(0, 1, 0.5)`
+are equal. Two colors that a perceptually uniform space might separate by a hair still count as
+equal here:
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_equals(plt_srgb(1, 0, 0), plt_hsl(0, 1, 0.5)) AS across_spaces,
+       plt_equals(plt_with_alpha(plt_srgb(1, 0, 0), 0.5), plt_with_alpha(plt_srgb(1, 0, 0), 0.6)) AS alpha_differs,
+       plt_equals(plt_srgb(0.5, 0.5, 0.5), plt_srgb(0.501, 0.5, 0.5)) AS within_a_byte;
+```
+
+Comparing the STRUCTs directly with `=` does not do this: it also compares the `space` tag and the
+full floating-point components, so two `srgb` values that render identically but differ in the last
+bit are `!=` there.
 
 ## Errors
 

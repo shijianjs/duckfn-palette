@@ -1,7 +1,7 @@
 ---
 title: 色差与对比度
 sidebar_position: 3
-description: 七种色差指标及其有定义的空间，外加 WCAG 2.1 的相对亮度、对比度与达标判定。
+description: 七种色差指标及其有定义的空间，外加 WCAG 2.1 的相对亮度、对比度、达标判定，以及可读性选色与 YIQ 亮度。
 ---
 
 # 色差与对比度
@@ -125,6 +125,70 @@ FROM (VALUES (plt_named('rebeccapurple')),
 
 ```sql {"type":"duckfn","expect":"error"}
 SELECT plt_contrast_check(plt_srgb(1, 1, 1), plt_srgb(0, 0, 0), 'aaa');
+```
+
+## `plt_most_readable(base, candidates)` 及其重载
+
+**签名**：`plt_most_readable(base plt_color, candidates plt_color[]) -> plt_color`
+**签名**：`plt_most_readable(base plt_color, candidates plt_color[], criterion VARCHAR) -> plt_color`
+**签名**：`plt_most_readable(base plt_color, candidates plt_color[], criterion VARCHAR, use_black_and_white BOOLEAN) -> plt_color`
+
+在候选颜色里挑出与 `base` 对比度最高的那个，用的就是 `plt_contrast` 返回的同一个比值。默认准则是
+`min_text`，它只在 `use_black_and_white` 为真时起作用：此时若最优候选仍不满足该准则，函数返回黑白
+两色中与 `base` 对比度更高的那个 —— 即 tinycolor 的 `mostReadable` 行为。候选列表为空会报错，未知
+准则与 `plt_contrast_check` 一样让语句失败。
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_to_hex(plt_most_readable(plt_named('navy'),
+                                    [plt_named('teal'), plt_named('gold'), plt_named('tomato')])) AS best,
+       plt_to_hex(plt_most_readable(plt_named('navy'),
+                                    [plt_named('teal')], 'min_text', true)) AS fallback;
+```
+
+这就是「给这个背景色找一个读得清的文字色」的逐行写法：
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_to_hex(bg) AS background,
+       plt_to_hex(plt_most_readable(bg, [plt_named('white'), plt_named('black')])) AS label
+FROM (VALUES (plt_named('seagreen')), (plt_named('gold')), (plt_named('rebeccapurple'))) t(bg);
+```
+
+```sql {"type":"duckfn","expect":"error"}
+SELECT plt_most_readable(plt_srgb(1, 1, 1), []);
+```
+
+## 亮度与明暗判断
+
+`plt_relative_luminance` 遵循 WCAG，对比度用的就是它。下面三个函数用的是更老的 **YIQ** 亮度 ——
+tinycolor 把它暴露为 `getBrightness`。它更粗糙，按通道加权（0.299 R + 0.587 G + 0.114 B），但
+很多设计工具正是用它决定文字该用亮色还是暗色。
+
+### `plt_brightness(color)`
+
+**签名**：`plt_brightness(color plt_color) -> DOUBLE`
+
+YIQ 亮度，0（黑）到 1（白）。颜色会先转换到 sRGB 并夹紧。
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_brightness(plt_srgb(0, 0, 0)) AS black,
+       plt_brightness(plt_srgb(0.5, 0.5, 0.5)) AS middle_gray,
+       plt_brightness(plt_srgb(1, 1, 1)) AS white,
+       plt_brightness(plt_named('gold')) AS gold;
+```
+
+### `plt_is_light(color)` 与 `plt_is_dark(color)`
+
+**签名**：`plt_is_light(color plt_color) -> BOOLEAN`
+**签名**：`plt_is_dark(color plt_color) -> BOOLEAN`
+
+在同一个 YIQ 值上取 128/255（约 0.502）这个阈值，也就是 tinycolor 的默认值。两者严格互补 —— 一个
+颜色要么是亮的、要么是暗的，不会同时成立，也不会都不成立。
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_is_light(plt_named('gold')) AS gold_light,
+       plt_is_dark(plt_named('gold')) AS gold_dark,
+       plt_is_light(plt_named('navy')) AS navy_light,
+       plt_is_dark(plt_named('navy')) AS navy_dark;
 ```
 
 ## 列出支持的名字

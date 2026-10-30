@@ -11,7 +11,7 @@
 for 44 color spaces, conversion, blending, color difference and contrast, schemes, white points, CAM16
 and 8-bit packing; [csscolorparser](https://crates.io/crates/csscolorparser) for CSS Color Level 4
 strings in both directions; and [colorous](https://crates.io/crates/colorous) for the
-d3-scale-chromatic gradients and categorical palettes. Together they register 145 scalar functions
+d3-scale-chromatic gradients and categorical palettes. Together they register 160 scalar functions
 under the `plt_` prefix.
 
 A color is a single STRUCT in SQL:
@@ -48,19 +48,19 @@ The `Justfile` wraps the same commands: `just build`, `just sql "SELECT plt_to_h
 
 ## Functions
 
-145 distinct names, 152 signatures (overloads share a name). The full signatures and runnable examples
+160 distinct names, 169 signatures (overloads share a name). The full signatures and runnable examples
 are in the [function reference](docs/docs/user-guide/functions/overview.md).
 
 | Category | Representative functions |
 | --- | --- |
 | Color structure | `plt_color`, `plt_space`, `plt_components`, `plt_component`, `plt_alpha`, `plt_with_alpha`, `plt_opaque`, `plt_from_components`, `plt_color_spaces` |
 | Constructors (one per space) | `plt_srgb`, `plt_oklch`, `plt_lab`, `plt_xyz`, `plt_hsl`, `plt_luma`, … 44 spaces |
-| Conversion | `plt_convert`, `plt_convert_clamped`, `plt_clamp`, `plt_is_within_bounds`, `plt_luma`, `plt_luma_linear`, `plt_luma_gamma` |
-| Manipulation | `plt_mix`, `plt_lighten`, `plt_darken`, `plt_saturate`, `plt_desaturate` (each with `_fixed`), `plt_shift_hue`, `plt_with_hue`, `plt_hue`, `plt_premultiply`, `plt_unpremultiply` |
+| Conversion | `plt_convert`, `plt_convert_clamped`, `plt_clamp`, `plt_is_within_bounds`, `plt_equals`, `plt_luma`, `plt_luma_linear`, `plt_luma_gamma` |
+| Manipulation | `plt_mix`, `plt_lighten`, `plt_darken`, `plt_brighten`, `plt_greyscale`, `plt_tint`, `plt_shade`, `plt_saturate`, `plt_desaturate` (each with `_fixed`), `plt_shift_hue`, `plt_with_hue`, `plt_hue`, `plt_premultiply`, `plt_unpremultiply` |
 | Blending & compositing | `plt_blend`, `plt_compose`, `plt_blend_equations`, `plt_blend_modes`, `plt_compose_modes`, `plt_blend_parameters` |
-| Difference & contrast | `plt_difference`, `plt_difference_metrics`, `plt_relative_luminance`, `plt_contrast`, `plt_contrast_check`, `plt_contrast_criteria` |
-| Color schemes | `plt_complementary`, `plt_split_complementary`, `plt_analogous`, `plt_analogous_secondary`, `plt_triadic`, `plt_tetradic`, `plt_harmony`, `plt_color_schemes` |
-| Named colors / CSS | `plt_named`, `plt_named_names`, `plt_css_parse`, `plt_css_is_valid`, `plt_css_name`, `plt_css_serialize`, `plt_css_formats`, `plt_from_hex`, `plt_to_hex` |
+| Difference & contrast | `plt_difference`, `plt_difference_metrics`, `plt_relative_luminance`, `plt_contrast`, `plt_contrast_check`, `plt_contrast_criteria`, `plt_most_readable`, `plt_brightness`, `plt_is_light`, `plt_is_dark` |
+| Color schemes | `plt_complementary`, `plt_split_complementary`, `plt_analogous`, `plt_analogous_secondary`, `plt_triadic`, `plt_tetradic`, `plt_monochromatic`, `plt_harmony`, `plt_color_schemes` |
+| Named colors / CSS | `plt_named`, `plt_named_names`, `plt_nearest_named`, `plt_css_parse`, `plt_css_is_valid`, `plt_css_name`, `plt_css_serialize`, `plt_css_formats`, `plt_from_hex`, `plt_to_hex`, `plt_to_hex6`, `plt_to_hex8`, `plt_to_percentage_rgb`, `plt_to_hsv_string` |
 | White points, adaptation, encoding | `plt_white_points`, `plt_white_point_xyz`, `plt_white_point_xy`, `plt_adaptation_methods`, `plt_adaptation_matrix`, `plt_lms_matrix`, `plt_lms_to_xyz_matrix`, `plt_diagonal_adaptation_matrix`, `plt_chromatic_adapt`, `plt_encoding_spaces`, `plt_transfer_function`, `plt_transfer_functions`, `plt_decode`, `plt_encode`, `plt_white_point_of`, `plt_rgb_primaries`, `plt_rgb_to_xyz_matrix`, `plt_xyz_to_rgb_matrix` |
 | Matrices | `plt_matrix_identity`, `plt_matrix_scale`, `plt_matrix_multiply`, `plt_matrix_inverse`, `plt_matrix_apply`, `plt_apply_matrix` |
 | 8-bit packing | `plt_pack`, `plt_unpack`, `plt_pack_orders` |

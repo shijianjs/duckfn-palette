@@ -1,0 +1,191 @@
+# name: test/sql/convenience.test
+# description: tinycolor 风格的便捷封装：亮度与明暗判断、most_readable、brighten / greyscale /
+#   tint / shade、monochromatic、nearest_named、hex6 / hex8、百分比 RGB 与 HSV 字符串、equals
+#   （src/extension/functions/{difference,manipulate,theory,named,css,convert}.rs）。
+#   期望值来源：tinycolor2 1.4.2 的对应语义（YIQ 亮度、128/255 的明暗阈值、WCAG 对比度失败后
+#   回退到黑白），具体数值与字符串均为实跑输出。颜色保持输入空间，alpha 原样保留。
+# group: [duckfn_palette]
+
+require duckfn_palette
+
+# ---- YIQ 亮度与明暗判断：阈值是 128/255 ----
+
+query TTTT
+SELECT plt_brightness(plt_srgb(0,0,0))::DECIMAL(6,4),
+       plt_brightness(plt_srgb(1,1,1))::DECIMAL(6,4),
+       plt_brightness(plt_from_hex('#808080'))::DECIMAL(6,4),
+       plt_brightness(plt_from_hex('#7f7f7f'))::DECIMAL(6,4);
+----
+0.0000	1.0000	0.5020	0.4980
+
+query TTTTT
+SELECT plt_is_light(plt_srgb(1,1,1)),
+       plt_is_light(plt_from_hex('#808080')),
+       plt_is_dark(plt_from_hex('#808080')),
+       plt_is_dark(plt_srgb(0,0,0)),
+       plt_is_light(plt_srgb(0,0,0));
+----
+true	true	false	true	false
+
+# ---- most_readable：在候选里挑对比度最高的；可选回退到黑/白 ----
+
+query TTTT
+SELECT plt_to_hex(plt_most_readable(plt_srgb(0,0,0), [plt_from_hex('#333333'), plt_from_hex('#1a1ae6')])),
+       plt_to_hex(plt_most_readable(plt_srgb(1,1,1), [plt_from_hex('#333333'), plt_from_hex('#1a1ae6')], 'min_text')),
+       plt_to_hex(plt_most_readable(plt_srgb(0.5,0.5,0.5), [plt_from_hex('#666666')], 'min_text', false)),
+       plt_to_hex(plt_most_readable(plt_srgb(0.5,0.5,0.5), [plt_from_hex('#666666')], 'min_text', true));
+----
+#1a1ae6	#333333	#666666	#000000
+
+query TT
+SELECT plt_to_hex(plt_most_readable(plt_srgb(0,0,0), [plt_from_hex('#555555')], 'min_text', true)),
+       plt_to_hex(plt_most_readable(plt_srgb(1,1,1), [plt_from_hex('#cccccc')], 'min_text', true));
+----
+#ffffff	#000000
+
+# ---- brighten / tint / shade / greyscale：都在 sRGB 上做通道运算，amount 0..1（越界截断） ----
+
+query TTT
+SELECT plt_to_hex(plt_brighten(plt_srgb(0.2,0.2,0.2), 0.1)),
+       plt_to_hex(plt_brighten(plt_srgb(0.9,0.9,0.9), 0.5)),
+       plt_to_hex(plt_brighten(plt_srgb(0.2,0.2,0.2), 0.0));
+----
+#4d4d4d	#ffffff	#333333
+
+query TTT
+SELECT plt_to_hex(plt_tint(plt_srgb(1,0,0), 0.5)),
+       plt_to_hex(plt_tint(plt_srgb(1,0,0), 0.0)),
+       plt_to_hex(plt_tint(plt_srgb(1,0,0), 1.0));
+----
+#ff8080	#ff0000	#ffffff
+
+query TTT
+SELECT plt_to_hex(plt_shade(plt_srgb(1,0,0), 0.5)),
+       plt_to_hex(plt_shade(plt_srgb(1,0,0), 0.0)),
+       plt_to_hex(plt_shade(plt_srgb(1,0,0), 1.0));
+----
+#800000	#ff0000	#000000
+
+query TTT
+SELECT plt_to_hex(plt_greyscale(plt_srgb(1,0,0))),
+       plt_to_hex(plt_greyscale(plt_srgb(0,0,1))),
+       plt_to_hex(plt_greyscale(plt_srgb(0.2,0.6,0.9)));
+----
+#7f7f7f	#7f8080	#8c8c8c
+
+# 保持输入空间
+query TTT
+SELECT plt_brighten(plt_lab(50,20,30), 0.1).space,
+       plt_tint(plt_hsl(0,1,0.5), 0.1).space,
+       plt_greyscale(plt_oklch(0.6,0.1,20)).space;
+----
+lab	hsl	oklch
+
+# ---- monochromatic：含输入色自身，HSV 的 value 按 1/count 循环 ----
+
+query TTTT
+SELECT plt_to_hex(plt_monochromatic(plt_srgb(1,0,0), 4)[1]),
+       plt_to_hex(plt_monochromatic(plt_srgb(1,0,0), 4)[2]),
+       plt_to_hex(plt_monochromatic(plt_srgb(1,0,0), 4)[3]),
+       plt_to_hex(plt_monochromatic(plt_srgb(1,0,0), 4)[4]);
+----
+#ff0000	#400000	#7f0000	#bf0000
+
+query TTRT
+SELECT plt_monochromatic(plt_srgb(1,0,0), 0),
+       len(plt_monochromatic(plt_srgb(1,0,0), 3)),
+       plt_monochromatic(plt_with_alpha(plt_srgb(1,0,0), 0.5), 2)[2].alpha,
+       plt_monochromatic(plt_lab(50,20,30), 2)[1].space;
+----
+[]	3	0.5	lab
+
+statement error
+SELECT plt_monochromatic(plt_srgb(1,0,0), -1);
+----
+count must be non-negative
+
+# ---- nearest_named：148 个 CSS 命名色里 CIEDE2000 最近的那个 ----
+
+query TTTTT
+SELECT plt_nearest_named(plt_srgb(1,0,0)),
+       plt_nearest_named(plt_srgb(0,0,1)),
+       plt_nearest_named(plt_srgb(0.99,0.01,0.02)),
+       plt_nearest_named(plt_srgb(0.5,0.5,0.5)),
+       plt_nearest_named(plt_oklch(0.7,0.1,150));
+----
+red	blue	red	gray	darkseagreen
+
+# ---- 输出格式：hex6 / hex8 / 百分比 RGB / HSV 字符串 ----
+
+query TTTT
+SELECT plt_to_hex6(plt_srgb(1,0,0)),
+       plt_to_hex6(plt_with_alpha(plt_srgb(1,0,0), 0.5)),
+       plt_to_hex8(plt_srgb(1,0,0)),
+       plt_to_hex8(plt_with_alpha(plt_srgb(1,0,0), 0.25));
+----
+#ff0000	#ff0000	#ff0000ff	#ff000040
+
+query TTT
+SELECT plt_to_percentage_rgb(plt_srgb(1,0.5,0)),
+       plt_to_percentage_rgb(plt_with_alpha(plt_srgb(1,0.5,0), 0.5)),
+       plt_to_percentage_rgb(plt_from_hex('#010203'));
+----
+rgb(100%, 50%, 0%)	rgba(100%, 50%, 0%, 0.5)	rgb(0%, 1%, 1%)
+
+query TTT
+SELECT plt_to_hsv_string(plt_srgb(1,0,0)),
+       plt_to_hsv_string(plt_with_alpha(plt_srgb(0,0.5,1), 0.25)),
+       plt_to_hsv_string(plt_from_hex('#010203'));
+----
+hsv(0, 100%, 100%)	hsva(210, 100%, 100%, 0.25)	hsv(210, 67%, 1%)
+
+# ---- equals：按 8 位 sRGB 与两位小数的 alpha 比较（跨空间） ----
+
+query TTTTTT
+SELECT plt_equals(plt_srgb(1,0,0), plt_hsl(0,1,0.5)),
+       plt_equals(plt_srgb(1,0,0), plt_srgb(0,1,0)),
+       plt_equals(plt_with_alpha(plt_srgb(1,0,0), 0.5), plt_with_alpha(plt_hsl(0,1,0.5), 0.5)),
+       plt_equals(plt_with_alpha(plt_srgb(1,0,0), 0.5), plt_with_alpha(plt_srgb(1,0,0), 0.6)),
+       plt_equals(plt_srgb(0.5,0.5,0.5), plt_srgb(0.501,0.5,0.5)),
+       plt_equals(plt_srgb(0.5,0.5,0.5), plt_srgb(0.6,0.5,0.5));
+----
+true	false	true	false	true	false
+
+# ---- NULL 三态契约：NULL 进 NULL 出 ----
+
+query TTTTT
+SELECT plt_brightness(NULL) IS NULL,
+       plt_is_light(NULL) IS NULL,
+       plt_is_dark(NULL) IS NULL,
+       plt_most_readable(NULL, [plt_srgb(1,1,1)]) IS NULL,
+       plt_brighten(NULL, 0.1) IS NULL;
+----
+true	true	true	true	true
+
+query TTTTT
+SELECT plt_greyscale(NULL) IS NULL,
+       plt_tint(NULL, 0.1) IS NULL,
+       plt_shade(NULL, 0.1) IS NULL,
+       plt_monochromatic(NULL, 3) IS NULL,
+       plt_nearest_named(NULL) IS NULL;
+----
+true	true	true	true	true
+
+query TTTTT
+SELECT plt_to_hex6(NULL) IS NULL,
+       plt_to_hex8(NULL) IS NULL,
+       plt_to_percentage_rgb(NULL) IS NULL,
+       plt_to_hsv_string(NULL) IS NULL,
+       plt_equals(NULL, plt_srgb(1,0,0)) IS NULL;
+----
+true	true	true	true	true
+
+statement error
+SELECT plt_most_readable(plt_srgb(0,0,0), []);
+----
+candidates must not be empty
+
+statement error
+SELECT plt_most_readable(plt_srgb(0,0,0), [plt_srgb(1,1,1)], 'bogus');
+----
+unknown contrast criterion

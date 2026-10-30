@@ -91,6 +91,60 @@ SELECT plt_to_hex(plt_darken(plt_srgb(1, 0, 0), 0.2)) AS darker,
 SELECT plt_components(plt_darken_fixed(plt_lab(50, 20, -30), 0.1)) AS lowered_lab;
 ```
 
+### `plt_brighten(color, amount)`
+
+**签名**：`plt_brighten(color plt_color, amount DOUBLE) -> plt_color`
+
+给每个 sRGB 通道加上 `amount`（占 0..1 整个量程的比例，而不是亮度的比例），并在 1 处截断。这是
+tinycolor 的 `brighten` 在本扩展 0..1 尺度上的写法；`plt_lighten` 缩放的是该 space 自己的亮度。所有
+space 都接受，结果保留输入的 space 与 alpha。
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_to_hex(plt_brighten(plt_srgb(0.2, 0.2, 0.2), 0.1)) AS brighter,
+       plt_to_hex(plt_brighten(plt_lab(50, 20, 30), 0.1)) AS brighter_lab,
+       plt_to_hex(plt_brighten(plt_srgb(0.9, 0.9, 0.9), 0.5)) AS clipped;
+```
+
+## 灰度、tint 与 shade
+
+三个一句话就能解决的常用操作：变灰、变浅、变深。它们都接受所有 space，并保留输入的 space 与 alpha。
+
+### `plt_greyscale(color)`
+
+**签名**：`plt_greyscale(color plt_color) -> plt_color`
+
+把 HSL 的饱和度降到 0，所以保留的是颜色在 HSL 里的亮度。效果与对 HSL 颜色调用 `plt_desaturate`
+相同，只是不用自己先转换。
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_to_hex(plt_greyscale(plt_srgb(1, 0, 0))) AS red_grey,
+       plt_to_hex(plt_greyscale(plt_srgb(0.2, 0.6, 0.9))) AS blue_grey;
+```
+
+### `plt_tint(color, amount)`
+
+**签名**：`plt_tint(color plt_color, amount DOUBLE) -> plt_color`
+
+在 sRGB 里朝白色混合：0 保持原色，1 得到白色。`amount` 会被夹进 0..1。
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_to_hex(plt_tint(plt_srgb(1, 0, 0), 0.25)) AS quarter,
+       plt_to_hex(plt_tint(plt_srgb(1, 0, 0), 0.5)) AS half,
+       plt_to_hex(plt_tint(plt_srgb(1, 0, 0), 1)) AS white;
+```
+
+### `plt_shade(color, amount)`
+
+**签名**：`plt_shade(color plt_color, amount DOUBLE) -> plt_color`
+
+在 sRGB 里朝黑色混合：0 保持原色，1 得到黑色。
+
+```sql {"type":"duckfn","show":"table"}
+SELECT plt_to_hex(plt_shade(plt_srgb(1, 0, 0), 0.25)) AS quarter,
+       plt_to_hex(plt_shade(plt_srgb(1, 0, 0), 0.5)) AS half,
+       plt_to_hex(plt_shade(plt_srgb(1, 0, 0), 1)) AS black;
+```
+
 ## 饱和度
 
 按比例的形式把饱和度或 chroma 朝该 space 的最大值（`plt_saturate`）或最小值（`plt_desaturate`）缩放；

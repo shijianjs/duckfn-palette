@@ -40,13 +40,7 @@ fn plt_color_3(space: String, c1: f64, c2: f64, c3: f64) -> DuckOptionResult<Plt
     description = "Build a color in any supported space from a space name, three components and an alpha value",
     example = "SELECT plt_color('oklch', 0.7, 0.1, 120, 0.5)"
 )]
-fn plt_color_4(
-    space: String,
-    c1: f64,
-    c2: f64,
-    c3: f64,
-    alpha: f64,
-) -> DuckOptionResult<PltColor> {
+fn plt_color_4(space: String, c1: f64, c2: f64, c3: f64, alpha: f64) -> DuckOptionResult<PltColor> {
     let space = space_arg("plt_color", &space)?;
     Ok(Some(PltColor::new(space, c1, c2, c3, alpha)))
 }
@@ -114,6 +108,15 @@ fn plt_with_alpha(color: PltColor, alpha: f64) -> PltColor {
 )]
 fn plt_opaque(color: PltColor) -> PltColor {
     PltColor::new(&color.space, color.c1, color.c2, color.c3, 1.0)
+}
+
+/// 两个颜色是否渲染成同一份 8 位 sRGB（跨空间比较，alpha 两位小数）。
+#[duck_scalar_function(
+    description = "Whether two colors render as the same 8-bit sRGB value and alpha (rounded to two decimals), regardless of their spaces",
+    example = "SELECT plt_equals(plt_srgb(1, 0, 0), plt_hsl(0, 1, 0.5))"
+)]
+fn plt_equals(a: PltColor, b: PltColor) -> DuckOptionResult<bool> {
+    Ok(Some(a.same_rgba8(&b, "plt_equals")?))
 }
 
 /// 所有受支持的空间名。

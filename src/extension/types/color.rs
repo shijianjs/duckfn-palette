@@ -44,11 +44,13 @@ use palette::luma::Luma;
 use palette::num::Real;
 use palette::rgb::{
     AdobeRgb, DciP3, DisplayP3, GammaSrgb, LinAdobeRgb, LinDciP3, LinDisplayP3, LinProPhotoRgb,
-    LinRec2020, LinSrgb, ProPhotoRgb, Rec2020, Rec709, Srgb,
+    LinRec2020, LinSrgb, ProPhotoRgb, Rec709, Rec2020, Srgb,
 };
 use palette::white_point::{Any, D50, D65, WhitePoint};
 use palette::xyz::meta::HasXyzMeta;
-use palette::{Hsl, Hsluv, Hsv, Hwb, Lab, Lch, Lchuv, Luv, Okhsl, Okhsv, Okhwb, Oklab, Oklch, Xyz, Yxy};
+use palette::{
+    Hsl, Hsluv, Hsv, Hwb, Lab, Lch, Lchuv, Luv, Okhsl, Okhsv, Okhwb, Oklab, Oklch, Xyz, Yxy,
+};
 use quack_rs::error::ExtensionError;
 
 use crate::extension::functions::err;
@@ -543,12 +545,24 @@ impl PltColor {
                 let c = Okhwb::from_color_unclamped(hsv);
                 (c.hue.into_positive_degrees(), c.whiteness, c.blackness)
             }
-            "cam16_jch" => partial_components(Cam16Jch::from_xyz(xyz, Self::cam16_parameters().bake())),
-            "cam16_jmh" => partial_components(Cam16Jmh::from_xyz(xyz, Self::cam16_parameters().bake())),
-            "cam16_jsh" => partial_components(Cam16Jsh::from_xyz(xyz, Self::cam16_parameters().bake())),
-            "cam16_qch" => partial_components(Cam16Qch::from_xyz(xyz, Self::cam16_parameters().bake())),
-            "cam16_qmh" => partial_components(Cam16Qmh::from_xyz(xyz, Self::cam16_parameters().bake())),
-            "cam16_qsh" => partial_components(Cam16Qsh::from_xyz(xyz, Self::cam16_parameters().bake())),
+            "cam16_jch" => {
+                partial_components(Cam16Jch::from_xyz(xyz, Self::cam16_parameters().bake()))
+            }
+            "cam16_jmh" => {
+                partial_components(Cam16Jmh::from_xyz(xyz, Self::cam16_parameters().bake()))
+            }
+            "cam16_jsh" => {
+                partial_components(Cam16Jsh::from_xyz(xyz, Self::cam16_parameters().bake()))
+            }
+            "cam16_qch" => {
+                partial_components(Cam16Qch::from_xyz(xyz, Self::cam16_parameters().bake()))
+            }
+            "cam16_qmh" => {
+                partial_components(Cam16Qmh::from_xyz(xyz, Self::cam16_parameters().bake()))
+            }
+            "cam16_qsh" => {
+                partial_components(Cam16Qsh::from_xyz(xyz, Self::cam16_parameters().bake()))
+            }
             "cam16_ucs_jab" => {
                 let jmh = Cam16Jmh::from_xyz(xyz, Self::cam16_parameters().bake());
                 Cam16UcsJab::from_color_unclamped(jmh).into_components()
@@ -559,9 +573,7 @@ impl PltColor {
                 (c.lightness, c.colorfulness, c.hue.into_positive_degrees())
             }
             "lms" => BradfordLms::<D65, f64>::from_color_unclamped(xyz).into_components(),
-            "lms_von_kries" => {
-                VonKriesLms::<D65, f64>::from_color_unclamped(xyz).into_components()
-            }
+            "lms_von_kries" => VonKriesLms::<D65, f64>::from_color_unclamped(xyz).into_components(),
             _ => unreachable!("canonical_space returned an unknown space"),
         };
         Ok(Self::new(space, c1, c2, c3, alpha))
@@ -738,6 +750,19 @@ impl PltColor {
             )));
         }
         Ok(self.alpha)
+    }
+
+    /// 两个颜色是否渲染成同一份 8 位 sRGB（alpha 按两位小数比较），与所在空间无关。
+    ///
+    /// Whether both colors render as the same 8-bit sRGB value, comparing alpha at two decimal
+    /// places. The spaces may differ.
+    pub fn same_rgba8(&self, other: &Self, fn_name: &str) -> Result<bool, ExtensionError> {
+        let a = self.convert(fn_name, "srgb")?;
+        let b = other.convert(fn_name, "srgb")?;
+        let a8: Srgb<u8> = Srgb::<f64>::new(a.c1, a.c2, a.c3).into_format();
+        let b8: Srgb<u8> = Srgb::<f64>::new(b.c1, b.c2, b.c3).into_format();
+        let alpha = |value: f64| (value.clamp(0.0, 1.0) * 100.0).round() as i64;
+        Ok(a8 == b8 && alpha(a.alpha) == alpha(b.alpha))
     }
 }
 
