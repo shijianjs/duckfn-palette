@@ -1,0 +1,9 @@
+{
+  "label": "运算",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "对一个颜色能做的事：混合、提亮或压暗、改饱和度或色相、混合与合成、比较，以及由它生成配色方案。",
+    "slug": "/category/operations"
+  }
+}

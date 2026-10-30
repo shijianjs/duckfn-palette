@@ -79,7 +79,7 @@ FROM (VALUES ('lab'), ('oklch')) t(space);
 
 `"type":"duckfn"` is required; `show` is `table` (default), `text`, `html`, `iframe` or `svg`, and
 a block that demonstrates a failure declares `"expect":"error"` (see `docs/user-guide/intro.md`,
-`docs/user-guide/functions.md` and `docs/development/quick-start.md` for the ones this site ships).
+`docs/user-guide/functions/overview.md` and `docs/development/quick-start.md` for the ones this site ships).
 See [`AGENTS.md`](./AGENTS.md) for the conventions this site's blocks follow — reading data out of
 `static/` without hard-coding a locale prefix above all, which is the mistake that makes a block work
 in English and 404 in Chinese. The full config reference is in the kit's own guide at
@@ -207,7 +207,7 @@ A translated page is a full copy of its English source, placed under
 
 - Translate the body and the reader-facing front matter (`title`, `description`).
 - Keep `id`, `slug` and `sidebar_position` identical so both languages share routes and order.
-- Link to other pages with **relative file paths** (`./testing.md`, `../user-guide/functions.md`).
+- Link to other pages with **relative file paths** (`./testing.md`, `../user-guide/functions/overview.md`).
   A hard-coded `/docs/...` link would send a Chinese page to the English one.
 - Runnable blocks are copied verbatim except for the SQL comments: the `{"type":"duckfn",…}` info
   string and the query itself are code, and `npm test` runs the Chinese page's blocks too.

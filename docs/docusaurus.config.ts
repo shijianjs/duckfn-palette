@@ -68,7 +68,7 @@ const baseUrl = process.env.DOCS_BASE_URL ?? '/';
 
 const config: Config = {
   title: 'duckfn_palette',
-  tagline: 'The palette color library, as SQL functions',
+  tagline: 'Color spaces, conversion and palettes for DuckDB, from the Rust palette, csscolorparser and colorous crates',
   favicon: 'img/logo.svg',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -282,7 +282,7 @@ const config: Config = {
             },
             {
               label: 'Functions',
-              to: '/docs/user-guide/functions',
+              to: '/docs/category/functions',
             },
           ],
         },

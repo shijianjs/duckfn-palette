@@ -1,0 +1,9 @@
+{
+  "label": "Color science",
+  "position": 5,
+  "link": {
+    "type": "generated-index",
+    "description": "The machinery behind the conversions: white points and chromatic adaptation, transfer functions and primaries, 3x3 matrices, and CAM16 under viewing conditions you choose.",
+    "slug": "/category/color-science"
+  }
+}

@@ -7,10 +7,11 @@
 [![版本](https://img.shields.io/github/v/release/shijianjs/duckfn-palette?style=flat&logo=github&label=%E7%89%88%E6%9C%AC)](https://github.com/shijianjs/duckfn-palette/releases)
 [![许可证](https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF%E8%AF%81-MIT-14459b.svg?style=flat&logo=github)](https://github.com/shijianjs/duckfn-palette/blob/main/LICENSE)
 
-`duckfn_palette` 把 Rust 的 [palette](https://crates.io/crates/palette) 颜色库搬上 SQL：145 个
-`plt_` 前缀的标量函数，覆盖 44 个颜色空间、空间转换、混合与合成、色差与对比度、色彩理论、
-CSS 与命名色、白点与色适应、矩阵运算、CAM16 和 8 位打包。另有两点补充：csscolorparser 负责
-CSS 颜色字符串的正反序列化，colorous 提供预设渐变与分类色板。
+`duckfn_palette` 把三个 Rust 颜色库包装成 SQL 函数：[palette](https://crates.io/crates/palette)
+提供 44 个颜色空间、转换、混合、色差与对比度、配色方案、白点、CAM16 与 8 位打包；
+[csscolorparser](https://crates.io/crates/csscolorparser) 负责 CSS Color Level 4 字符串的正反序列化；
+[colorous](https://crates.io/crates/colorous) 提供 d3-scale-chromatic 的渐变与分类色板。三者一起
+注册了 145 个 `plt_` 前缀的标量函数。
 
 颜色在 SQL 里就是一个 STRUCT：
 
@@ -47,7 +48,7 @@ SELECT plt_contrast(plt_named('white'), plt_named('black'));                    
 ## 函数总览
 
 一共 145 个名字（152 个签名，重载合并为同一个名字）。完整签名与可运行示例见
-[函数参考](docs/i18n/zh-Hans/docusaurus-plugin-content-docs/current/user-guide/functions.md)。
+[函数参考](docs/i18n/zh-Hans/docusaurus-plugin-content-docs/current/user-guide/functions/overview.md)。
 
 | 类别 | 代表函数 |
 | --- | --- |

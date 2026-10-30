@@ -1,0 +1,9 @@
+{
+  "label": "Formats",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Moving colors in and out of SQL text and integers: hex, full CSS Color Level 4 syntax, CSS/SVG names, and packed 8-bit values.",
+    "slug": "/category/formats"
+  }
+}

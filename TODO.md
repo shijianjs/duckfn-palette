@@ -12,6 +12,9 @@ palette 全部对外能力 → SQL，函数前缀 `plt_`。完成一项勾一项
 - [x] CAM16 全量（自定义观察条件）、colorous 色板、随机色
 - [x] SQL 测试：15 份 `.test` 覆盖上游断言 + 边界 / NULL / 错误，`just test` 全绿
 - [x] 文档：README（中英）、用户指南（中英）、开发指南（中英）、首页、`function_descriptions.csv`
+- [x] 函数页拆分：`functions/` 下六个 generated-index 子目录、13 页中英全文，覆盖全部 145 个函数
+- [x] 首页与开篇文案：点明包装 palette / csscolorparser / colorous 三个 Rust 库
+- [x] 转换暴力穷举：40 个可逆空间两两往返（1600 次）纳入 `convert.test`
 - [x] 社区扩展注册草稿：`description.yml` 占位符全部替换、CSV 已重新生成
 - [x] 收尾：`just lint` 无警告、`just test` 全绿、已提交
 

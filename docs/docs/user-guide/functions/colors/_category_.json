@@ -1,0 +1,9 @@
+{
+  "label": "Colors and spaces",
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "slug": "/category/colors",
+    "description": "The color value itself: how to build one in any of the 44 spaces, read and change its components and alpha, and move between spaces with or without clamping."
+  }
+}

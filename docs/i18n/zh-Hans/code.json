@@ -330,7 +330,7 @@
     "message": "开始使用"
   },
   "homepage.tagline": {
-    "message": "把 palette 颜色库变成 SQL 函数",
+    "message": "给 DuckDB 的颜色空间、转换与色板：包装 Rust 的 palette、csscolorparser 与 colorous 三个库",
     "description": "The tagline shown on the homepage hero"
   },
   "homepage.github": {
@@ -341,52 +341,52 @@
     "message": "duckfn_palette 能给你什么",
     "description": "Home page section title above the feature cards"
   },
-  "homepage.features.sql.title": {
-    "message": "直接用 SQL 调用",
+  "homepage.features.value.title": {
+    "message": "颜色就是普通的 SQL 值",
     "description": "Home page feature card title"
   },
-  "homepage.features.sql.details": {
-    "message": "145 个 plt_ 函数就是普通的 DuckDB 函数：44 个颜色空间、转换、混合、对比度、CSS 与 CAM16，放进任意查询就能用，调用处不需要 import 任何东西。",
+  "homepage.features.value.details": {
+    "message": "一个颜色就是一个 STRUCT(space, c1, c2, c3, alpha)：能放进列里、按它分组、直接比较，也能传进 lambda 和 join，和别的值没有区别。",
     "description": "Home page feature card description"
   },
-  "homepage.features.install.title": {
-    "message": "一行装好",
+  "homepage.features.spaces.title": {
+    "message": "44 个颜色空间",
     "description": "Home page feature card title"
   },
-  "homepage.features.install.details": {
-    "message": "INSTALL duckfn_palette FROM community; 再 LOAD duckfn_palette; —— 构建签过名、且与你的 DuckDB 版本和平台匹配，所以不用加 -unsigned。",
+  "homepage.features.spaces.details": {
+    "message": "sRGB、Display P3、Rec. 2020、CIE Lab 与 LCh、OKLab 与 OKLCh、HSLuv、CAM16……在任意空间构造，再一次调用就能在它们之间互转，全程不离开 SQL。",
     "description": "Home page feature card description"
   },
-  "homepage.features.platforms.title": {
-    "message": "每个版本都有各平台产物",
+  "homepage.features.operations.title": {
+    "message": "混合、叠色与配色方案",
     "description": "Home page feature card title"
   },
-  "homepage.features.platforms.details": {
-    "message": "每个版本都会把各平台各一份 .duckdb_extension 挂到 GitHub Release 上：下载你平台那一份，改名成 duckfn_palette.duckdb_extension 再 LOAD。",
+  "homepage.features.operations.details": {
+    "message": "11 种混合模式与 6 个 Porter-Duff 合成算子、提亮与压暗、饱和度与色相调整、预乘 alpha，以及互补、类似、三角、四角配色方案。",
     "description": "Home page feature card description"
   },
-  "homepage.features.versions.title": {
-    "message": "DuckDB 1.4 或更新",
+  "homepage.features.contrast.title": {
+    "message": "色差与对比度",
     "description": "Home page feature card title"
   },
-  "homepage.features.versions.details": {
-    "message": "基于 DuckDB 的 C 扩展 API 构建，一个二进制就能加载进 DuckDB 1.4 及之后的版本，不需要重新编译。",
+  "homepage.features.contrast.details": {
+    "message": "CIEDE2000、CMC 等 7 种色差度量，加上 WCAG 2.1 的相对亮度、对比度，以及按标准阈值判定是否达标。",
     "description": "Home page feature card description"
   },
-  "homepage.features.examples.title": {
-    "message": "例子就地能跑",
+  "homepage.features.palettes.title": {
+    "message": "色板与随机色",
     "description": "Home page feature card title"
   },
-  "homepage.features.examples.details": {
-    "message": "本站每个例子都在你的浏览器里用 DuckDB-Wasm 真跑 —— 在函数页点一下「执行」就能看到真实结果。",
+  "homepage.features.palettes.details": {
+    "message": "38 条 colorous 渐变与 10 组分类色板、148 个 SVG/CSS 命名色，以及按 palette 分布、用种子复现的随机采样 —— 一张色图就是一个函数调用。",
     "description": "Home page feature card description"
   },
-  "homepage.features.license.title": {
-    "message": "MIT 许可",
+  "homepage.features.formats.title": {
+    "message": "文本与 8 位格式",
     "description": "Home page feature card title"
   },
-  "homepage.features.license.details": {
-    "message": "以 MIT 许可开源：源码、测试与这些页面都在仓库里。",
+  "homepage.features.formats.details": {
+    "message": "解析与写出十六进制或完整的 CSS Color Level 4，打包和解包 ARGB/RGBA/ABGR/BGRA 整数，还能查基色、白点、传递函数与矩阵。",
     "description": "Home page feature card description"
   },
   "homepage.showcase.title": {

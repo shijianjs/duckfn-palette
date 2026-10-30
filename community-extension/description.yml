@@ -1,6 +1,6 @@
 extension:
   name: duckfn_palette
-  description: The palette color library as SQL functions — 44 color spaces, conversion, blending, contrast, CSS, CAM16
+  description: SQL functions wrapping the Rust palette, csscolorparser and colorous color crates — 44 color spaces, conversion, blending, contrast, CSS, CAM16
   version: 0.1.0
   language: Rust
   build: cargo
@@ -26,15 +26,16 @@ docs:
     -- 21.0
   extended_description: |
     Documentation: [user guide](https://shijianjs.github.io/duckfn-palette/docs/intro) ·
-    [function reference](https://shijianjs.github.io/duckfn-palette/docs/user-guide/functions) - installation,
+    [function reference](https://shijianjs.github.io/duckfn-palette/docs/category/functions) - installation,
     every function with a runnable example, and the NULL / error rules.
 
-    `duckfn_palette` maps Rust's [palette](https://crates.io/crates/palette) color library onto SQL: 145
-    functions under the `plt_` prefix, covering 44 color spaces, conversion between them, lightening and
-    saturation, blending and compositing, color-difference metrics and WCAG contrast, color schemes,
-    named colors, white points, chromatic adaptation, transfer functions, 3x3 matrices, CAM16 with custom
-    viewing conditions and 8-bit packing. Two supporting crates fill the edges: csscolorparser for CSS
-    Color Level 4 strings, and colorous for the d3-scale-chromatic gradients and categorical palettes.
+    `duckfn_palette` wraps three Rust color crates with SQL functions:
+    [palette](https://crates.io/crates/palette) for 44 color spaces, conversion, blending and
+    compositing, color-difference metrics and WCAG contrast, color schemes, white points, chromatic
+    adaptation, transfer functions, 3x3 matrices, CAM16 with custom viewing conditions and 8-bit
+    packing; [csscolorparser](https://crates.io/crates/csscolorparser) for CSS Color Level 4 strings;
+    and [colorous](https://crates.io/crates/colorous) for the d3-scale-chromatic gradients and
+    categorical palettes. Together they register 145 functions under the `plt_` prefix.
 
     A color is a single STRUCT, so it can be stored in a column and compared like any other value:
 

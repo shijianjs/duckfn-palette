@@ -1,0 +1,9 @@
+{
+  "label": "Function reference",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "All 145 plt_ functions, grouped by what they do. Every function has its signature, its SQL behaviour and a runnable example.",
+    "slug": "/category/functions"
+  }
+}

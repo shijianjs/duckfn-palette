@@ -1,0 +1,9 @@
+{
+  "label": "Operations",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "What you can do to a color: mix it, lighten or darken it, change its saturation or hue, blend and composite it, compare it, or build a scheme from it.",
+    "slug": "/category/operations"
+  }
+}

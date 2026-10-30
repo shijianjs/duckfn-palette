@@ -7,11 +7,12 @@
 [![Release](https://img.shields.io/github/v/release/shijianjs/duckfn-palette?style=flat&logo=github)](https://github.com/shijianjs/duckfn-palette/releases)
 [![License](https://img.shields.io/badge/license-MIT-14459b.svg?style=flat&logo=github)](https://github.com/shijianjs/duckfn-palette/blob/main/LICENSE)
 
-`duckfn_palette` puts Rust's [palette](https://crates.io/crates/palette) color library into SQL: 145
-scalar functions under the `plt_` prefix covering 44 color spaces, conversion between them, blending
-and compositing, color difference and contrast, color schemes, CSS and named colors, white points and
-chromatic adaptation, matrix arithmetic, CAM16 and 8-bit packing. Two additions: csscolorparser for
-CSS color strings in both directions, and colorous for preset gradients and categorical palettes.
+`duckfn_palette` wraps three Rust color crates with SQL functions: [palette](https://crates.io/crates/palette)
+for 44 color spaces, conversion, blending, color difference and contrast, schemes, white points, CAM16
+and 8-bit packing; [csscolorparser](https://crates.io/crates/csscolorparser) for CSS Color Level 4
+strings in both directions; and [colorous](https://crates.io/crates/colorous) for the
+d3-scale-chromatic gradients and categorical palettes. Together they register 145 scalar functions
+under the `plt_` prefix.
 
 A color is a single STRUCT in SQL:
 
@@ -48,7 +49,7 @@ The `Justfile` wraps the same commands: `just build`, `just sql "SELECT plt_to_h
 ## Functions
 
 145 distinct names, 152 signatures (overloads share a name). The full signatures and runnable examples
-are in the [function reference](docs/docs/user-guide/functions.md).
+are in the [function reference](docs/docs/user-guide/functions/overview.md).
 
 | Category | Representative functions |
 | --- | --- |

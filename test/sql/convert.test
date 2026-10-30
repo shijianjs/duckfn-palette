@@ -138,6 +138,25 @@ WHERE s NOT IN ('luma','luma_linear','luma_gamma','srgb_gamma')
 ----
 0
 
+# 暴力往返：40 个可逆空间两两组合（1600 次 A → B → A），误差 ≤ 1e-4。中间空间排除
+# luma*（一维，丢掉另外两个分量）与 srgb_gamma（-0 附近 powf 出 NaN）；每个 A 的源色都
+# 先由同一个 gamut 内 sRGB 颜色转到 A，避免拿越界分量做往返。容差比单段往返宽一档：
+# 经过 D50 空间（prophoto_*、xyz_d50）或 dci_p3 时，Bradford 适应矩阵往返会留下 ~4e-5。
+query I
+WITH spaces AS (
+  SELECT s FROM unnest(plt_color_spaces()) t(s)
+  WHERE s NOT IN ('luma','luma_linear','luma_gamma','srgb_gamma')
+), src AS (
+  SELECT s, plt_convert(plt_srgb(0.2,0.4,0.6), s) AS base FROM spaces
+)
+SELECT count(*) FROM src a, spaces b
+WHERE list_max(list_transform(
+        list_zip(plt_components(plt_convert(plt_convert(a.base, b.s), a.s)),
+                 plt_components(a.base)),
+        lambda p: abs(p[1] - p[2]))) > 1e-4;
+----
+0
+
 # 参数来自列而不是常量字面量
 query TT
 SELECT space, plt_components(plt_convert(c, space))

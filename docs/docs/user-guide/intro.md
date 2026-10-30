@@ -7,16 +7,15 @@ description: What duckfn_palette adds to DuckDB, and how to start using it.
 
 # Introduction
 
-`duckfn_palette` is a [DuckDB loadable extension](https://duckdb.org/docs/stable/extensions/overview): it
-adds SQL functions to DuckDB, and once it is loaded they behave like DuckDB's own. You do not need to
-know how it was written or to compile anything — the CLI, a Python or R session and the browser build all
-take the same `.duckdb_extension` file.
-
-It brings palette's color types and algorithms into SQL: 145 functions under the `plt_` prefix covering
-44 color spaces, conversion, blending and compositing, color difference and contrast, color schemes,
-CSS and named colors, white points and chromatic adaptation, matrices, CAM16 and 8-bit packing. Two
-supporting libraries fill the edges: csscolorparser for CSS color strings, and colorous for preset
-gradients and categorical palettes.
+`duckfn_palette` is a [DuckDB loadable extension](https://duckdb.org/docs/stable/extensions/overview)
+that wraps three Rust color crates as SQL functions: [palette](https://crates.io/crates/palette) for
+44 color spaces, conversion, blending, color difference and contrast, schemes, white points, CAM16 and
+8-bit packing; [csscolorparser](https://crates.io/crates/csscolorparser) for CSS Color Level 4
+strings; and [colorous](https://crates.io/crates/colorous) for the d3-scale-chromatic gradients and
+categorical palettes. Together they register 145 functions under the `plt_` prefix, and once the
+extension is loaded they behave like DuckDB's own. You do not need to know how it was written or to
+compile anything — the CLI, a Python or R session and the browser build all take the same
+`.duckdb_extension` file.
 
 A color is one `STRUCT`, so it can live in a column, be passed around as a value, and be compared:
 
@@ -45,6 +44,6 @@ the file.
 ## Where to go next
 
 - [Installation](./installation.md) — the community repository, a release file, or a local build.
-- [Functions](./functions.md) — every function, grouped by what it does, with examples you can run.
+- [Functions](./functions/overview.md) — every function, grouped by what it does, with examples you can run.
 - [Development guide](../development/quick-start.md) — building the extension from source. That part is
   for people working on this repository; it is not needed to use the extension.

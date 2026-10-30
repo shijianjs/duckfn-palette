@@ -228,85 +228,85 @@ function featuresContent(): FeaturesContent {
       {
         icon: 'lucide:braces',
         title: translate({
-          id: 'homepage.features.sql.title',
+          id: 'homepage.features.value.title',
           description: 'Home page feature card title',
-          message: 'Call it from SQL',
+          message: 'Colors as ordinary SQL values',
         }),
         details: translate({
-          id: 'homepage.features.sql.details',
+          id: 'homepage.features.value.details',
           description: 'Home page feature card description',
           message:
-            '145 plt_ functions are ordinary DuckDB functions: 44 color spaces, conversion, blending, contrast, CSS and CAM16, usable in any query alongside DuckDB\u2019s own.',
+            'A color is one STRUCT(space, c1, c2, c3, alpha): keep it in a column, group by it, compare it, and pass it through lambdas and joins like any other value.',
         }),
       },
       {
-        icon: 'lucide:package',
+        icon: 'lucide:swatch-book',
         title: translate({
-          id: 'homepage.features.install.title',
+          id: 'homepage.features.spaces.title',
           description: 'Home page feature card title',
-          message: 'Install in one line',
+          message: '44 color spaces',
         }),
         details: translate({
-          id: 'homepage.features.install.details',
+          id: 'homepage.features.spaces.details',
           description: 'Home page feature card description',
           message:
-            'INSTALL duckfn_palette FROM community; then LOAD duckfn_palette; \u2014 signed builds matched to your DuckDB version and platform, so no -unsigned flag is needed.',
+            'sRGB, Display P3, Rec. 2020, CIE Lab and LCh, OKLab and OKLCh, HSLuv, CAM16 and more \u2014 construct a color in any of them and convert between all of them in one call.',
         }),
       },
       {
-        icon: 'lucide:monitor-down',
+        icon: 'lucide:blend',
         title: translate({
-          id: 'homepage.features.platforms.title',
+          id: 'homepage.features.operations.title',
           description: 'Home page feature card title',
-          message: 'Every platform, on every release',
+          message: 'Mix, blend and build schemes',
         }),
         details: translate({
-          id: 'homepage.features.platforms.details',
+          id: 'homepage.features.operations.details',
           description: 'Home page feature card description',
           message:
-            'Each version attaches one .duckdb_extension per platform to a GitHub Release; download the file for yours, rename it to duckfn_palette.duckdb_extension and LOAD it.',
-        }),
-      },
-      {
-        icon: 'lucide:shield-check',
-        title: translate({
-          id: 'homepage.features.versions.title',
-          description: 'Home page feature card title',
-          message: 'DuckDB 1.4 or newer',
-        }),
-        details: translate({
-          id: 'homepage.features.versions.details',
-          description: 'Home page feature card description',
-          message:
-            "Built against DuckDB's C extension API, so one binary loads into DuckDB 1.4 and later without a recompile.",
-        }),
-      },
-      {
-        icon: 'lucide:play',
-        title: translate({
-          id: 'homepage.features.examples.title',
-          description: 'Home page feature card title',
-          message: 'Examples that run here',
-        }),
-        details: translate({
-          id: 'homepage.features.examples.details',
-          description: 'Home page feature card description',
-          message:
-            'Every example on this site runs in your browser through DuckDB-Wasm \u2014 click Run on the function reference and see the real result.',
+            '11 blend modes and 6 Porter-Duff compositing operators, lighten and darken, saturation and hue shifts, premultiplied alpha, and complementary / analogous / triadic / tetradic schemes.',
         }),
       },
       {
         icon: 'lucide:scale',
         title: translate({
-          id: 'homepage.features.license.title',
+          id: 'homepage.features.contrast.title',
           description: 'Home page feature card title',
-          message: 'MIT licensed',
+          message: 'Differences and contrast',
         }),
         details: translate({
-          id: 'homepage.features.license.details',
+          id: 'homepage.features.contrast.details',
           description: 'Home page feature card description',
           message:
-            'Open source under the MIT license: the source, the tests and these pages all live in the repository.',
+            'Seven color-difference metrics including CIEDE2000 and CMC, plus WCAG 2.1 relative luminance, contrast ratio and pass/fail checks against the standard criteria.',
+        }),
+      },
+      {
+        icon: 'lucide:palette',
+        title: translate({
+          id: 'homepage.features.palettes.title',
+          description: 'Home page feature card title',
+          message: 'Palettes and random colors',
+        }),
+        details: translate({
+          id: 'homepage.features.palettes.details',
+          description: 'Home page feature card description',
+          message:
+            '38 colorous gradients and 10 categorical palettes, the 148 SVG/CSS names, and seeded random sampling from palette\u2019s distributions \u2014 a colormap is one function call.',
+        }),
+      },
+      {
+        icon: 'lucide:file-text',
+        title: translate({
+          id: 'homepage.features.formats.title',
+          description: 'Home page feature card title',
+          message: 'Text and 8-bit formats',
+        }),
+        details: translate({
+          id: 'homepage.features.formats.details',
+          description: 'Home page feature card description',
+          message:
+            'Parse and write hex or full CSS Color Level 4, pack and unpack ARGB/RGBA/ABGR/BGRA integers, and inspect primaries, white points, transfer functions and matrices.',
         }),
       },
     ],
@@ -420,7 +420,7 @@ function CodeShowcase(): ReactNode {
           </div>
         </div>
         <p className={styles.showcaseLinkRow}>
-          <Link className={styles.showcaseLink} to="/docs/user-guide/functions">
+          <Link className={styles.showcaseLink} to="/docs/category/functions">
             <Translate
               id="homepage.showcase.link"
               description="Home page link to the function reference">
@@ -459,7 +459,7 @@ export default function Home(): ReactNode {
   const nextHrefs = [
     useBaseUrl('/docs/intro'),
     useBaseUrl('/docs/user-guide/installation'),
-    useBaseUrl('/docs/user-guide/functions'),
+    useBaseUrl('/docs/category/functions'),
     useBaseUrl('/docs/development/quick-start'),
   ] as const;
 

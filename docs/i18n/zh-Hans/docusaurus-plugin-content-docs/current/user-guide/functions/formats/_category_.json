@@ -1,0 +1,9 @@
+{
+  "label": "格式",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "把颜色与 SQL 文本、整数互转：十六进制、完整的 CSS Color Level 4 语法、CSS/SVG 命名色，以及 8 位打包值。",
+    "slug": "/category/formats"
+  }
+}
