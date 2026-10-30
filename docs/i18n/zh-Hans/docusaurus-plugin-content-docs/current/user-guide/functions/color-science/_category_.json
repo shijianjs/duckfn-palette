@@ -1,9 +1,0 @@
-{
-  "label": "色彩科学",
-  "position": 5,
-  "link": {
-    "type": "generated-index",
-    "description": "转换背后的机制：白点与色适应、传递函数与基色、3x3 矩阵，以及用自定义观察条件计算的 CAM16。",
-    "slug": "/category/color-science"
-  }
-}

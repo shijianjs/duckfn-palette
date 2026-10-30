@@ -1,9 +1,0 @@
-{
-  "label": "颜色与颜色空间",
-  "position": 2,
-  "link": {
-    "type": "generated-index",
-    "slug": "/category/colors",
-    "description": "颜色值本身：怎么在 44 个空间里的任意一个构造颜色、读写它的分量与 alpha，以及在空间之间转换（裁剪或不裁剪）。"
-  }
-}

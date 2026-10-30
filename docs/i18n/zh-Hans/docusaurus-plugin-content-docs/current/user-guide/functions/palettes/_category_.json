@@ -1,9 +1,0 @@
-{
-  "label": "色板与随机色",
-  "position": 6,
-  "link": {
-    "type": "generated-index",
-    "description": "colorous 提供的 d3 风格渐变与分类色板，以及 palette 分布的可复现随机采样。",
-    "slug": "/category/palettes"
-  }
-}

@@ -212,6 +212,14 @@ A translated page is a full copy of its English source, placed under
 - Runnable blocks are copied verbatim except for the SQL comments: the `{"type":"duckfn",…}` info
   string and the query itself are code, and `npm test` runs the Chinese page's blocks too.
 
+Category metadata is the exception to "copy the page": a translated `_category_.json` under `i18n/` is
+**never read** — Docusaurus loads category labels, generated-index titles and descriptions from the
+default (English) content path only. Translate them in
+`i18n/zh-Hans/docusaurus-plugin-content-docs/current.json` instead, under
+`sidebar.<sidebarName>.category.<English label>`, plus `.link.generated-index.title` and
+`.link.generated-index.description` for the two strings on the category page itself. The title falls
+back to the label, so leaving `.title` out is enough when the page should be named after the category.
+
 UI strings live in `i18n/zh-Hans/*.json`. After changing text in `docusaurus.config.ts`, in `src/`, or
 a `_category_.json`, regenerate the stubs and fill in the new entries:
 

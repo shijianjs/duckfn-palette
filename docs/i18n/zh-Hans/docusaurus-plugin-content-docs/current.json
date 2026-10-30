@@ -2,5 +2,53 @@
   "version.label": {
     "message": "下一版",
     "description": "The label for version current"
+  },
+  "sidebar.userGuide.category.Function reference": {
+    "message": "函数参考",
+    "description": "The label for category 'Function reference' in sidebar 'userGuide'"
+  },
+  "sidebar.userGuide.category.Function reference.link.generated-index.description": {
+    "message": "全部 160 个 plt_ 函数，按用途分组。每个函数都有签名、SQL 行为说明和一个可以就地运行的例子。",
+    "description": "The generated-index page description for category 'Function reference' in sidebar 'userGuide'"
+  },
+  "sidebar.userGuide.category.Colors and spaces": {
+    "message": "颜色与颜色空间",
+    "description": "The label for category 'Colors and spaces' in sidebar 'userGuide'"
+  },
+  "sidebar.userGuide.category.Colors and spaces.link.generated-index.description": {
+    "message": "颜色值本身：怎么在 44 个空间里的任意一个构造颜色、读写它的分量与 alpha，以及在空间之间转换（裁剪或不裁剪）。",
+    "description": "The generated-index page description for category 'Colors and spaces' in sidebar 'userGuide'"
+  },
+  "sidebar.userGuide.category.Operations": {
+    "message": "运算",
+    "description": "The label for category 'Operations' in sidebar 'userGuide'"
+  },
+  "sidebar.userGuide.category.Operations.link.generated-index.description": {
+    "message": "对一个颜色能做的事：混合、提亮或压暗、改饱和度或色相、混合与合成、比较，以及由它生成配色方案。",
+    "description": "The generated-index page description for category 'Operations' in sidebar 'userGuide'"
+  },
+  "sidebar.userGuide.category.Formats": {
+    "message": "格式",
+    "description": "The label for category 'Formats' in sidebar 'userGuide'"
+  },
+  "sidebar.userGuide.category.Formats.link.generated-index.description": {
+    "message": "把颜色与 SQL 文本、整数互转：十六进制、完整的 CSS Color Level 4 语法、CSS/SVG 命名色，以及 8 位打包值。",
+    "description": "The generated-index page description for category 'Formats' in sidebar 'userGuide'"
+  },
+  "sidebar.userGuide.category.Color science": {
+    "message": "色彩科学",
+    "description": "The label for category 'Color science' in sidebar 'userGuide'"
+  },
+  "sidebar.userGuide.category.Color science.link.generated-index.description": {
+    "message": "转换背后的机制：白点与色适应、传递函数与基色、3x3 矩阵，以及用自定义观察条件计算的 CAM16。",
+    "description": "The generated-index page description for category 'Color science' in sidebar 'userGuide'"
+  },
+  "sidebar.userGuide.category.Palettes and random colors": {
+    "message": "色板与随机色",
+    "description": "The label for category 'Palettes and random colors' in sidebar 'userGuide'"
+  },
+  "sidebar.userGuide.category.Palettes and random colors.link.generated-index.description": {
+    "message": "colorous 提供的 d3 风格渐变与分类色板，以及 palette 分布的可复现随机采样。",
+    "description": "The generated-index page description for category 'Palettes and random colors' in sidebar 'userGuide'"
   }
 }
