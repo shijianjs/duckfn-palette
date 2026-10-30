@@ -11,12 +11,11 @@
 name: npm checks
 
 on:
+  # PR 上按路径过滤跑；push 到 main 不触发 CI（只在 PR 与手动触发时跑），tag 发布由
+  # MainDistributionPipeline 负责。
+  #
+  # Runs on pull requests (path-filtered) and manual dispatch only: pushing to main does not start CI.
   pull_request:
-    paths:
-      - 'docs/**'
-      - '.github/workflows/NpmChecks.yml'
-  push:
-    branches: [main]
     paths:
       - 'docs/**'
       - '.github/workflows/NpmChecks.yml'
