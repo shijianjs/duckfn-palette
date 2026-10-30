@@ -11,7 +11,7 @@ extension:
 
 repo:
   github: shijianjs/duckfn-palette
-  ref: 27e4715bd97680170ea99079ff4e798af962028d
+  ref: 450f447f24365a353ad0835816d3b6c95d96be80
 
 docs:
   hello_world: |
