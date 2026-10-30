@@ -141,9 +141,18 @@ macro_rules! theory_dispatch {
     ($space:expr, $fn_name:expr, $a:expr, $scheme:expr) => {{
         let a = $a;
         match $space {
-            "hsl" => Ok(harmonic_triples(Hsl::<encoding::Srgb, f64>::from_triple(a), $scheme)),
-            "hsv" => Ok(harmonic_triples(Hsv::<encoding::Srgb, f64>::from_triple(a), $scheme)),
-            "hwb" => Ok(harmonic_triples(Hwb::<encoding::Srgb, f64>::from_triple(a), $scheme)),
+            "hsl" => Ok(harmonic_triples(
+                Hsl::<encoding::Srgb, f64>::from_triple(a),
+                $scheme,
+            )),
+            "hsv" => Ok(harmonic_triples(
+                Hsv::<encoding::Srgb, f64>::from_triple(a),
+                $scheme,
+            )),
+            "hwb" => Ok(harmonic_triples(
+                Hwb::<encoding::Srgb, f64>::from_triple(a),
+                $scheme,
+            )),
             "hsluv" => Ok(harmonic_triples(Hsluv::<D65, f64>::from_triple(a), $scheme)),
             "lch" => Ok(harmonic_triples(Lch::<D65, f64>::from_triple(a), $scheme)),
             "lchuv" => Ok(harmonic_triples(Lchuv::<D65, f64>::from_triple(a), $scheme)),
@@ -157,7 +166,10 @@ macro_rules! theory_dispatch {
             "cam16_qch" => Ok(harmonic_triples(Cam16Qch::<f64>::from_triple(a), $scheme)),
             "cam16_qmh" => Ok(harmonic_triples(Cam16Qmh::<f64>::from_triple(a), $scheme)),
             "cam16_qsh" => Ok(harmonic_triples(Cam16Qsh::<f64>::from_triple(a), $scheme)),
-            "cam16_ucs_jmh" => Ok(harmonic_triples(Cam16UcsJmh::<f64>::from_triple(a), $scheme)),
+            "cam16_ucs_jmh" => Ok(harmonic_triples(
+                Cam16UcsJmh::<f64>::from_triple(a),
+                $scheme,
+            )),
             other => Err(unsupported($fn_name, other)),
         }
     }};

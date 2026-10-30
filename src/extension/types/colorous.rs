@@ -137,7 +137,7 @@ pub fn gradient(fn_name: &str, name: &str) -> Result<Gradient, ExtensionError> {
             return Err(err(format!(
                 "{fn_name}: unknown gradient '{other}'; see plt_colorous_palettes() for the {} names",
                 GRADIENTS.len()
-            )))
+            )));
         }
     };
     Ok(gradient)
@@ -161,7 +161,7 @@ pub fn categorical(fn_name: &str, name: &str) -> Result<&'static [Color], Extens
         other => {
             return Err(err(format!(
                 "{fn_name}: unknown categorical palette '{other}'; see plt_colorous_categoricals()"
-            )))
+            )));
         }
     };
     Ok(palette)

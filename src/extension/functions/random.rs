@@ -21,7 +21,10 @@ use crate::extension::types::random;
     example = "SELECT plt_random_spaces()"
 )]
 fn plt_random_spaces() -> Vec<String> {
-    random::RANDOM_SPACES.iter().map(|s| s.to_string()).collect()
+    random::RANDOM_SPACES
+        .iter()
+        .map(|s| s.to_string())
+        .collect()
 }
 
 /// 采一个随机色。
@@ -42,11 +45,7 @@ fn plt_random_color(space: String, seed: i64) -> DuckOptionResult<PltColor> {
     description = "A LIST of reproducible random colors from one seeded sequence; count must be non-negative",
     example = "SELECT plt_random_colors('srgb', 5, 42)"
 )]
-fn plt_random_colors(
-    space: String,
-    count: i64,
-    seed: i64,
-) -> DuckOptionResult<Vec<PltColor>> {
+fn plt_random_colors(space: String, count: i64, seed: i64) -> DuckOptionResult<Vec<PltColor>> {
     let count = usize::try_from(count).map_err(|_| {
         err(format!(
             "plt_random_colors: count must be non-negative, got {count}"

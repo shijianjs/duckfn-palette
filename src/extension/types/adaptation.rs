@@ -23,10 +23,10 @@
 
 use palette::encoding::DciP3;
 use palette::lms::matrix::{Bradford, LmsToXyz, UnitMatrix, VonKries, XyzToLms};
-use palette::matrix::{multiply_3x3, multiply_3x3_and_vec3, Mat3};
+use palette::matrix::{Mat3, multiply_3x3, multiply_3x3_and_vec3};
 use palette::white_point::{
-    WhitePoint, A, B, C, D50, D55, D65, D75, D50Degree10, D55Degree10, D65Degree10, D75Degree10,
-    E, F11, F2, F7,
+    A, B, C, D50, D50Degree10, D55, D55Degree10, D65, D65Degree10, D75, D75Degree10, E, F2, F7,
+    F11, WhitePoint,
 };
 use quack_rs::error::ExtensionError;
 
@@ -100,10 +100,7 @@ pub fn white_point_arg(fn_name: &str, name: &str) -> Result<&'static str, Extens
 /// 白点的 XYZ 三刺激值（Y 已归一化为 1）。
 ///
 /// The white point's tristimulus values (Y normalized to 1).
-pub fn white_point_xyz(
-    fn_name: &str,
-    name: &str,
-) -> Result<(f64, f64, f64), ExtensionError> {
+pub fn white_point_xyz(fn_name: &str, name: &str) -> Result<(f64, f64, f64), ExtensionError> {
     let xyz = match white_point_arg(fn_name, name)? {
         "a" => A::get_xyz(),
         "b" => B::get_xyz(),
@@ -154,19 +151,10 @@ pub fn method_arg(fn_name: &str, method: &str) -> Result<&'static str, Extension
 /// 方法对应的「XYZ→LMS」与「LMS→XYZ」矩阵。
 ///
 /// The XYZ→LMS and LMS→XYZ matrices of an adaptation method.
-fn lms_matrices(
-    fn_name: &str,
-    method: &str,
-) -> Result<(Mat3<f64>, Mat3<f64>), ExtensionError> {
+fn lms_matrices(fn_name: &str, method: &str) -> Result<(Mat3<f64>, Mat3<f64>), ExtensionError> {
     Ok(match method_arg(fn_name, method)? {
-        "bradford" => (
-            Bradford::xyz_to_lms_matrix(),
-            Bradford::lms_to_xyz_matrix(),
-        ),
-        "von_kries" => (
-            VonKries::xyz_to_lms_matrix(),
-            VonKries::lms_to_xyz_matrix(),
-        ),
+        "bradford" => (Bradford::xyz_to_lms_matrix(), Bradford::lms_to_xyz_matrix()),
+        "von_kries" => (VonKries::xyz_to_lms_matrix(), VonKries::lms_to_xyz_matrix()),
         "unit_matrix" => (
             UnitMatrix::xyz_to_lms_matrix(),
             UnitMatrix::lms_to_xyz_matrix(),

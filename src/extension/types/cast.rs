@@ -11,9 +11,9 @@
 // default (6-digit `0xRRGGBB` reads naturally); the other orders are for external formats.
 // ============================================================================
 
+use palette::Srgba;
 use palette::cast::Packed;
 use palette::rgb::channels::{Abgr, Argb, Bgra, Rgba};
-use palette::Srgba;
 use quack_rs::error::ExtensionError;
 
 use super::color::{PltColor, bad_arg};
@@ -96,5 +96,7 @@ pub fn unpack(fn_name: &str, value: i64, order: &str) -> Result<PltColor, Extens
         _ => unreachable!("pack_order returned an unknown order"),
     };
     let rgba = rgba.into_format::<f64, f64>();
-    Ok(PltColor::new("srgb", rgba.red, rgba.green, rgba.blue, rgba.alpha))
+    Ok(PltColor::new(
+        "srgb", rgba.red, rgba.green, rgba.blue, rgba.alpha,
+    ))
 }

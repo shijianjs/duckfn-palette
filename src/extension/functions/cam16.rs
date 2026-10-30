@@ -142,10 +142,7 @@ fn plt_cam16_params_xyz_custom(
     description = "Convert an xyz color into the full CAM16 attributes (lightness, chroma, hue, brightness, colorfulness, saturation) under custom viewing conditions",
     example = "SELECT plt_cam16_from_xyz(plt_xyz(0.4, 0.3, 0.2), plt_cam16_default_params())"
 )]
-fn plt_cam16_from_xyz(
-    color: PltColor,
-    params: PltCam16Params,
-) -> DuckOptionResult<PltCam16Full> {
+fn plt_cam16_from_xyz(color: PltColor, params: PltCam16Params) -> DuckOptionResult<PltCam16Full> {
     let cam16 = cam16::full_from_xyz(&color, "plt_cam16_from_xyz", &params)?;
     let mut full = PltCam16Full::from(cam16);
     full.alpha = color.alpha;
@@ -157,10 +154,7 @@ fn plt_cam16_from_xyz(
     description = "Convert the full CAM16 attributes back into an xyz color under custom viewing conditions",
     example = "SELECT plt_cam16_to_xyz(plt_cam16_from_xyz(plt_xyz(0.4, 0.3, 0.2), plt_cam16_default_params()), plt_cam16_default_params())"
 )]
-fn plt_cam16_to_xyz(
-    cam16: PltCam16Full,
-    params: PltCam16Params,
-) -> DuckOptionResult<PltColor> {
+fn plt_cam16_to_xyz(cam16: PltCam16Full, params: PltCam16Params) -> DuckOptionResult<PltColor> {
     let mut color = cam16::full_to_xyz(cam16.to_cam16(), &params);
     color.alpha = cam16.alpha;
     Ok(Some(color))
@@ -189,10 +183,7 @@ fn plt_cam16_partial_from_xyz(
     description = "Convert a partial CAM16 color (cam16_jch etc.) back into an xyz color under custom viewing conditions",
     example = "SELECT plt_cam16_partial_to_xyz(plt_cam16_jch(50, 40, 120), plt_cam16_default_params())"
 )]
-fn plt_cam16_partial_to_xyz(
-    color: PltColor,
-    params: PltCam16Params,
-) -> DuckOptionResult<PltColor> {
+fn plt_cam16_partial_to_xyz(color: PltColor, params: PltCam16Params) -> DuckOptionResult<PltColor> {
     Ok(Some(cam16::partial_to_xyz(
         &color,
         "plt_cam16_partial_to_xyz",

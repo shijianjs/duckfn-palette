@@ -21,7 +21,10 @@ use crate::extension::types::matrix;
     example = "SELECT plt_encoding_spaces()"
 )]
 fn plt_encoding_spaces() -> Vec<String> {
-    encoding::ENCODING_SPACES.iter().map(|s| s.to_string()).collect()
+    encoding::ENCODING_SPACES
+        .iter()
+        .map(|s| s.to_string())
+        .collect()
 }
 
 /// 空间使用的传输函数名。

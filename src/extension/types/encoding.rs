@@ -182,7 +182,11 @@ where
         S::Primaries::green(),
         S::Primaries::blue(),
     );
-    [r.into_components(), g.into_components(), b.into_components()]
+    [
+        r.into_components(),
+        g.into_components(),
+        b.into_components(),
+    ]
 }
 
 /// RGB 空间的原色列表。
@@ -210,15 +214,17 @@ pub fn primaries(fn_name: &str, space: &str) -> Result<Vec<PltColor>, ExtensionE
 /// The RGB→XYZ matrix, row-major.
 pub fn rgb_to_xyz(fn_name: &str, space: &str) -> Result<[f64; 9], ExtensionError> {
     let space = space_arg(fn_name, space)?;
-    Ok(with_rgb_space!(space, fn_name, "RGB→XYZ matrix", S => rgb_to_xyz_matrix::<S, f64>(), [
-        "srgb" | "srgb_linear" | "srgb_gamma" | "rec709" | "rec709_linear"
-        | "luma" | "luma_linear" | "luma_gamma" => Srgb,
-        "adobe_rgb" | "adobe_rgb_linear" => AdobeRgb,
-        "display_p3" | "display_p3_linear" => DisplayP3Space,
-        "dci_p3" | "dci_p3_linear" => DciP3Space,
-        "prophoto_rgb" | "prophoto_rgb_linear" => ProPhotoRgb,
-        "rec2020" | "rec2020_linear" => Rec2020,
-    ]))
+    Ok(
+        with_rgb_space!(space, fn_name, "RGB→XYZ matrix", S => rgb_to_xyz_matrix::<S, f64>(), [
+            "srgb" | "srgb_linear" | "srgb_gamma" | "rec709" | "rec709_linear"
+            | "luma" | "luma_linear" | "luma_gamma" => Srgb,
+            "adobe_rgb" | "adobe_rgb_linear" => AdobeRgb,
+            "display_p3" | "display_p3_linear" => DisplayP3Space,
+            "dci_p3" | "dci_p3_linear" => DciP3Space,
+            "prophoto_rgb" | "prophoto_rgb_linear" => ProPhotoRgb,
+            "rec2020" | "rec2020_linear" => Rec2020,
+        ]),
+    )
 }
 
 /// XYZ → RGB 的 3x3 矩阵（行主序 9 个数），即上面那个矩阵的逆。

@@ -22,13 +22,13 @@
 // The gamma 2.2 spaces are deprecated but still public; sample them like any other space.
 #![allow(deprecated)]
 
-use palette::encoding::{Gamma, Linear, Srgb as SrgbEncoding};
 use palette::cam16::{Cam16UcsJab, Cam16UcsJmh};
+use palette::encoding::{Gamma, Linear, Srgb as SrgbEncoding};
 use palette::lms::{BradfordLms, VonKriesLms};
 use palette::luma::Luma;
 use palette::rgb::{
     AdobeRgb, DciP3, DisplayP3, GammaSrgb, LinAdobeRgb, LinDciP3, LinDisplayP3, LinProPhotoRgb,
-    LinRec2020, LinRec709, LinSrgb, ProPhotoRgb, Rec2020, Rec709, Srgb,
+    LinRec709, LinRec2020, LinSrgb, ProPhotoRgb, Rec709, Rec2020, Srgb,
 };
 use palette::white_point::{D50, D65};
 use palette::{Hsl, Hsv, Hwb, Lab, Lch, Lchuv, Luv, Oklab, Oklch, Xyz, Yxy};
@@ -226,7 +226,7 @@ fn sample_rng(fn_name: &str, space: &str, rng: &mut StdRng) -> Result<PltColor, 
                 "{fn_name}: color space '{}' has no random distribution; use one of {}",
                 other,
                 RANDOM_SPACES.join(", ")
-            )))
+            )));
         }
     };
     Ok(PltColor::new(space, c1, c2, c3, 1.0))

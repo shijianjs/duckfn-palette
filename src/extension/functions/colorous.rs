@@ -33,7 +33,10 @@ fn plt_colorous_palettes() -> Vec<String> {
     example = "SELECT plt_colorous_categoricals()"
 )]
 fn plt_colorous_categoricals() -> Vec<String> {
-    colorous::CATEGORICALS.iter().map(|s| s.to_string()).collect()
+    colorous::CATEGORICALS
+        .iter()
+        .map(|s| s.to_string())
+        .collect()
 }
 
 /// 在渐变的 t 处取色。
@@ -74,5 +77,7 @@ fn plt_colorous_palette(name: String, n: i64) -> DuckOptionResult<Vec<PltColor>>
 )]
 fn plt_colorous_categorical(name: String) -> DuckOptionResult<Vec<PltColor>> {
     let palette = colorous::categorical("plt_colorous_categorical", &name)?;
-    Ok(Some(palette.iter().map(|c| colorous::to_color(*c)).collect()))
+    Ok(Some(
+        palette.iter().map(|c| colorous::to_color(*c)).collect(),
+    ))
 }

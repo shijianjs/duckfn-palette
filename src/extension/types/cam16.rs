@@ -22,13 +22,13 @@
 // ============================================================================
 
 use duckfn::DuckStruct;
+use palette::Xyz;
 use palette::cam16::{
     BakedParameters, Cam16, Cam16Jch, Cam16Jmh, Cam16Jsh, Cam16Qch, Cam16Qmh, Cam16Qsh,
     Cam16UcsJab, Cam16UcsJmh, Discounting, Parameters, Surround,
 };
 use palette::convert::FromColorUnclamped;
 use palette::white_point::{Any, D65, WhitePoint};
-use palette::Xyz;
 use quack_rs::error::ExtensionError;
 
 use super::adaptation;
@@ -118,7 +118,10 @@ impl PltCam16Params {
 ///
 /// Surround name into its percentage; a number written as text (`'12.5'`) is accepted too.
 pub fn surround_percent(fn_name: &str, surround: &str) -> Result<f64, ExtensionError> {
-    let normalized = surround.trim().to_ascii_lowercase().replace(['-', ' '], "_");
+    let normalized = surround
+        .trim()
+        .to_ascii_lowercase()
+        .replace(['-', ' '], "_");
     match normalized.as_str() {
         "dark" => Ok(0.0),
         "dim" => Ok(10.0),
@@ -261,7 +264,7 @@ pub fn partial_from_xyz(
                 "{fn_name}: '{}' is not a CAM16 space; use one of {}",
                 other,
                 CAM16_SPACES.join(", ")
-            )))
+            )));
         }
     };
     Ok(color.with_components(space, c1, c2, c3))
@@ -297,7 +300,7 @@ pub fn partial_to_xyz(
             return Err(err(format!(
                 "{fn_name}: expected a CAM16 space ({}), got '{other}'",
                 CAM16_SPACES.join(", ")
-            )))
+            )));
         }
     };
     Ok(color.with_components("xyz", xyz.x, xyz.y, xyz.z))
