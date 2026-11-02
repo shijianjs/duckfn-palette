@@ -145,4 +145,4 @@ colorous = "1.0"
 #
 # rand: seeded PRNG for reproducible random colors; same major version as palette's `random`
 # feature (0.8), so only one rand enters the graph.
-rand = "0.8"
+rand = "0.10"
