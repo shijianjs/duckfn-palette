@@ -141,8 +141,10 @@ csscolorparser = "0.9"
 colorous = "1.0"
 
 # rand：colorous 之外的随机色需要可设种子的 PRNG；与 palette 的 `random` feature 使用同一
-# 大版本（0.8），避免两份 rand 同时进依赖图。
+# 大版本（0.8），避免两份 rand 同时进依赖图。palette 的 `Standard` 分布实现的是 rand 0.8 的
+# `Distribution`，换大版本会直接编译不过，所以 `.github/dependabot.yml` 里也挡住 rand 的 major。
 #
 # rand: seeded PRNG for reproducible random colors; same major version as palette's `random`
-# feature (0.8), so only one rand enters the graph.
+# feature (0.8), so only one rand enters the graph. palette's `Standard` distributions implement
+# rand 0.8's `Distribution` trait, so a major bump stops compiling — hence the Dependabot ignore.
 rand = "0.8"
