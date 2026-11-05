@@ -84,7 +84,7 @@ duckfn = { version = "0.3.0", features = ["cli"] }
 # types or builders directly.
 # quack-rs: the code expanded by `duckfn_entrypoint!` refers to `quack_rs::` paths,
 # so it must be a direct dependency.
-quack-rs = "0.19.0"
+quack-rs = "0.20.0"
 
 # loadable-extension：走 DuckDB 的 API 函数表分发，而不是链接 libduckdb，
 # 这也是「无需在本地编译 DuckDB」的原因（仅使用头文件，不链接库）。
