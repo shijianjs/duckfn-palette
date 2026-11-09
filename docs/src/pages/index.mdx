@@ -1,0 +1,127 @@
+---
+title: duckfn_palette
+description: How to install and use this DuckDB extension, the functions it adds, and where its development guide lives.
+hide_table_of_contents: true
+wrapperClassName: dfk-home
+---
+
+import Link from '@docusaurus/Link';
+import {registerDfkElements} from 'duckfn-docs-kit';
+
+import styles from '@site/src/pages/index.module.css';
+
+{registerDfkElements()}
+
+{/* `MDXPage` supplies the `<Layout>` and the page grid; `dfk-home` is what
+    lets `src/css/home.css` give the page the full width it needs. The badge
+    `href`s carry the repository URL inline because an MDX page cannot read
+    `customFields`. */}
+
+<dfk-hero
+  logo-src="/img/logo.svg"
+  title="duckfn_palette"
+  tagline="Color spaces, conversion and palettes for DuckDB, from the Rust palette, csscolorparser and colorous crates">
+
+<dfk-action kind="primary" href="/docs/user-guide/installation">Get started</dfk-action>
+
+<dfk-action kind="secondary" href="https://github.com/shijianjs/duckfn-palette" icon="simple-icons:github">GitHub</dfk-action>
+
+<dfk-badge href="https://duckdb.org" src="https://img.shields.io/badge/DuckDB-1.4%2B-fff100?logo=duckdb&style=flat" alt="DuckDB 1.4 or newer" />
+
+<dfk-badge href="https://duckdb.org/community_extensions/extensions/duckfn_palette" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcommunity-extensions.duckdb.org%2Fdownloads-last-week.json&query=%24.duckfn_palette&label=Weekly%20Downloads&color=blue&logo=duckdb&logoColor=a899ff&style=flat" alt="Weekly downloads from the DuckDB community extensions" />
+
+<dfk-badge href="https://github.com/shijianjs/duckfn-palette/releases" src="https://img.shields.io/github/v/release/shijianjs/duckfn-palette?style=flat&logo=github" alt="Latest release" />
+
+<dfk-badge href="https://github.com/shijianjs/duckfn-palette/blob/main/LICENSE" src="https://img.shields.io/badge/license-MIT-14459b.svg?style=flat&logo=github" alt="MIT license" />
+
+</dfk-hero>
+
+<dfk-features section-title="What duckfn_palette gives you">
+
+<dfk-feature icon="lucide:braces" title="Colors as ordinary SQL values">
+A color is one STRUCT(space, c1, c2, c3, alpha): keep it in a column, group by it, compare it, and pass it through lambdas and joins like any other value.
+</dfk-feature>
+
+<dfk-feature icon="lucide:swatch-book" title="44 color spaces">
+sRGB, Display P3, Rec. 2020, CIE Lab and LCh, OKLab and OKLCh, HSLuv, CAM16 and more — construct a color in any of them and convert between all of them in one call.
+</dfk-feature>
+
+<dfk-feature icon="lucide:blend" title="Mix, blend and build schemes">
+11 blend modes and 6 Porter-Duff compositing operators, lighten and darken, saturation and hue shifts, premultiplied alpha, and complementary / analogous / triadic / tetradic schemes.
+</dfk-feature>
+
+<dfk-feature icon="lucide:scale" title="Differences and contrast">
+Seven color-difference metrics including CIEDE2000 and CMC, plus WCAG 2.1 relative luminance, contrast ratio and pass/fail checks against the standard criteria.
+</dfk-feature>
+
+<dfk-feature icon="lucide:palette" title="Palettes and random colors">
+38 colorous gradients and 10 categorical palettes, the 148 SVG/CSS names, and seeded random sampling from palette's distributions — a colormap is one function call.
+</dfk-feature>
+
+<dfk-feature icon="lucide:file-text" title="Text and 8-bit formats">
+Parse and write hex or full CSS Color Level 4, pack and unpack ARGB/RGBA/ABGR/BGRA integers, and inspect primaries, white points, transfer functions and matrices.
+</dfk-feature>
+
+</dfk-features>
+
+<section className={styles.sectionTint}>
+<div className={styles.sectionInner}>
+
+## Install once, then call it from SQL
+
+The extension adds ordinary SQL functions, with nothing to import at the call site. Install it once (left), then use the functions anywhere a DuckDB function is allowed (right).
+
+<div className={styles.codeGrid}>
+
+```sql title="duckdb"
+-- once per installation, then once per session
+INSTALL duckfn_palette FROM community;
+LOAD duckfn_palette;
+```
+
+<div className={styles.codeColumn}>
+
+```sql title="duckdb"
+SELECT plt_to_hex(plt_convert(plt_srgb(1, 0.5, 0), 'oklch'));  -- #ff8000
+SELECT plt_contrast(plt_named('white'), plt_named('black'));    -- 21.0
+SELECT to_json(list_transform(plt_colorous_palette('viridis', 3), lambda x: plt_to_hex(x)));
+-- ["#440154","#20908c","#fde725"]
+```
+
+The comments are what each call returns — a converted color, a WCAG contrast ratio, and a three-stop gradient sampled as hex.
+
+</div>
+</div>
+
+<div className={styles.showcaseLinkRow}>
+<Link className={styles.showcaseLink} to="/docs/category/functions">
+
+The full function reference
+
+<iconify-icon icon="lucide:arrow-right" className={styles.showcaseLinkArrow} aria-hidden="true" />
+
+</Link>
+</div>
+
+</div>
+</section>
+
+<dfk-next-steps section-title="Where to go next">
+
+<dfk-step href="/docs/intro" title="Introduction">
+What duckfn_palette adds to DuckDB, in one page.
+</dfk-step>
+
+<dfk-step href="/docs/user-guide/installation" title="Installation">
+The community repository, a release file, or a local build.
+</dfk-step>
+
+<dfk-step href="/docs/category/functions" title="Functions">
+Every function, with an example you can run right here.
+</dfk-step>
+
+<dfk-step href="/docs/development/quick-start" title="Development guide">
+Building, testing and releasing the extension from source.
+</dfk-step>
+
+</dfk-next-steps>

@@ -1,0 +1,126 @@
+---
+title: duckfn_palette
+description: 如何安装并使用这个 DuckDB 扩展、它提供的函数，以及开发指南的位置。
+hide_table_of_contents: true
+wrapperClassName: dfk-home
+---
+
+import Link from '@docusaurus/Link';
+import {registerDfkElements} from 'duckfn-docs-kit';
+
+import styles from '@site/src/pages/index.module.css';
+
+{registerDfkElements()}
+
+{/* `MDXPage` 自带 `<Layout>` 与页面栅格；`dfk-home` 给 `src/css/home.css`
+    一个作用域，把首页放成全宽。徽章的 `href` 内联了仓库地址，因为 MDX 页面
+    读不到 `customFields`。 */}
+
+<dfk-hero
+  logo-src="/img/logo.svg"
+  title="duckfn_palette"
+  tagline="给 DuckDB 的颜色空间、转换与色板：包装 Rust 的 palette、csscolorparser 与 colorous 三个库">
+
+<dfk-action kind="primary" href="/docs/user-guide/installation">开始使用</dfk-action>
+
+<dfk-action kind="secondary" href="https://github.com/shijianjs/duckfn-palette" icon="simple-icons:github">GitHub</dfk-action>
+
+<dfk-badge href="https://duckdb.org" src="https://img.shields.io/badge/DuckDB-1.4%2B-fff100?logo=duckdb&style=flat" alt="DuckDB 1.4 or newer" />
+
+<dfk-badge href="https://duckdb.org/community_extensions/extensions/duckfn_palette" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcommunity-extensions.duckdb.org%2Fdownloads-last-week.json&query=%24.duckfn_palette&label=%E5%91%A8%E4%B8%8B%E8%BD%BD&color=blue&logo=duckdb&logoColor=a899ff&style=flat" alt="DuckDB 社区仓的周下载量" />
+
+<dfk-badge href="https://github.com/shijianjs/duckfn-palette/releases" src="https://img.shields.io/github/v/release/shijianjs/duckfn-palette?style=flat&logo=github&label=%E7%89%88%E6%9C%AC" alt="Latest release" />
+
+<dfk-badge href="https://github.com/shijianjs/duckfn-palette/blob/main/LICENSE" src="https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF%E8%AF%81-MIT-14459b.svg?style=flat&logo=github" alt="MIT license" />
+
+</dfk-hero>
+
+<dfk-features section-title="duckfn_palette 能给你什么">
+
+<dfk-feature icon="lucide:braces" title="颜色就是普通的 SQL 值">
+一个颜色就是一个 STRUCT(space, c1, c2, c3, alpha)：能放进列里、按它分组、直接比较，也能传进 lambda 和 join，和别的值没有区别。
+</dfk-feature>
+
+<dfk-feature icon="lucide:swatch-book" title="44 个颜色空间">
+sRGB、Display P3、Rec. 2020、CIE Lab 与 LCh、OKLab 与 OKLCh、HSLuv、CAM16……在任意空间构造，再一次调用就能在它们之间互转，全程不离开 SQL。
+</dfk-feature>
+
+<dfk-feature icon="lucide:blend" title="混合、叠色与配色方案">
+11 种混合模式与 6 个 Porter-Duff 合成算子、提亮与压暗、饱和度与色相调整、预乘 alpha，以及互补、类似、三角、四角配色方案。
+</dfk-feature>
+
+<dfk-feature icon="lucide:scale" title="色差与对比度">
+CIEDE2000、CMC 等 7 种色差度量，加上 WCAG 2.1 的相对亮度、对比度，以及按标准阈值判定是否达标。
+</dfk-feature>
+
+<dfk-feature icon="lucide:palette" title="色板与随机色">
+38 条 colorous 渐变与 10 组分类色板、148 个 SVG/CSS 命名色，以及按 palette 分布、用种子复现的随机采样 —— 一张色图就是一个函数调用。
+</dfk-feature>
+
+<dfk-feature icon="lucide:file-text" title="文本与 8 位格式">
+解析与写出十六进制或完整的 CSS Color Level 4，打包和解包 ARGB/RGBA/ABGR/BGRA 整数，还能查基色、白点、传递函数与矩阵。
+</dfk-feature>
+
+</dfk-features>
+
+<section className={styles.sectionTint}>
+<div className={styles.sectionInner}>
+
+## 装一次，之后就在 SQL 里调用
+
+扩展加的就是一批普通的 SQL 函数，调用处不用 import 任何东西。左边装一次，右边就能在任何能写 DuckDB 函数的地方用它。
+
+<div className={styles.codeGrid}>
+
+```sql title="duckdb"
+-- once per installation, then once per session
+INSTALL duckfn_palette FROM community;
+LOAD duckfn_palette;
+```
+
+<div className={styles.codeColumn}>
+
+```sql title="duckdb"
+SELECT plt_to_hex(plt_convert(plt_srgb(1, 0.5, 0), 'oklch'));  -- #ff8000
+SELECT plt_contrast(plt_named('white'), plt_named('black'));    -- 21.0
+SELECT to_json(list_transform(plt_colorous_palette('viridis', 3), lambda x: plt_to_hex(x)));
+-- ["#440154","#20908c","#fde725"]
+```
+
+注释就是每次调用的返回值 —— 一次空间转换、一个 WCAG 对比度，以及把 viridis 均匀取三点后得到的十六进制列表。
+
+</div>
+</div>
+
+<div className={styles.showcaseLinkRow}>
+<Link className={styles.showcaseLink} to="/docs/category/functions">
+
+完整的函数参考
+
+<iconify-icon icon="lucide:arrow-right" className={styles.showcaseLinkArrow} aria-hidden="true" />
+
+</Link>
+</div>
+
+</div>
+</section>
+
+<dfk-next-steps section-title="接下来去哪">
+
+<dfk-step href="/docs/intro" title="简介">
+一页说清 duckfn_palette 给 DuckDB 加了什么。
+</dfk-step>
+
+<dfk-step href="/docs/user-guide/installation" title="安装">
+社区仓、Release 文件，或者本地自己构建的产物。
+</dfk-step>
+
+<dfk-step href="/docs/category/functions" title="函数">
+每个函数，配一个能就地跑的例子。
+</dfk-step>
+
+<dfk-step href="/docs/development/quick-start" title="开发指南">
+从源码构建、测试与发布这个扩展。
+</dfk-step>
+
+</dfk-next-steps>
