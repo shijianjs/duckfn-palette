@@ -75,7 +75,7 @@ CLI 的 `--base-url` / `--asset`）。
 | 图的来源 | 怎么放 | 例子 |
 | --- | --- | --- |
 | **扩展自己算出来的**（返回值是 SVG / HTML） | 可运行 SQL 块 + `show` | `{"type":"duckfn","show":"svg"}` |
-| **站点自己的静态图**（logo、社交卡片、示意图） | `static/img/` + `useBaseUrl('img/…')` | `useBaseUrl('img/logo.svg')` |
+| **站点自己的静态图**（logo、社交卡片、示意图） | `static/img/` + `useBaseUrl('img/…')` | `useBaseUrl('img/logo.png')` |
 
 ### 块里渲染
 
@@ -103,10 +103,11 @@ CLI 的 `--base-url` / `--asset`）。
   子路径下，写死的前缀在本地与线上不一致。
 - `static/` 会被复制进**每个 locale** 的输出，所以跨语言共用的图放这里一份即可，路径里不要带语言前缀；
   只给某一页用的图也可以跟 `.md` 放一起用相对路径引用，但那样中英两份要各放一份。
-- 体积：logo 用 SVG（十几 KB），社交卡片 JPG 几十 KB 量级。不要提交构建产物、整页截图或几百 KB 的
-  PNG —— 它们会被打进站点，也会留在 git 历史里。
+- 体积：logo 是位图插画，用 256×256 的 PNG（几十 KB 量级，别超 150 KB）；只有矢量 logo 才写 SVG
+  （十几 KB）。社交卡片 JPG 几十 KB 量级。不要提交构建产物、整页截图或几百 KB 的 PNG —— 它们会被
+  打进站点，也会留在 git 历史里。
 - `favicon` 与链接预览图（`image`）在 `docusaurus.config.ts` 里；换 logo 时 logo、favicon、社交卡片与
-  `src/css/custom.css` 的品牌色一起换（那份注释里写明了「palette 来自 logo.svg，两处一起改」）。
+  `src/css/custom.css` 的品牌色一起换（那份注释里写明了「palette 来自 logo.png，两处一起改」）。
 
 ## 中英双语要成对改
 

@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="docs/static/img/logo.png" alt="duckfn_palette logo" width="180" />
+</div>
+
 [English](README.md) | [简体中文](README.zh.md)
 
 # duckfn_palette

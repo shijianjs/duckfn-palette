@@ -69,7 +69,7 @@ const baseUrl = process.env.DOCS_BASE_URL ?? '/';
 const config: Config = {
   title: 'duckfn_palette',
   tagline: 'Color spaces, conversion and palettes for DuckDB, from the Rust palette, csscolorparser and colorous crates',
-  favicon: 'img/logo.svg',
+  favicon: 'img/logo.png',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
@@ -221,7 +221,7 @@ const config: Config = {
       title: 'duckfn_palette',
       logo: {
         alt: 'duckfn_palette logo',
-        src: 'img/logo.svg',
+        src: 'img/logo.png',
       },
       items: [
         // 顶栏两项 = 两个侧边栏（见 sidebars.ts）：用这个扩展（装插件、调函数）/ 开发这个仓库。
